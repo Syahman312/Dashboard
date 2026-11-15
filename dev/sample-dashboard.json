@@ -238,7 +238,7 @@
         ],
         "month": {
           "month": "2026-11",
-          "spent": 288.2,
+          "spent": 348.2,
           "income": 3295,
           "prevSpent": 563.4,
           "prevSamePoint": 235.9,
@@ -272,7 +272,7 @@
           },
           {
             "month": "2026-11",
-            "spent": 288.2,
+            "spent": 348.2,
             "income": 3295
           }
         ],
@@ -294,12 +294,12 @@
             "spent": 42
           },
           {
-            "category": "🍜 Food",
-            "spent": 38.3
+            "category": "🍣 Belanja Family",
+            "spent": 40
           },
           {
-            "category": "☕ Coffee",
-            "spent": 19
+            "category": "🍜 Food",
+            "spent": 38.3
           }
         ],
         "recent": [
@@ -374,7 +374,7 @@
           "dateOnlyRows": 0
         }
       },
-      "ms": 10
+      "ms": 9
     },
     "garage": {
       "name": "Garage",
@@ -464,12 +464,12 @@
           }
         ],
         "counts": {
-          "logs": 2,
+          "logs": 3,
           "fuel": 14,
           "deleted": 1
         }
       },
-      "ms": 2
+      "ms": 1
     }
   },
   "issues": [
@@ -488,11 +488,11 @@
       "detail": "Last at 15 Nov 15:30 · from Windows browser"
     },
     {
-      "source": "finance",
+      "source": "garage",
       "level": "error",
-      "area": "gold",
-      "message": "Gold price failed: Failed to fetch — 4× in the last 7 days",
-      "detail": "Last at 14 Nov 12:03 · from Windows browser"
+      "area": "dates",
+      "message": "Date saved as \"0009-10-26\" — the date column says 2009-10-26, which is before the car was made (2015)",
+      "detail": "row 13. At 117900 km it most likely happened between 2026-08-24 and 2026-08-31. Fix the date in Garage."
     },
     {
       "source": "flow",
@@ -586,10 +586,17 @@
       "detail": "row 4"
     },
     {
+      "source": "finance",
+      "level": "warn",
+      "area": "gold",
+      "message": "Gold price failed: Failed to fetch — 4× in the last 7 days",
+      "detail": "Last at 14 Nov 12:03 · from Windows browser"
+    },
+    {
       "source": "garage",
       "level": "warn",
       "area": "dates",
-      "message": "Date saved as \"0021-03-02\" (typo year) — using 2021-03-02 from the date column",
+      "message": "Date saved as \"0021-03-02\" (typo year) — reading it as 2021-03-02",
       "detail": "row 10. Re-save this entry in Garage to fix the stored date."
     },
     {
@@ -597,7 +604,7 @@
       "level": "warn",
       "area": "odometer",
       "message": "Demo Car: odometer goes backwards 1 time(s)",
-      "detail": "2026-10-12 (119190 km, row 22)"
+      "detail": "2026-10-12 (119190 km, row 23)"
     },
     {
       "source": "garage",
@@ -639,7 +646,7 @@
       "level": "info",
       "area": "duplicates",
       "message": "1 possible duplicate transaction(s) in the last 60 days",
-      "detail": "row 130"
+      "detail": "row 132"
     },
     {
       "source": "finance",
@@ -672,7 +679,7 @@
   ],
   "counts": {
     "error": 3,
-    "warn": 16,
+    "warn": 17,
     "info": 9
   }
 }

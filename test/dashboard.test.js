@@ -56,6 +56,10 @@ test('garage summary and checks', () => {
   assert.ok(has(i, 'garage', /typo year/), 'typo year');
   assert.ok(has(i, 'garage', /Road tax expires in 24 days/), 'road tax');
   assert.ok(has(i, 'garage', /odometer goes backwards/), 'odometer');
+  const pre = i.find(x => /before the car was made \(2015\)/.test(x.message));
+  assert.ok(pre, 'pre-car-year date');
+  assert.equal(pre.level, 'error');
+  assert.match(pre.detail, /between 2026-08-24 and 2026-08-31/);
   assert.ok(has(i, 'garage', /Wiper blades.*not in the service list/), 'unknown item');
   assert.ok(has(i, 'garage', /deleted row/), 'deleted rows');
 });
@@ -74,7 +78,9 @@ test('finance summary and checks', () => {
   assert.ok(has(i, 'finance', /no category/), 'no category');
   assert.ok(has(i, 'finance', /"Old Wallet"/), 'unknown account');
   assert.ok(has(i, 'finance', /written 2 ways/), 'icon variants');
-  assert.ok(has(i, 'finance', /Similar categories/), 'similar categories');
+  assert.ok(has(i, 'finance', /Similar categories "🍜 Food" and "🍽️ Food & Drinks"/), 'similar categories');
+  assert.ok(!has(i, 'finance', /Belanja GF/), 'no false match on shared first word');
+  assert.equal(i.find(x => /Gold price/.test(x.message)).level, 'warn', 'gold failures are warnings');
   assert.ok(has(i, 'finance', /duplicate/), 'duplicates');
   assert.ok(has(i, 'finance', /Gross − Deductions ≠ Net/), 'payslip maths');
   assert.ok(has(i, 'finance', /No connection to the script.*6×/), 'sync log');

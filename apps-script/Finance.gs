@@ -211,17 +211,18 @@ function checkCategories_(list, since30, issues) {
     if (variants.length > 1) issues.add('warn', 'categories', 'Category written ' + variants.length + ' ways: ' + variants.join(' · '));
   });
 
-  // 2. Names that overlap, e.g. "Food" and "Food & Drinks"
+  // 2. One name is the start of another, e.g. "Food" and "Food & Drinks"
+  //    (but not "Belanja GF" vs "Belanja Family", or "Income" vs "Rental income")
   var names = Object.keys(byName);
-  var words = function (s) { return s.split(/[^\p{L}\p{N}]+/u).filter(function (w) { return w.length > 2; }); };
+  var words = function (s) { return s.split(/[^\p{L}\p{N}]+/u).filter(function (w) { return w && w !== 'and'; }); };
   var pairs = [];
   names.forEach(function (a) {
     var wa = words(a);
     if (!wa.length) return;
     names.forEach(function (b) {
-      if (a === b || b.length <= a.length) return;
       var wb = words(b);
-      if (wa.every(function (w) { return wb.indexOf(w) >= 0; })) pairs.push([a, b]);
+      if (a === b || wb.length <= wa.length) return;
+      if (wa.every(function (w, i) { return wb[i] === w; })) pairs.push([a, b]);
     });
   });
   var label = function (k) { return Object.keys(byName[k])[0]; };

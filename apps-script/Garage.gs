@@ -15,7 +15,7 @@ function readGarage_(ss, ctx) {
     return { summary: { cars: [] }, issues: issues.list };
   }
 
-  var badJson = [], badDates = [], fixedDates = [], noDate = [], noCost = [], noOdo = [];
+  var badJson = [], badDates = [], noDate = [], noCost = [], noOdo = [];
   var unknownCar = [], deleted = 0;
   var cars = {}, svcNames = {}, logs = [], fuels = [];
 
@@ -50,8 +50,8 @@ function readGarage_(ss, ctx) {
     var jsonDate = toISODate_(rec.date), colDate = toISODate_(row.date), date = jsonDate;
     if (!isPlausibleDate_(jsonDate, ctx)) {
       if (isPlausibleDate_(colDate, ctx)) {
-        if (jsonDate) fixedDates.push({ row: row, from: text_(rec.date), to: colDate });
         date = colDate;
+        var guessedFrom = jsonDate ? text_(rec.date) : null;
       } else {
         (jsonDate || colDate ? badDates : noDate).push(row);
         date = null;
@@ -66,8 +66,10 @@ function readGarage_(ss, ctx) {
       litres: toNumber_(rec.litres),
       place: text_(rec.place),
       items: kind === 'log' ? text_(rec.item || row.item).split(/\s*,\s*/).filter(String) : [],
+      guessedFrom: guessedFrom || null,
       __row: row.__row
     };
+    guessedFrom = null;
     if (entry.cost === null) noCost.push(row);
     if (entry.odo === null) noOdo.push(row);
     (kind === 'log' ? logs : fuels).push(entry);
@@ -75,10 +77,7 @@ function readGarage_(ss, ctx) {
 
   /* --- data quality --- */
   if (badJson.length) issues.add('error', 'records', badJson.length + ' row(s) have unreadable JSON', rowList_(badJson));
-  fixedDates.forEach(function (f) {
-    issues.add('warn', 'dates', 'Date saved as "' + f.from + '" (typo year) — using ' + f.to + ' from the date column',
-      'row ' + f.row.__row + '. Re-save this entry in Garage to fix the stored date.');
-  });
+  checkGuessedDates_(logs.concat(fuels), cars, issues);
   if (badDates.length) issues.add('error', 'dates', badDates.length + ' entr(ies) have an impossible date', rowList_(badDates));
   if (noDate.length) issues.add('error', 'dates', noDate.length + ' entr(ies) have no date', rowList_(noDate));
   if (noCost.length) issues.add('warn', 'fields', noCost.length + ' entr(ies) have no cost', rowList_(noCost));
@@ -110,6 +109,42 @@ function readGarage_(ss, ctx) {
     },
     issues: issues.list
   };
+}
+
+/**
+ * Entries whose stored year was a typo ("0021-03-02") fall back to the date
+ * column. That is only trusted if it is not before the car was made; otherwise
+ * the date is dropped and the odometer is used to suggest when it happened.
+ */
+function checkGuessedDates_(entries, cars, issues) {
+  var ids = Object.keys(cars);
+  var carOf = function (e) { return cars[e.carId] || (ids.length === 1 ? cars[ids[0]] : null); };
+  entries.forEach(function (e) {
+    if (!e.guessedFrom) return;
+    var car = carOf(e);
+    var year = car && toNumber_(car.year);
+    if (!year || +e.date.slice(0, 4) >= year) {
+      issues.add('warn', 'dates', 'Date saved as "' + e.guessedFrom + '" (typo year) — reading it as ' + e.date,
+        'row ' + e.__row + '. Re-save this entry in Garage to fix the stored date.');
+      return;
+    }
+    var hint = '';
+    if (e.odo !== null) {
+      var known = entries.filter(function (o) { return o !== e && o.date && !o.guessedFrom && o.odo !== null && carOf(o) === car; });
+      var before = null, after = null;
+      known.forEach(function (o) {
+        if (o.odo <= e.odo && (!before || o.odo > before.odo)) before = o;
+        if (o.odo >= e.odo && (!after || o.odo < after.odo)) after = o;
+      });
+      if (before || after) {
+        hint = ' At ' + e.odo + ' km it most likely happened ' +
+          (before && after ? 'between ' + before.date + ' and ' + after.date : before ? 'after ' + before.date : 'before ' + after.date) + '.';
+      }
+    }
+    issues.add('error', 'dates', 'Date saved as "' + e.guessedFrom + '" — the date column says ' + e.date +
+      ', which is before the car was made (' + year + ')', 'row ' + e.__row + '.' + hint + ' Fix the date in Garage.');
+    e.date = null; // keep it out of the timeline and totals
+  });
 }
 
 function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {

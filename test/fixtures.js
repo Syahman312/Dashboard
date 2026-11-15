@@ -28,6 +28,8 @@ function garage() {
   log('l1', '0021-03-02', 98000, 'Spark Plugs, Timing Belt, Brake fluid', 540, { colDate: '2021-03-02' });
   log('l2', '2026-06-20', 115200, 'Engine oil and filter, Air filter, Fan Belt, Wiper blades', 188);
   log('l3', '2026-10-18', '', 'Others', 1, { deleted: 1 });
+  // Typo year whose date column is before the car was made (2015)
+  log('l4', '0009-10-26', 117900, 'Engine oil and filter', 120, { colDate: '2009-10-26' });
 
   let odo = 117000;
   const fills = [];
@@ -68,6 +70,8 @@ function finance() {
   add('2026-11-07', 'Mystery', '', 'Old Wallet', -12);       // account not in Accounts tab
   add('2026-11-06', 'Food & Drinks', '🍔 Food & Drinks', 'Maybank', -8); // same name, different icon
   add('2026-11-05', 'Coffee', '☕ Coffee', 'Maybank', -9.5);
+  add('2026-11-04', 'Belanja GF', '🍰 Belanja GF', 'Maybank', -20);
+  add('2026-11-04', 'Belanja Family', '🍣 Belanja Family', 'Maybank', -40);
   add('2026-11-05', 'Coffee', '☕ Coffee', 'Maybank', -9.5);  // duplicate
 
   const accounts = [['Account', 'Type', 'Balance', 'Owed'],

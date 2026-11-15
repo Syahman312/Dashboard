@@ -260,7 +260,9 @@ function summariseLog_(table, cols, ctx, issues, days) {
   });
   Object.keys(groups).forEach(function (k) {
     var g = groups[k];
-    var lvl = g.level === 'error' || /sync/i.test(g.area) ? 'error' : 'warn';
+    // Sync failures put data at risk; other failures (e.g. a price feed) are warnings
+    // unless the app itself logged them as errors.
+    var lvl = /sync/i.test(g.area) || (cols.level && g.level === 'error') ? 'error' : 'warn';
     var who = Object.keys(g.sources);
     issues.add(lvl, g.area,
       g.msg + ' — ' + g.count + '× in the last ' + (days || 7) + ' days',
