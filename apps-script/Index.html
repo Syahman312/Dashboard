@@ -42,23 +42,25 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+button, a, input, [data-go], .hit, .cells i, .hb { touch-action: manipulation; }
 body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
 button { font: inherit; color: inherit; }
 a { color: var(--accent); }
 .num { font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); } .faint { color: var(--faint); }
 .good { color: var(--good); } .bad { color: var(--bad); } .warnc { color: var(--warn); }
-.wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px 56px; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left)); }
 
 /* ---------- Header & tabs ---------- */
 .top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
-.top-in { max-width: 1200px; margin: 0 auto; padding: 14px 16px 0; padding-top: max(14px, env(safe-area-inset-top)); }
+.top-in { max-width: 1200px; margin: 0 auto; padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
 .hdr { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .hdr h1 { font-size: 22px; margin: 0; letter-spacing: -.02em; }
 .hdr .sub { color: var(--muted); font-size: 13px; }
 .hdr-r { display: flex; align-items: center; gap: 8px; }
 .icon-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); cursor: pointer; font-size: 14px; transition: border-color .15s, transform .15s; }
-.icon-btn:hover { border-color: var(--accent); }
+@media (hover: hover) { .icon-btn:hover { border-color: var(--accent); } }
 .icon-btn:active { transform: scale(.97); }
 .icon-btn svg { width: 16px; height: 16px; }
 .icon-btn.spin svg { animation: spin .9s linear infinite; }
@@ -69,7 +71,7 @@ a { color: var(--accent); }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 10px 14px 12px; background: none; border: 0; cursor: pointer; color: var(--muted); font-weight: 550; font-size: 14.5px; white-space: nowrap; transition: color .15s; }
 .tab svg { width: 17px; height: 17px; }
-.tab:hover { color: var(--text); }
+@media (hover: hover) { .tab:hover { color: var(--text); } }
 .tab[aria-current="page"] { color: var(--text); }
 .tab::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--accent); transform: scaleX(0); transition: transform .25s ease; }
 .tab[aria-current="page"]::after { transform: scaleX(1); }
@@ -87,6 +89,7 @@ a { color: var(--accent); }
   .bnav button[aria-current="page"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
   .bnav .badge { position: absolute; top: 2px; left: calc(50% + 6px); transform: scale(.85); }
   .wrap { padding-bottom: 96px; }
+  html { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom)); scroll-padding-top: 90px; }
   .hdr h1 { font-size: 20px; }
   .stamp, .icon-btn .lbl { display: none; }
 }
@@ -101,7 +104,8 @@ a { color: var(--accent); }
 .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .g-21 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 .g-12 { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
-@media (max-width: 980px) { .g3 { grid-template-columns: 1fr 1fr; } .g-21, .g-12 { grid-template-columns: 1fr; } }
+@media (max-width: 980px) { .g3 { grid-template-columns: 1fr 1fr; } .g3 > :last-child:nth-child(odd) { grid-column: 1 / -1; } }
+@media (max-width: 767px) { .g-21, .g-12 { grid-template-columns: 1fr; } }
 @media (max-width: 680px) { .g3 { grid-template-columns: 1fr; } }
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; box-shadow: var(--shadow); }
@@ -115,7 +119,7 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 .note.bad { background: color-mix(in srgb, var(--bad) 12%, var(--card)); color: var(--text); }
 .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 13px; background: var(--card); border: 1px solid var(--line); color: inherit; text-decoration: none; cursor: pointer; transition: border-color .15s; }
-.pill:hover { border-color: var(--accent); }
+@media (hover: hover) { .pill:hover { border-color: var(--accent); } }
 .app-pill { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .app-pill:hover { filter: brightness(1.08); }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
@@ -133,7 +137,7 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 
 /* Overview summary cards */
 .sum { display: block; text-align: left; width: 100%; cursor: pointer; transition: transform .2s ease, border-color .2s; }
-.sum:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+@media (hover: hover) { .sum:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); } }
 .sum .big { font-size: 28px; font-weight: 700; letter-spacing: -.02em; margin: 6px 0 2px; }
 .sum .row { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
 .sum .go { font-size: 12.5px; color: var(--accent); margin-top: 10px; display: inline-flex; gap: 4px; align-items: center; }
@@ -142,7 +146,7 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 /* Brief */
 .brief { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .brief li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; margin: 0 -10px; border-radius: 10px; font-size: 14.5px; cursor: pointer; transition: background .15s; }
-.brief li:hover { background: var(--card-2); }
+@media (hover: hover) { .brief li:hover { background: var(--card-2); } }
 .brief .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: color-mix(in srgb, var(--info) 16%, transparent); color: var(--info); }
 .brief li.bad .ic { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
 .brief li.warn .ic { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
@@ -159,6 +163,7 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 .tag.t3 { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
 .tag.late { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
 .when { display: inline-block; min-width: 62px; font-size: 12px; color: var(--muted); }
+.list.up .t { white-space: normal; display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: baseline; }
 .when.soon { color: var(--warn); font-weight: 600; }
 
 /* Progress */
@@ -211,7 +216,7 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 
 /* Horizontal bars */
 .hb { padding: 7px 8px; margin: 0 -8px; border-radius: 10px; transition: background .15s; }
-.hb:hover { background: var(--card-2); }
+@media (hover: hover) { .hb:hover { background: var(--card-2); } }
 .hb-top { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; margin-bottom: 6px; }
 .hb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hb-val { white-space: nowrap; color: var(--muted); font-size: 13px; }
@@ -238,7 +243,7 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 .cells i { aspect-ratio: 1; border-radius: 3px; background: var(--card-3); transition: transform .1s; max-height: 22px; }
 .cells i.on { background: var(--good); }
 .cells i.today { outline: 1.5px solid var(--text); outline-offset: 1px; }
-.cells i:hover { transform: scale(1.35); }
+@media (hover: hover) { .cells i:hover { transform: scale(1.35); } }
 .hab-meta { font-size: 12.5px; color: var(--muted); white-space: nowrap; text-align: right; }
 @media (max-width: 680px) { .hab { grid-template-columns: 1fr auto; } .hab .cells { grid-column: 1 / -1; grid-row: 2; gap: 2px; } }
 
@@ -305,6 +310,41 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 .err { color: var(--bad); font-size: 13px; margin-top: 10px; min-height: 1em; }
 .setup-mode .bnav, .setup-mode .tabs, .setup-mode .hdr-r { display: none !important; }
 .hint { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+/* Large PC screens: use the space */
+@media (min-width: 1600px) {
+  .wrap, .top-in { max-width: 1480px; }
+  body { font-size: 15.5px; }
+}
+/* Touch screens: every tap target at least 44px tall */
+@media (pointer: coarse) {
+  .pill, .seg-ctl button, .icon-btn, .mpick button, .issue .acts a.open-btn, .issue .acts .pill { min-height: 44px; }
+  .icon-btn { min-width: 44px; justify-content: center; }
+  .mpick button { width: 44px; }
+  .pill { padding: 0 14px; }
+  .seg-ctl button { padding: 0 14px; }
+  .linkbtn { min-height: 44px; display: inline-flex; align-items: center; padding: 0 6px; }
+  .fixbox summary { min-height: 44px; }
+  .legend button { min-height: 36px; }
+  .issue .acts { gap: 10px; }
+  .brief li { min-height: 48px; }
+}
+/* Phones turned sideways: keep the header slim */
+@media (max-height: 500px) and (orientation: landscape) {
+  .top-in { padding-top: max(8px, env(safe-area-inset-top)); }
+  .hdr .sub, .stamp { display: none; }
+  .hdr h1 { font-size: 18px; }
+  .tabs { margin-top: 2px; }
+  .tab { padding: 8px 12px 9px; }
+  .icon-btn { height: 34px; min-height: 34px; }
+  .view { padding-top: 12px; }
+}
+/* 16px text in fields stops iPhone zooming in when you tap them */
+input, select, textarea { font-size: 16px !important; }
+/* Pull to refresh (home-screen app) */
+#ptr { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 8px); z-index: 40; transform: translate(-50%, -60px); width: 36px; height: 36px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); display: grid; place-items: center; color: var(--accent); transition: transform .2s; }
+#ptr svg { width: 18px; height: 18px; }
+#ptr.spin svg { animation: spin .9s linear infinite; }
+.kbd { font: 11px ui-monospace, monospace; padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
 footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
 footer a { color: var(--muted); }
 </style>
@@ -353,6 +393,7 @@ footer a { color: var(--muted); }
 <nav class="bnav" id="bnav" aria-label="Sections"></nav>
 <div id="tip" role="status" aria-live="polite"></div>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></div>
 
 <script>
 (function () {
@@ -459,9 +500,18 @@ footer a { color: var(--muted); }
     if (top < 8) top = y + 16;
     if (top + h > vh - 8) top = vh - h - 8;
     tipEl.style.left = left + 'px'; tipEl.style.top = top + 'px';
+    tipScrollY = window.scrollY;
   }
   function hideTip() { tipEl.classList.remove('on'); }
-  window.addEventListener('scroll', hideTip, { passive: true });
+  // Fingers "leave" as soon as they lift; only a mouse moving away should close a tooltip.
+  function mouseLeave(e) { if (e.pointerType === 'mouse') hideTip(); }
+  // Close on a real scroll only; small adjustments right after a tap should not hide it.
+  var tipScrollY = 0;
+  window.addEventListener('scroll', function () { if (Math.abs(window.scrollY - tipScrollY) > 24) hideTip(); }, { passive: true });
+  // Touch: tapping anywhere outside a chart closes its tooltip.
+  document.addEventListener('pointerdown', function (e) {
+    if (!e.target.closest || !e.target.closest('.chart, .hb, .cells')) hideTip();
+  }, true);
 
   /* =========================================================
    * Charts (plain SVG, no library)
@@ -585,8 +635,8 @@ footer a { color: var(--muted); }
     function leave() { g.style.display = 'none'; hideTip(); cur = -1; }
     svg.addEventListener('pointermove', move);
     svg.addEventListener('pointerdown', move);
-    svg.addEventListener('pointerleave', leave);
-    svg.addEventListener('blur', leave);
+    svg.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') leave(); });
+    svg.addEventListener('blur', function () { if (svg.isConnected) leave(); });
     svg.addEventListener('keydown', function (e) {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       e.preventDefault();
@@ -652,8 +702,11 @@ footer a { color: var(--muted); }
       }
       g.__tip = tip;
       hit.addEventListener('pointermove', tip);
-      hit.addEventListener('pointerleave', hideTip);
-      if (opts.onSelect) hit.addEventListener('click', function () { hideTip(); opts.onSelect(gi); });
+      var touched = false;
+      hit.addEventListener('pointerdown', function (evt) { touched = evt.pointerType !== 'mouse'; tip(evt); }); // touch: a tap shows the values
+      hit.addEventListener('pointerleave', mouseLeave);
+      // On touch the tooltip stays up after selecting, so the numbers can be read.
+      if (opts.onSelect) hit.addEventListener('click', function () { if (!touched) hideTip(); opts.onSelect(gi); });
     })(gi);
     var focusI = hasSel ? opts.selected : n - 1;
     svg.addEventListener('keydown', function (e) {
@@ -663,7 +716,7 @@ footer a { color: var(--muted); }
       if (opts.onSelect) opts.onSelect(focusI); else groups[focusI].__tip();
     });
     svg.addEventListener('focus', function () { if (!opts.onSelect) groups[focusI].__tip(); });
-    svg.addEventListener('blur', hideTip);
+    svg.addEventListener('blur', function () { setTimeout(function () { if (svg.isConnected) hideTip(); }, 0); });
   }
 
   function sparkline(values, color) {
@@ -715,6 +768,10 @@ footer a { color: var(--muted); }
     var fail = function (e) {
       setLoading(false);
       S.recheckFrom = null;
+      if (navigator.onLine === false && S.data) {
+        $('banner').innerHTML = '<div class="banner">You\'re offline. Showing your data from ' + clock(S.data.generatedAt) + '; it refreshes when you\'re back online.</div>';
+        return;
+      }
       $('banner').innerHTML = '<div class="banner err"><b>Could not load the dashboard.</b>' + (S.data ? ' Showing the last saved data.' : '') +
         '<br><span class="muted">' + esc(e && e.message || e) + '</span></div>';
     };
@@ -838,7 +895,9 @@ footer a { color: var(--muted); }
     if (!VIEWS.some(function (v) { return v.key === view; })) view = 'overview';
     var changed = S.view !== view;
     S.view = view;
-    try { history.replaceState(null, '', '#' + view); } catch (e) { /* sandboxed frame */ }
+    if (!(opts && opts.fromHistory) && location.hash !== '#' + view) {
+      try { history.pushState(null, '', '#' + view); } catch (e) { /* sandboxed frame */ }
+    }
     if (opts && opts.filter) S.filter = opts.filter;
     S.animate = true;
     hideTip();
@@ -940,7 +999,7 @@ footer a { color: var(--muted); }
       (brief.length ? brief.map(function (b) {
         return '<li class="' + esc(b.tone) + '" data-go="' + (SRC_VIEW[b.src] || 'overview') + '" title="Open ' + esc(SRC_LABEL[b.src] || '') + '"><span class="ic">' + (ICONS[b.tone] || 'i') + '</span><span>' + esc(b.text) + '</span><span class="src">' + esc(SRC_LABEL[b.src] || '') + '</span></li>';
       }).join('') : '<li class="good"><span class="ic">✓</span><span>All quiet.</span><span></span></li>') + '</ul></div>';
-    html += '<div class="card">' + cardHead('Coming up', 'Next 45 days') + '<ul class="list">' +
+    html += '<div class="card">' + cardHead('Coming up', 'Next 45 days') + '<ul class="list up">' +
       (up.length ? up.map(function (u) {
         var when = u.days === 0 ? 'Today' : u.days === 1 ? 'Tomorrow' : shortDate(u.date);
         return '<li><span class="t"><span class="when' + (u.days <= 7 ? ' soon' : '') + '">' + when + '</span>' + esc(u.label) + '</span><span class="r">' + (u.days > 1 ? 'in ' + u.days + 'd' : '') + '</span></li>';
@@ -1114,11 +1173,12 @@ footer a { color: var(--muted); }
       }).join('') : '<div class="empty">No spending recorded in ' + monLabel(mk, true) + '.</div>';
       each($('cats'), '.hb', function (e) {
         var r = rows[+e.getAttribute('data-i')];
+        e.addEventListener('pointerdown', function (evt) { e.dispatchEvent(new PointerEvent('pointermove', evt)); });
         e.addEventListener('pointermove', function (evt) {
           showTip(evt.clientX, evt.clientY, r.category, [{ color: css(r.other ? '--s-prev' : '--s1'), value: rm(r.spent), label: monLabel(mk, true) }],
             [plural(r.count, 'transaction') + ' · average ' + rm(r.spent / Math.max(1, r.count)), Math.round(r.spent / total * 100) + '% of the month']);
         });
-        e.addEventListener('pointerleave', hideTip);
+        e.addEventListener('pointerleave', mouseLeave);
       });
       if (grow) fillBars($('cats'));
     }
@@ -1186,11 +1246,12 @@ footer a { color: var(--muted); }
 
     host.innerHTML = html;
     each(host, '.cells i', function (c) {
+      c.addEventListener('pointerdown', function (evt) { c.dispatchEvent(new PointerEvent('pointermove', evt)); });
       c.addEventListener('pointermove', function (evt) {
         var h = s.habits[+c.getAttribute('data-h')], iso = c.getAttribute('data-d'), on = c.getAttribute('data-on') === '1';
         showTip(evt.clientX, evt.clientY, dayName(iso) + ', ' + shortDate(iso), [{ color: css(on ? '--good' : '--faint'), value: on ? 'Done' : 'Not done', label: h.habit }]);
       });
-      c.addEventListener('pointerleave', hideTip);
+      c.addEventListener('pointerleave', mouseLeave);
     });
     var daily = st.daily || [];
     barChart($('ch-study'), {
@@ -1350,6 +1411,7 @@ footer a { color: var(--muted); }
         (s.appUrl ? ' · <a href="' + esc(s.appUrl) + '" target="_blank" rel="noopener">app</a>' : '') + ' <span class="num">' + s.ms + 'ms</span></span>';
     });
     parts.push('<span>Read-only · v' + esc(d.version) + '</span>');
+    if (window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) parts.push('<span>Keys: <span class="kbd">1</span>–<span class="kbd">5</span> tabs · <span class="kbd">R</span> refresh</span>');
     if (MODE === 'remote') parts.push('<button type="button" class="linkbtn faint" id="reconnect">Connection settings</button>');
     $('footer').innerHTML = parts.join('');
     if ($('reconnect')) $('reconnect').addEventListener('click', function () { showSetup(''); window.scrollTo(0, 0); });
@@ -1383,9 +1445,56 @@ footer a { color: var(--muted); }
     clearTimeout(rz);
     rz = setTimeout(function () { if (S.data) { S.animate = false; renderView(); } }, 150);
   });
+  window.addEventListener('online', function () { if (S.data && MODE !== 'setup') load(false); });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible' && Date.now() - S.loadedAt > 10 * 60e3) load(false);
   });
+
+  // Back / forward and #links switch tabs
+  function fromAddress() {
+    var v = (location.hash || '').replace('#', '');
+    if (v && v !== S.view && VIEWS.some(function (x) { return x.key === v; })) go(v, { fromHistory: true });
+  }
+  window.addEventListener('popstate', fromAddress);
+  window.addEventListener('hashchange', fromAddress);
+
+  // PC: keyboard shortcuts
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || /input|textarea|select/i.test((e.target.tagName || ''))) return;
+    if (MODE === 'setup') return;
+    var n = parseInt(e.key, 10);
+    if (n >= 1 && n <= VIEWS.length) { go(VIEWS[n - 1].key); e.preventDefault(); }
+    else if (e.key === 'r' || e.key === 'R') { load(true); e.preventDefault(); }
+  });
+
+  // Home-screen app: pull down to refresh (iOS has no built-in one there)
+  (function () {
+    var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    if (!standalone || !('ontouchstart' in window)) return;
+    var startY = null, dy = 0, ptr = $('ptr');
+    document.addEventListener('touchstart', function (e) { startY = window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; dy = 0; }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (startY === null) return;
+      dy = Math.max(0, e.touches[0].clientY - startY);
+      ptr.style.transform = 'translate(-50%, ' + (Math.min(dy, 110) - 60) + 'px) rotate(' + dy * 3 + 'deg)';
+    }, { passive: true });
+    document.addEventListener('touchend', function () {
+      if (startY === null) return;
+      startY = null;
+      if (dy > 80 && MODE !== 'setup') {
+        ptr.classList.add('spin'); ptr.style.transform = 'translate(-50%, 24px)';
+        load(true);
+        var wait = setInterval(function () { if (!$('refresh').disabled) { clearInterval(wait); ptr.classList.remove('spin'); ptr.style.transform = ''; } }, 200);
+      } else ptr.style.transform = '';
+    });
+  })();
+
+  // Home-screen app: keep working offline (shows the last saved data)
+  if (MODE === 'remote' || MODE === 'setup') {
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* optional */ });
+    }
+  }
 
   var startView = (location.hash || '').replace('#', '');
   S.view = VIEWS.some(function (v) { return v.key === startView; }) ? startView : 'overview';

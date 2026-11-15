@@ -10,7 +10,8 @@ const OUT = path.join(ROOT, 'docs', 'index.html');
 
 const HEAD = [
   '<meta name="referrer" content="no-referrer">',
-  '<meta name="theme-color" content="#0e1014">',
+  '<meta name="theme-color" content="#0e1014" media="(prefers-color-scheme: dark)">',
+  '<meta name="theme-color" content="#f3f5f9" media="(prefers-color-scheme: light)">',
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-title" content="Dashboard">',
