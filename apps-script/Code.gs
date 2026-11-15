@@ -22,8 +22,7 @@ var SOURCES = [
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Dashboard')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')
-    .setFaviconUrl('https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/dashboard/default/48px.svg');
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
 }
 
 /** Called from the page. Returns a JSON string (Dates can't cross google.script.run). */
