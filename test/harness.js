@@ -36,9 +36,17 @@ function fakeSpreadsheet(tabs) {
 function load(props) {
   const context = {
     console,
-    Utilities: { formatDate },
+    Utilities: { formatDate, getUuid: () => require('crypto').randomUUID() },
     Logger: { log: () => {} },
-    PropertiesService: { getScriptProperties: () => ({ getProperty: k => (props || {})[k] || null }) },
+    PropertiesService: { getScriptProperties: () => ({
+      getProperty: k => (props || {})[k] || null,
+      setProperty: (k, v) => { props[k] = v; }
+    }) },
+    ContentService: {
+      MimeType: { JSON: 'application/json' },
+      createTextOutput: body => ({ body, setMimeType() { return this; } })
+    },
+    Session: { getActiveUser: () => ({ getEmail: () => (props || {}).__user || '' }) },
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {}, getAll: () => ({}), putAll: () => {} }) }
   };
   vm.createContext(context);

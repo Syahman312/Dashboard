@@ -204,3 +204,40 @@ test('chart data series', () => {
   assert.equal(car.history[0].date, '2026-06-20');
   assert.ok(JSON.stringify(d).length < 200000, 'payload stays small');
 });
+
+test('access key protects the data', () => {
+  const props = Object.assign({}, PROPS);
+  const gs = load(props);
+  gs.SpreadsheetApp = { openById: id => fakeSpreadsheet(BOOKS[id]) };
+  const json = params => JSON.parse(gs.doGet({ parameter: Object.assign({ format: 'json' }, params) }).body);
+
+  // No key set yet: closed, not open
+  assert.equal(json({}).ok, false);
+  assert.match(json({}).error, /createAccessKey/);
+
+  // createAccessKey only works from the editor (signed-in user), not from a page visitor
+  assert.throws(() => gs.createAccessKey(), /editor/);
+  assert.throws(() => gs.installWarmUp(), /editor/);
+  props.__user = 'owner@example.com';
+  gs.createAccessKey();
+  const key = props.DASH_KEY;
+  assert.equal(key.length, 40);
+  delete props.__user;
+
+  assert.deepEqual(json({ key: 'wrong' }), { ok: false, error: 'locked' });
+  assert.equal(json({ key: key.slice(0, 39) }).ok, false, 'prefix is not enough');
+  assert.equal(json({ key: key + 'x' }).ok, false, 'extra characters rejected');
+  const good = json({ key, force: '1' });
+  assert.equal(good.ok, true);
+  assert.ok(good.data.sources.finance.ok);
+
+  assert.throws(() => gs.getDashboard(true, 'nope'), /locked/);
+  assert.ok(JSON.parse(gs.getDashboard(true, key)).sources);
+});
+
+test('phone app page is in step with Index.html', () => {
+  const fs = require('fs');
+  const pages = require('../scripts/build-pages');
+  assert.equal(fs.readFileSync(pages.OUT, 'utf8'), pages.build(), 'run: npm run build:pages');
+  assert.match(pages.build(), /^<!DOCTYPE html>/);
+});

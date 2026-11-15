@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dashboard</title>
+<!-- PAGES_HEAD -->
 <style>
 /* ---------- Tokens (dark is the default, like the other apps) ---------- */
 :root {
@@ -275,6 +276,18 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 .banner.err { border-color: var(--bad); color: var(--text); }
 .skel { height: 180px; border-radius: var(--radius); background: linear-gradient(90deg, var(--card) 0%, var(--card-2) 50%, var(--card) 100%); background-size: 200% 100%; animation: sh 1.2s infinite linear; }
 @keyframes sh { to { background-position: -200% 0; } }
+/* First-run setup (home-screen app) */
+.setup { max-width: 460px; margin: 28px auto 0; text-align: center; }
+.setup .logo { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+.setup h2 { font-size: 24px; margin: 16px 0 4px; letter-spacing: -.02em; }
+.setup form { text-align: left; margin-top: 18px; }
+.setup label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+.setup input { width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; }
+.setup input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn { display: block; width: 100%; margin-top: 16px; padding: 12px; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 650; cursor: pointer; }
+.err { color: var(--bad); font-size: 13px; margin-top: 10px; min-height: 1em; }
+.setup-mode .bnav, .setup-mode .tabs, .setup-mode .hdr-r { display: none !important; }
+.hint { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
 footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
 footer a { color: var(--muted); }
 </style>
@@ -299,6 +312,19 @@ footer a { color: var(--muted); }
 
 <div class="wrap">
   <div id="banner"></div>
+  <section class="setup" id="setup" hidden>
+    <img class="logo" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Crect width='1024' height='1024' fill='%230f1218'/%3E%3Crect x='282' y='572' width='120' height='200' rx='60' fill='%234f8cff' opacity='.45'/%3E%3Crect x='452' y='442' width='120' height='330' rx='60' fill='%234f8cff' opacity='.72'/%3E%3Crect x='622' y='312' width='120' height='460' rx='60' fill='%234f8cff'/%3E%3Ccircle cx='342' cy='384' r='60' fill='%23f5b74e'/%3E%3C/svg%3E">
+    <h2>Connect your dashboard</h2>
+    <div class="muted">Done once. Both values stay on this device.</div>
+    <form class="card" id="setup-form" autocomplete="off">
+      <label for="cfg-app">Web app URL (ends in /exec)</label>
+      <input id="cfg-app" type="url" inputmode="url" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec">
+      <label for="cfg-key">Access key</label>
+      <input id="cfg-key" type="password" spellcheck="false" placeholder="The key from createAccessKey">
+      <div class="err" id="cfg-err"></div>
+      <button class="btn" type="submit">Connect</button>
+    </form>
+  </section>
   <section class="view on" data-view="overview" id="v-overview"><div class="grid g-21"><div class="skel"></div><div class="skel"></div></div></section>
   <section class="view" data-view="flow" id="v-flow"></section>
   <section class="view" data-view="money" id="v-money"></section>
@@ -318,9 +344,10 @@ footer a { color: var(--muted); }
    * State, storage, formatting
    * ======================================================= */
   var S = { data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
-  var LS = { data: 'dash:last', hidden: 'dash:hidden', theme: 'dash:theme' };
+  var LS = { data: 'dash:last', hidden: 'dash:hidden', theme: 'dash:theme', cfg: 'dash:cfg', hint: 'dash:hint' };
   var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
   var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* unavailable */ } };
+  var lsRemove = function (k) { try { localStorage.removeItem(k); } catch (e) { /* unavailable */ } };
   try { S.hidden = JSON.parse(lsGet(LS.hidden) || '{}') || {}; } catch (e) { S.hidden = {}; }
 
   var $ = function (id) { return document.getElementById(id); };
@@ -654,6 +681,7 @@ footer a { color: var(--muted); }
    * ======================================================= */
   function setLoading(on) { $('refresh').classList.toggle('spin', on); $('refresh').disabled = on; }
   function load(force) {
+    if (MODE === 'setup') return;
     setLoading(true);
     var done = function (json) {
       setLoading(false);
@@ -669,14 +697,93 @@ footer a { color: var(--muted); }
       $('banner').innerHTML = '<div class="banner err"><b>Could not load the dashboard.</b>' + (S.data ? ' Showing the last saved data.' : '') +
         '<br><span class="muted">' + esc(e && e.message || e) + '</span></div>';
     };
-    if (window.google && google.script && google.script.run) {
-      google.script.run.withSuccessHandler(done).withFailureHandler(fail).getDashboard(!!force);
+    if (MODE === 'gas') {
+      // Inside Apps Script: pass on the key from the page address (?key=…).
+      google.script.url.getLocation(function (loc) {
+        var key = (loc && loc.parameter && loc.parameter.key) || '';
+        google.script.run.withSuccessHandler(done).withFailureHandler(function (e) {
+          if (/locked|access key/i.test(e && e.message || '')) e = new Error('This dashboard needs its key. Open it as …/exec?key=YOUR-KEY');
+          fail(e);
+        }).getDashboard(!!force, key);
+      });
+    } else if (MODE === 'remote') {
+      // Home-screen app: fetch the data from the Apps Script web app.
+      var url = CFG.app + '?format=json&key=' + encodeURIComponent(CFG.key) + (force ? '&force=1' : '');
+      fetch(url, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' })
+        .then(function (r) { if (!r.ok) throw new Error('The web app answered ' + r.status); return r.json(); })
+        .then(function (res) {
+          if (res && res.ok) return done(res.data);
+          if (res && /locked|access key/i.test(res.error || '')) { showSetup('That key was not accepted. Check it, or make a new one with createAccessKey.'); setLoading(false); return; }
+          throw new Error(res && res.error || 'Unexpected answer from the web app');
+        })
+        .catch(function (e) {
+          fail(/Failed to fetch|Load failed|NetworkError/i.test(e && e.message || '') ? new Error('Could not reach the web app. Check the internet, and that the deployment is set to "Anyone".') : e);
+        });
     } else {
       // Local preview: the sample made by `npm run sample`
       fetch(window.DASH_SAMPLE_URL || '../dev/sample-dashboard.json', { cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw new Error('No sample data (' + r.status + ')'); return r.json(); })
         .then(done, fail);
     }
+  }
+
+  /* =========================================================
+   * Where the data comes from
+   *   gas    — running inside Apps Script
+   *   remote — the home-screen app (GitHub Pages), using a saved URL + key
+   *   sample — local preview
+   *   setup  — home-screen app that has not been connected yet
+   * ======================================================= */
+  var APP_RE = /^https:\/\/script\.google\.com\/(a\/[^\/]+\/)?macros\/s\/[\w-]+\/(exec|dev)$/;
+  var CFG = readConfig();
+  var MODE = (window.google && google.script && google.script.run) ? 'gas'
+    : CFG ? 'remote'
+    : /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !/[?&]setup/.test(location.search) ? 'sample' : 'setup';
+
+  function readConfig() {
+    var q = new URLSearchParams(location.search);
+    var app = q.get('app'), key = q.get('key');
+    if (app && key && APP_RE.test(app)) { lsSet(LS.cfg, JSON.stringify({ app: app, key: key })); return { app: app, key: key }; }
+    try {
+      var c = JSON.parse(lsGet(LS.cfg) || 'null');
+      if (c && APP_RE.test(c.app) && c.key) return c;
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+
+  function showSetup(msg) {
+    each(document, '.view', function (v) { v.classList.remove('on'); });
+    $('setup').hidden = false;
+    document.body.classList.add('setup-mode');
+    $('footer').innerHTML = '';
+    $('cfg-err').textContent = msg || '';
+    if (CFG) { $('cfg-app').value = CFG.app; }
+  }
+
+  $('setup-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var app = $('cfg-app').value.trim().replace(/\?.*$/, ''), key = $('cfg-key').value.trim();
+    if (!APP_RE.test(app)) { $('cfg-err').textContent = 'That is not an Apps Script web app URL ending in /exec.'; return; }
+    if (key.length < 20) { $('cfg-err').textContent = 'The key looks too short. Copy it again from the execution log.'; return; }
+    CFG = { app: app, key: key }; MODE = 'remote';
+    lsSet(LS.cfg, JSON.stringify(CFG));
+    lsRemove(LS.data);
+    // iPhone home-screen apps keep separate storage, so the address carries the settings too.
+    try { history.replaceState(null, '', '?app=' + encodeURIComponent(app) + '&key=' + encodeURIComponent(key) + location.hash); } catch (err) { /* sandboxed */ }
+    $('setup').hidden = true;
+    document.body.classList.remove('setup-mode');
+    S.data = null;
+    renderNav();
+    each(document, '.view', function (v) { v.classList.toggle('on', v.getAttribute('data-view') === S.view); });
+    $('v-' + S.view).innerHTML = '<div class="grid g-21"><div class="skel"></div><div class="skel"></div></div>';
+    load(true);
+  });
+
+  function installHint() {
+    var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (MODE !== 'remote' || standalone || !ios || lsGet(LS.hint)) return '';
+    return '<div class="banner hint"><span>For a full-screen app, tap <b>Share</b> then <b>Add to Home Screen</b>.</span><button type="button" class="linkbtn" id="hint-x">Got it</button></div>';
   }
 
   /* =========================================================
@@ -725,7 +832,8 @@ footer a { color: var(--muted); }
     $('hello').textContent = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
     $('date').textContent = DAYS[today.getUTCDay()] + ', ' + today.getUTCDate() + ' ' + MONTHS_L[today.getUTCMonth()] + ' ' + today.getUTCFullYear();
     $('stamp').textContent = (S.stale ? 'Saved data from ' : 'Updated ') + clock(d.generatedAt);
-    $('banner').innerHTML = '';
+    $('banner').innerHTML = installHint();
+    if ($('hint-x')) $('hint-x').addEventListener('click', function () { lsSet(LS.hint, '1'); $('banner').innerHTML = ''; });
     var fin = d.sources.finance;
     if (!S.moneyMonth && fin && fin.summary && fin.summary.month) S.moneyMonth = fin.summary.month.month;
     renderNav();
@@ -1169,7 +1277,9 @@ footer a { color: var(--muted); }
         (s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>' : esc(s.name)) + ' <span class="num">' + s.ms + 'ms</span></span>';
     });
     parts.push('<span>Read-only · v' + esc(d.version) + '</span>');
+    if (MODE === 'remote') parts.push('<button type="button" class="linkbtn faint" id="reconnect">Connection settings</button>');
     $('footer').innerHTML = parts.join('');
+    if ($('reconnect')) $('reconnect').addEventListener('click', function () { showSetup(''); window.scrollTo(0, 0); });
   }
 
   /* =========================================================
@@ -1207,6 +1317,7 @@ footer a { color: var(--muted); }
   var startView = (location.hash || '').replace('#', '');
   S.view = VIEWS.some(function (v) { return v.key === startView; }) ? startView : 'overview';
   renderNav();
+  if (MODE === 'setup') { showSetup(''); return; }
   try {
     var saved = lsGet(LS.data);
     if (saved) { S.data = JSON.parse(saved); S.stale = true; render(); }

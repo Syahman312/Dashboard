@@ -41,20 +41,29 @@ Each problem links straight to the sheet row, and **Hide** removes ones you alre
 Data is cached for 30 minutes. **Refresh** reads the Sheets again. The page also keeps the last data on your device,
 so it shows straight away and updates behind it.
 
-## Home-screen icon
+## Phone app (full screen, own icon)
 
-The icon lives in `docs/icons/` (`icon.svg` is the source; the PNGs are made from it).
+The same dashboard is also published as a home-screen app on GitHub Pages (`docs/`, built from
+`apps-script/Index.html` by `npm run build:pages`). It runs full screen with no browser bars and fetches its data
+from the web app with a private **access key**.
 
-- **Android / desktop:** the dashboard uses the icon as its favicon, so *Add to Home screen* in Chrome on the
-  dashboard itself picks it up.
-- **iPhone:** Apps Script wraps the page in Google's own frame, which never carries an iPhone icon. A small
-  launcher page in `docs/` does instead:
-  1. In GitHub, open **Settings → Pages**, choose **Deploy from a branch**, branch `claude/quirky-albattani-2xi1ko`,
-     folder **/docs**, then **Save**. After a minute it is live at <https://syahman312.github.io/Dashboard/>.
-  2. On the iPhone, open that link **in Safari**, paste your web app URL (ends in `/exec`) and tap **Save**.
-  3. Tap **Share → Add to Home Screen**. The icon opens straight into the dashboard.
+One-time setup:
 
-  Your web app URL is never committed. It is stored only in the home-screen shortcut and on your phone.
+1. In the Apps Script editor, run **`createAccessKey`**. Copy the key from the execution log and keep it private.
+2. Deploy so the web app is reachable without a Google sign-in: run `npm run deploy` (the manifest sets
+   *Who has access: Anyone*), or set it by hand under **Deploy → Manage deployments → ✏️ → Who has access: Anyone**.
+   Without the key the web app shows nothing; it never writes to your Sheets.
+3. In GitHub: **Settings → Pages → Deploy from a branch**, branch `claude/quirky-albattani-2xi1ko`, folder **/docs**.
+4. On the phone, open <https://syahman312.github.io/Dashboard/> in **Safari** (iPhone) or **Chrome** (Android), paste
+   the web app URL and the key, then tap **Connect**.
+5. iPhone: **Share → Add to Home Screen**. Android: **⋮ → Add to Home screen**.
+
+To lock out an old link or device, run `createAccessKey` again and reconnect your own devices with the new key
+(footer → *Connection settings*).
+
+The browser version still works: open `…/exec?key=YOUR-KEY`.
+
+The icon lives in `docs/icons/` (`icon.svg` is the source).
 
 ## Publishing changes with one command (clasp)
 

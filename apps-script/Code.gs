@@ -9,7 +9,7 @@
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
  */
 
-var DASH_VERSION = '1.2.1';
+var DASH_VERSION = '1.3.0';
 var CACHE_KEY = 'dashboard:v2';
 var CACHE_SECONDS = 1800;     // 30 min; the warm-up trigger refreshes it every 15
 var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
@@ -23,24 +23,82 @@ var SOURCES = [
 // Home-screen / tab icon, served from the public repo (docs/icons). Apps Script needs a URL ending in .png.
 var ICON_URL = 'https://raw.githubusercontent.com/Syahman312/Dashboard/claude/quirky-albattani-2xi1ko/docs/icons/icon-192.png';
 
-function doGet() {
+/**
+ * Two ways in:
+ *   /exec?key=…               the dashboard page (works in any browser)
+ *   /exec?format=json&key=…   the data, for the home-screen app on GitHub Pages
+ * When an access key is set (run createAccessKey once), every request must carry it.
+ */
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  if (p.format === 'json') return jsonResponse_(p);
   var page = HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Dashboard')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
   // Nice-to-haves: never let them stop the page from loading.
-  try { page.setFaviconUrl(ICON_URL); } catch (e) { /* icon unavailable */ }
-  try { page.addMetaTag('mobile-web-app-capable', 'yes'); } catch (e) { /* tag not allowed */ }
-  try { page.addMetaTag('apple-mobile-web-app-capable', 'yes'); } catch (e) { /* tag not allowed */ }
+  try { page.setFaviconUrl(ICON_URL); } catch (err) { /* icon unavailable */ }
+  try { page.addMetaTag('mobile-web-app-capable', 'yes'); } catch (err) { /* tag not allowed */ }
   return page;
 }
 
-/** Called from the page. Returns a JSON string (Dates can't cross google.script.run). */
-function getDashboard(force) {
+function jsonResponse_(p) {
+  var body;
+  try {
+    checkKey_(p.key);
+    body = '{"ok":true,"data":' + getDashboardJson_(p.force === '1') + '}';
+  } catch (err) {
+    body = JSON.stringify({ ok: false, error: String(err && err.message || err) });
+  }
+  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
+}
+
+/** Called from the page with google.script.run. Returns a JSON string (Dates can't cross over). */
+function getDashboard(force, key) {
+  checkKey_(key);
+  return getDashboardJson_(force);
+}
+
+function getDashboardJson_(force) {
   if (!force) {
     var hit = cacheGet_();
     if (hit) return hit;
   }
   return refreshCache_();
+}
+
+/* ---------- Access key ---------- */
+
+function checkKey_(given) {
+  var key = PropertiesService.getScriptProperties().getProperty('DASH_KEY');
+  if (!key) throw new Error('No access key yet: run createAccessKey in the editor');
+  var g = String(given || '');
+  // Compare every character so the time taken does not reveal how much matched.
+  var diff = g.length ^ key.length;
+  for (var i = 0; i < key.length; i++) diff |= key.charCodeAt(i) ^ g.charCodeAt(i % Math.max(1, g.length));
+  if (diff !== 0) throw new Error('locked');
+}
+
+/**
+ * Run once from the editor (and again any time you want to lock out old links).
+ * The new key is printed in the execution log.
+ */
+function createAccessKey() {
+  editorOnly_();
+  var key = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 40);
+  PropertiesService.getScriptProperties().setProperty('DASH_KEY', key);
+  Logger.log('Your access key (keep it private): ' + key);
+  Logger.log('Any old home-screen shortcut stops working until you enter this key in it.');
+}
+
+/**
+ * The web app is open to anyone with its link, and any top-level function can be
+ * called from a page. Functions meant for the editor refuse those calls: from the
+ * editor you are the active user; an anonymous visitor has no email.
+ */
+function editorOnly_() {
+  var me = '';
+  try { me = Session.getActiveUser().getEmail(); } catch (e) { me = ''; }
+  if (!me) throw new Error('Run this from the Apps Script editor.');
 }
 
 function refreshCache_() {
@@ -75,6 +133,7 @@ function cacheGet_() {
  * 6am and midnight it re-reads the Sheets, so the page opens instantly.
  */
 function installWarmUp() {
+  editorOnly_();
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'warmUp') ScriptApp.deleteTrigger(t);
   });
@@ -222,6 +281,7 @@ function crossChecks_(sources, ctx) {
 
 /** Run once from the editor to check access and see the output in the log. */
 function testDashboard() {
+  editorOnly_();
   var d = buildDashboard_(new Date());
   Object.keys(d.sources).forEach(function (k) {
     var s = d.sources[k];

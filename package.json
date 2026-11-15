@@ -10,7 +10,8 @@
     "setup": "node scripts/setup.js",
     "deploy": "node scripts/deploy.js",
     "push": "node -e \"require('./scripts/clasp').clasp(['push','-f'])\"",
-    "open": "node -e \"require('./scripts/clasp').clasp(['open-script'])\""
+    "open": "node -e \"require('./scripts/clasp').clasp(['open-script'])\"",
+    "build:pages": "node scripts/build-pages.js"
   },
   "devDependencies": {
     "@google/clasp": "3.4.1"
