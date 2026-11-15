@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "generatedAt": 1794702600000,
   "today": "2026-11-15",
   "sources": {
@@ -7,6 +7,8 @@
       "name": "Flow",
       "ok": true,
       "url": "https://docs.google.com/spreadsheets/d/sample-flow/edit",
+      "appUrl": "https://example.com/flow",
+      "appProp": "FLOW_APP_URL",
       "summary": {
         "tasks": {
           "today": [
@@ -394,12 +396,14 @@
         },
         "lastChange": 1794697200000
       },
-      "ms": 13
+      "ms": 8
     },
     "finance": {
       "name": "Finance",
       "ok": true,
       "url": "https://docs.google.com/spreadsheets/d/sample-finance/edit",
+      "appUrl": null,
+      "appProp": "FINANCE_APP_URL",
       "summary": {
         "netWorth": 12339.69,
         "groups": {
@@ -926,12 +930,14 @@
         },
         "lastChange": 1794700000000
       },
-      "ms": 11
+      "ms": 10
     },
     "garage": {
       "name": "Garage",
       "ok": true,
       "url": "https://docs.google.com/spreadsheets/d/sample-garage/edit",
+      "appUrl": "https://example.com/garage",
+      "appProp": "GARAGE_APP_URL",
       "summary": {
         "cars": [
           {

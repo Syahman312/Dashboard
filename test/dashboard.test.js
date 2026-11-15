@@ -268,3 +268,16 @@ test('a sync failure counts as recovered once the app saves again', () => {
   assert.equal(finSync.level, 'error');
   assert.ok(!finSync.recovered);
 });
+
+test('app links come from Script Properties and must be https', () => {
+  const gs = load(Object.assign({}, PROPS, {
+    FLOW_APP_URL: 'https://example.github.io/flow/',
+    FINANCE_APP_URL: 'javascript:alert(1)',
+    GARAGE_APP_URL: ' https://script.google.com/macros/s/AKfyGarage/exec '
+  }));
+  const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(BOOKS[id]));
+  assert.equal(d.sources.flow.appUrl, 'https://example.github.io/flow/');
+  assert.equal(d.sources.finance.appUrl, null, 'non-https rejected');
+  assert.equal(d.sources.garage.appUrl, 'https://script.google.com/macros/s/AKfyGarage/exec');
+  assert.equal(d.sources.finance.appProp, 'FINANCE_APP_URL');
+});

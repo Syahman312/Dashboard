@@ -116,6 +116,8 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 13px; background: var(--card); border: 1px solid var(--line); color: inherit; text-decoration: none; cursor: pointer; transition: border-color .15s; }
 .pill:hover { border-color: var(--accent); }
+.app-pill { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.app-pill:hover { filter: brightness(1.08); }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
 .dot.error { background: var(--bad); } .dot.warn { background: var(--warn); } .dot.info { background: var(--info); } .dot.ok { background: var(--good); }
 
@@ -865,7 +867,7 @@ footer a { color: var(--muted); }
     each(document, '.view', function (v) { v.classList.toggle('on', v.getAttribute('data-view') === S.view); });
     var host = $('v-' + S.view);
     ({ overview: viewOverview, flow: viewFlow, money: viewMoney, garage: viewGarage, health: viewHealth })[S.view](host, S.data);
-    countUp(host); fillBars(host);
+    bindAppLinks(host); countUp(host); fillBars(host);
     S.animate = false;
   }
 
@@ -891,7 +893,21 @@ footer a { color: var(--muted); }
   function viewHeader(title, src) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">' +
       '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="margin:0;font-size:22px;letter-spacing:-.02em">' + title + '</h2>' + freshBadge(src) + '</div>' +
-      (src && src.url ? '<a class="pill" href="' + esc(src.url) + '" target="_blank" rel="noopener">Open sheet ↗</a>' : '') + '</div>';
+      '<div class="chip-row">' + appButton(src) + (src && src.url ? '<a class="pill" href="' + esc(src.url) + '" target="_blank" rel="noopener">Open sheet ↗</a>' : '') + '</div></div>';
+  }
+  /** "Open Flow app" — or, until its link is set, a button that explains how to add it. */
+  function appButton(src, small) {
+    if (!src) return '';
+    if (src.appUrl) return '<a class="' + (small ? 'open-btn' : 'pill app-pill') + '" href="' + esc(src.appUrl) + '" target="_blank" rel="noopener">Open ' + esc(src.name) + ' app ↗</a>';
+    if (small) return '';
+    return '<button type="button" class="pill" data-applink="' + esc(src.appProp || '') + '" data-appname="' + esc(src.name) + '">+ Link ' + esc(src.name) + ' app</button>';
+  }
+  function bindAppLinks(root) {
+    each(root, '[data-applink]', function (b) {
+      b.addEventListener('click', function () {
+        toast('Add the ' + b.getAttribute('data-appname') + ' app\'s address in Apps Script → Project Settings → Script Properties as ' + b.getAttribute('data-applink') + ', then press Refresh.', 9000);
+      });
+    });
   }
   function taskLi(t, mode) {
     var right = mode === 'late' ? '<span class="tag late">' + shortDate(t.date) + '</span>'
@@ -959,6 +975,11 @@ footer a { color: var(--muted); }
         '<div class="faint" style="font-size:12px;margin-top:6px">Fuel, last 12 months · ' + rm(car.fuel.monthCost, 0) + ' this month</div>' + goLink('Garage') + '</button>';
     } else html += failedCard('Garage', ga);
     html += '</div>';
+
+    // Quick launcher for the apps themselves
+    html += '<div class="card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">' +
+      '<div><h2 style="font-size:15px;margin:0">Open your apps</h2><div class="faint" style="font-size:12.5px">Jump straight into an app to add or fix something</div></div>' +
+      '<div class="chip-row">' + ['flow', 'finance', 'garage'].map(function (k) { return appButton(d.sources[k]); }).join('') + '</div></div>';
 
     host.innerHTML = html;
     bindGo(host);
@@ -1272,22 +1293,24 @@ footer a { color: var(--muted); }
           '<ol>' + i.fix.steps.map(function (st) { return '<li>' + esc(st) + '</li>'; }).join('') + '</ol></details>' : '';
         return '<div class="issue' + (i.recovered ? ' rec' : '') + '"><span class="dot ' + (i.recovered ? 'ok' : i.level) + '"></span><div class="m"><span class="a">' + esc(i.area) + '</span>' + esc(i.message) + '</div>' +
           (i.detail ? '<div class="d">' + esc(i.detail) + '</div>' : '') + fix +
-          '<div class="acts" style="margin-top:8px;align-items:center">' + (link ? '<a class="open-btn" href="' + esc(link) + '" target="_blank" rel="noopener">' + linkLabel + ' ↗</a>' : '') +
+          '<div class="acts" style="margin-top:8px;align-items:center;flex-wrap:wrap">' + (i.fix && i.fix.where === 'app' ? appButton(s, true) : '') +
+          (link ? '<a class="' + (i.fix && i.fix.where === 'app' && s.appUrl ? 'pill' : 'open-btn') + '" style="font-size:12.5px;padding:5px 11px" href="' + esc(link) + '" target="_blank" rel="noopener">' + linkLabel + ' ↗</a>' : '') +
           '<button type="button" class="linkbtn faint" data-hide="' + esc(issueKey(i)) + '" title="Hide on this device (for problems you have accepted)">Hide</button></div></div>';
       }).join('') : '<div class="good" style="font-size:14px;padding:6px 0">✓ Nothing to fix</div>';
-      return '<div class="card">' + cardHead(SRC_LABEL[k] || k, list.length ? plural(list.length, 'item') : '', freshBadge(d.sources[k])) + body + '</div>';
+      return '<div class="card">' + cardHead(SRC_LABEL[k] || k, list.length ? plural(list.length, 'item') : '', freshBadge(d.sources[k])) + body +
+        '<div class="chip-row" style="margin-top:12px">' + appButton(d.sources[k]) + '</div></div>';
     }).join('') + '</div>';
     if (hiddenCount) html += '<div class="faint" style="font-size:13px;margin-top:12px">' + plural(hiddenCount, 'problem') + ' hidden · <button type="button" class="linkbtn" id="unhide">Show them again</button></div>';
     host.innerHTML = html;
 
     each(host, '.seg-ctl button', function (b) {
-      b.addEventListener('click', function () { S.filter = b.getAttribute('data-f'); viewHealth(host, d); });
+      b.addEventListener('click', function () { S.filter = b.getAttribute('data-f'); viewHealth(host, d); bindAppLinks(host); });
     });
     each(host, '[data-hide]', function (b) {
       b.addEventListener('click', function () {
         S.hidden[b.getAttribute('data-hide')] = Date.now();
         lsSet(LS.hidden, JSON.stringify(S.hidden));
-        renderNav(); viewHealth(host, d);
+        renderNav(); viewHealth(host, d); bindAppLinks(host);
         toast('Hidden on this device');
       });
     });
@@ -1323,7 +1346,8 @@ footer a { color: var(--muted); }
     var parts = Object.keys(d.sources).map(function (k) {
       var s = d.sources[k];
       return '<span><span class="dot ' + (s.ok ? 'ok' : 'error') + '" style="margin-right:5px"></span>' +
-        (s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>' : esc(s.name)) + ' <span class="num">' + s.ms + 'ms</span></span>';
+        (s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.name) + ' sheet</a>' : esc(s.name)) +
+        (s.appUrl ? ' · <a href="' + esc(s.appUrl) + '" target="_blank" rel="noopener">app</a>' : '') + ' <span class="num">' + s.ms + 'ms</span></span>';
     });
     parts.push('<span>Read-only · v' + esc(d.version) + '</span>');
     if (MODE === 'remote') parts.push('<button type="button" class="linkbtn faint" id="reconnect">Connection settings</button>');

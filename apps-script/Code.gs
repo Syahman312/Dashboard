@@ -9,15 +9,15 @@
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
  */
 
-var DASH_VERSION = '1.4.0';
+var DASH_VERSION = '1.5.0';
 var CACHE_KEY = 'dashboard:v2';
 var CACHE_SECONDS = 1800;     // 30 min; the warm-up trigger refreshes it every 15
 var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
 
 var SOURCES = [
-  { key: 'flow', name: 'Flow', prop: 'FLOW_SHEET_ID', reader: function (ss, ctx) { return readFlow_(ss, ctx); } },
-  { key: 'finance', name: 'Finance', prop: 'FINANCE_SHEET_ID', reader: function (ss, ctx) { return readFinance_(ss, ctx); } },
-  { key: 'garage', name: 'Garage', prop: 'GARAGE_SHEET_ID', reader: function (ss, ctx) { return readGarage_(ss, ctx); } }
+  { key: 'flow', name: 'Flow', prop: 'FLOW_SHEET_ID', appProp: 'FLOW_APP_URL', reader: function (ss, ctx) { return readFlow_(ss, ctx); } },
+  { key: 'finance', name: 'Finance', prop: 'FINANCE_SHEET_ID', appProp: 'FINANCE_APP_URL', reader: function (ss, ctx) { return readFinance_(ss, ctx); } },
+  { key: 'garage', name: 'Garage', prop: 'GARAGE_SHEET_ID', appProp: 'GARAGE_APP_URL', reader: function (ss, ctx) { return readGarage_(ss, ctx); } }
 ];
 
 // Home-screen / tab icon, served from the public repo (docs/icons). Apps Script needs a URL ending in .png.
@@ -155,7 +155,8 @@ function buildDashboard_(now, openById) {
   SOURCES.forEach(function (src) {
     var t0 = Date.now();
     var id = props.getProperty(src.prop);
-    var s = { name: src.name, ok: false, url: id ? 'https://docs.google.com/spreadsheets/d/' + id + '/edit' : null };
+    var s = { name: src.name, ok: false, url: id ? 'https://docs.google.com/spreadsheets/d/' + id + '/edit' : null,
+      appUrl: safeAppUrl_(props.getProperty(src.appProp)), appProp: src.appProp };
     try {
       if (!id) throw new Error('Script Property ' + src.prop + ' is not set');
       var ss = openById(id);
@@ -262,6 +263,15 @@ function upcoming_(sources, ctx) {
   g.forEach(function (c) { c.renewals.forEach(function (r) { add(r.date, c.name + ' ' + r.label.toLowerCase(), 'garage', 'warn'); }); });
   out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   return out.slice(0, 8);
+}
+
+/**
+ * Link to the app itself (Script Properties FLOW_APP_URL, FINANCE_APP_URL, GARAGE_APP_URL).
+ * Only https links are passed to the page.
+ */
+function safeAppUrl_(v) {
+  v = String(v || '').trim();
+  return /^https:\/\/[^\s"'<>]+$/i.test(v) ? v : null;
 }
 
 /** Checks that need two apps at once. */
