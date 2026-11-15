@@ -223,6 +223,32 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
     if (since > 30) issues.add('info', 'freshness', car.name + ': no fuel logged for ' + since + ' days (last ' + lastFill.date + ')');
   }
 
+  // Twelve months of running costs, and km driven per month from the odometer
+  var monthly = [];
+  for (var mi = 11; mi >= 0; mi--) {
+    var mk = addMonths_(month, -mi);
+    var fm = myFuel.filter(function (f) { return monthKey_(f.date) === mk; });
+    var sm = myLogs.filter(function (l) { return monthKey_(l.date) === mk; });
+    var odoEnd = null, odoStart = null;
+    timeline.forEach(function (e) {
+      if (!e.date) return;
+      if (monthKey_(e.date) <= mk) odoEnd = odoEnd === null ? e.odo : Math.max(odoEnd, e.odo);
+      if (monthKey_(e.date) < mk) odoStart = odoStart === null ? e.odo : Math.max(odoStart, e.odo);
+    });
+    monthly.push({
+      month: mk,
+      fuel: sum_(fm, function (f) { return f.cost; }),
+      service: sum_(sm, function (l) { return l.cost; }),
+      litres: sum_(fm, function (f) { return f.litres; }),
+      fills: fm.length,
+      km: odoEnd !== null && odoStart !== null && odoEnd > odoStart && fm.length + sm.length ? odoEnd - odoStart : null
+    });
+  }
+
+  var history = myLogs.slice().reverse().slice(0, 15).map(function (l) {
+    return { date: l.date, items: l.items, cost: l.cost, odo: l.odo };
+  });
+
   var spendMonth = sum_(myFuel.concat(myLogs).filter(function (e) { return monthKey_(e.date) === month; }), function (e) { return e.cost; });
 
   return {
@@ -244,6 +270,13 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
       lastFill: lastFill ? { date: lastFill.date, cost: lastFill.cost, litres: lastFill.litres, place: lastFill.place } : null,
       economy: economy
     },
-    spendMonth: spendMonth
+    spendMonth: spendMonth,
+    monthly: monthly,
+    history: history,
+    totals: {
+      fuel12: sum_(monthly, function (m) { return m.fuel; }),
+      service12: sum_(monthly, function (m) { return m.service; }),
+      km12: monthly.reduce(function (n, m) { return n + (m.km || 0); }, 0)
+    }
   };
 }

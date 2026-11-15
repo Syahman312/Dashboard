@@ -128,7 +128,9 @@ function readHabits_(habitsT, logT, ctx, issues) {
     for (var d = week; d <= ctx.today; d = addDays_(d, 1)) if (h.days[d]) h.week++;
     var cur = h.doneToday ? ctx.today : addDays_(ctx.today, -1);
     while (h.days[cur]) { h.streak++; cur = addDays_(cur, -1); }
-    out.push({ icon: h.icon, habit: h.habit, target: h.target, week: h.week, doneToday: h.doneToday, streak: h.streak, order: h.order });
+    var grid = [];
+    for (var g = 34; g >= 0; g--) grid.push(h.days[addDays_(ctx.today, -g)] ? 1 : 0);
+    out.push({ icon: h.icon, habit: h.habit, target: h.target, week: h.week, doneToday: h.doneToday, streak: h.streak, order: h.order, days: grid });
   });
   out.sort(function (a, b) { return a.order - b.order; });
   return out;
@@ -157,7 +159,7 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
     });
     if (badConf.length) issues.rows('warn', 'fields', badConf.length + ' topic(s) have confidence outside 0–3', badConf);
   }
-  var week = weekStart_(ctx.today), since7 = addDays_(ctx.today, -6);
+  var week = weekStart_(ctx.today), since7 = addDays_(ctx.today, -6), since30 = addDays_(ctx.today, -29);
   var study = { today: 0, week: 0, last7: 0, days: {} };
   if (studyT.exists) {
     var orphan = [], badMin = [];
@@ -170,13 +172,14 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
       if (!d) return;
       if (d === ctx.today) study.today += min;
       if (d >= week && d <= ctx.today) study.week += min;
-      if (d >= since7 && d <= ctx.today) { study.last7 += min; study.days[d] = (study.days[d] || 0) + min; }
+      if (d >= since7 && d <= ctx.today) study.last7 += min;
+      if (d >= since30 && d <= ctx.today) study.days[d] = (study.days[d] || 0) + min;
     });
     if (orphan.length) issues.rows('warn', 'links', orphan.length + ' study session(s) point to a paper that does not exist', orphan);
     if (badMin.length) issues.rows('warn', 'fields', badMin.length + ' study session(s) have no minutes', badMin);
   }
   var daily = [];
-  for (var i = 6; i >= 0; i--) { var dd = addDays_(ctx.today, -i); daily.push({ date: dd, minutes: study.days[dd] || 0 }); }
+  for (var i = 29; i >= 0; i--) { var dd = addDays_(ctx.today, -i); daily.push({ date: dd, minutes: study.days[dd] || 0 }); }
 
   var upcoming = list.filter(function (p) { return p.exam && p.exam >= ctx.today && !/pass|done|complete/i.test(p.status); })
     .sort(function (a, b) { return a.exam < b.exam ? -1 : 1; });
@@ -191,7 +194,14 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
   }
   return {
     byId: byId,
-    summary: { next: nextOut, today: study.today, week: study.week, last7: study.last7, daily: daily, papers: list.length }
+    summary: {
+      next: nextOut, today: study.today, week: study.week, last7: study.last7, daily: daily,
+      papers: list.map(function (p) {
+        return { code: p.code, paper: p.paper, exam: p.exam, daysLeft: p.exam ? daysBetween_(ctx.today, p.exam) : null,
+          hours: round2_(p.minutes / 60), targetHours: p.targetHours, status: p.status,
+          confidence: p.topics ? round2_(p.confSum / p.topics) : null };
+      }).sort(function (a, b) { return (a.exam || '9999') < (b.exam || '9999') ? -1 : 1; })
+    }
   };
 }
 

@@ -50,6 +50,9 @@ function readFinance_(ss, ctx) {
       debts: accounts.debts,
       month: tx.month,
       trend: tx.trend,
+      daily: tx.daily,
+      catsByMonth: tx.catsByMonth,
+      accounts: accounts.list.map(function (a) { return { name: a.name, type: a.type, group: a.group, balance: a.balance, owed: a.owed === null ? null : Math.abs(a.owed) }; }),
       topCategories: tx.topCategories,
       recent: tx.recent,
       latestDate: tx.latestDate,
@@ -111,7 +114,7 @@ function readAccounts_(table, issues) {
 }
 
 function readTransactions_(table, accounts, ctx, issues) {
-  var out = { month: null, trend: [], topCategories: [], recent: [], latestDate: null };
+  var out = { month: null, trend: [], topCategories: [], recent: [], latestDate: null, daily: null, catsByMonth: {} };
   if (!table.exists) return out;
 
   var month = monthKey_(ctx.today);
@@ -201,7 +204,43 @@ function readTransactions_(table, accounts, ctx, issues) {
     prevSpent: prev.spent, prevSamePoint: prevSamePoint,
     today: round2_(-sum_(real.filter(function (t) { return t.date === ctx.today && t.amount < 0; }), function (t) { return t.amount; }))
   };
-  for (var i = 5; i >= 0; i--) out.trend.push(totals(addMonths_(month, -i)));
+  for (var i = 11; i >= 0; i--) out.trend.push(totals(addMonths_(month, -i)));
+
+  // Spending per day for this month and last month (the page draws them cumulatively)
+  var prevDays = new Date(Date.UTC(+prevMonth.slice(0, 4), +prevMonth.slice(5, 7), 0)).getUTCDate();
+  var cumCur = [], cumPrev = [];
+  for (var dc = 0; dc < dayOfMonth; dc++) cumCur.push(0);
+  for (var dp = 0; dp < prevDays; dp++) cumPrev.push(0);
+  real.forEach(function (t) {
+    if (t.amount >= 0) return;
+    var mk = monthKey_(t.date), day = +t.date.slice(8, 10) - 1;
+    if (mk === month && day < dayOfMonth) cumCur[day] -= t.amount;
+    else if (mk === prevMonth) cumPrev[day] -= t.amount;
+  });
+  out.daily = { month: month, prevMonth: prevMonth, daysInMonth: daysInMonth,
+    cur: cumCur.map(round2_), prev: cumPrev.map(round2_) };
+
+  // Categories for each of the 12 months, so the page can drill into any month
+  out.catsByMonth = {};
+  var firstMonth = out.trend[0].month, catAcc = {};
+  real.forEach(function (t) {
+    var mk = monthKey_(t.date);
+    if (t.amount >= 0 || mk < firstMonth || mk > month) return;
+    var m = catAcc[mk] || (catAcc[mk] = {});
+    var k = t.cat || '(no category)';
+    var c = m[k] || (m[k] = { spent: 0, count: 0 });
+    c.spent -= t.amount; c.count++;
+  });
+  Object.keys(catAcc).forEach(function (mk) {
+    var rows = Object.keys(catAcc[mk]).map(function (k) { return { category: k, spent: round2_(catAcc[mk][k].spent), count: catAcc[mk][k].count }; })
+      .sort(function (a, b) { return b.spent - a.spent; });
+    if (rows.length > 9) {
+      var rest = rows.slice(8);
+      rows = rows.slice(0, 8).concat([{ category: 'Other (' + rest.length + ')', spent: sum_(rest, function (r) { return r.spent; }),
+        count: rest.reduce(function (n, r) { return n + r.count; }, 0), other: true }]);
+    }
+    out.catsByMonth[mk] = rows;
+  });
 
   var byCat = {};
   real.forEach(function (t) {
@@ -214,8 +253,8 @@ function readTransactions_(table, accounts, ctx, issues) {
 
   out.recent = list.filter(function (t) { return !t.adjust && t.date <= ctx.today; })
     .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : a.__row - b.__row; })
-    .slice(0, 6)
-    .map(function (t) { return { date: t.date, desc: t.desc || t.catName, cat: t.cat, account: t.account, amount: t.amount }; });
+    .slice(0, 12)
+    .map(function (t) { return { date: t.date, desc: t.desc || t.catName, cat: t.cat, account: t.account, amount: t.amount, transfer: t.transfer }; });
 
   return out;
 }

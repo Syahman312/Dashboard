@@ -68,7 +68,7 @@ test('finance summary and checks', () => {
   const d = build();
   const s = d.sources.finance.summary;
   assert.equal(s.netWorth, Math.round((75.9 + 1880.21 + 402.32 + 11.88 + 0.59 + 16000 + 20000 - 1231.21 - 9800 - 15000) * 100) / 100);
-  assert.equal(s.trend.length, 6);
+  assert.equal(s.trend.length, 12);
   assert.ok(s.month.spent > 0);
   assert.ok(!s.topCategories.some(c => /Balance adjustment/.test(c.category)), 'adjustments excluded');
   assert.equal(s.payslip.date, '2026-10-23');
@@ -175,4 +175,32 @@ test('cache splits large payloads into chunks and joins them back', () => {
   gs.cachePut_(big);
   assert.equal(store[gs.CACHE_KEY], '3');
   assert.equal(gs.cacheGet_(), big);
+});
+
+test('chart data series', () => {
+  const d = build();
+  const f = d.sources.finance.summary;
+  assert.equal(f.daily.cur.length, 15);           // 15 Nov
+  assert.equal(f.daily.prev.length, 31);          // October
+  assert.equal(f.daily.cur[14], 20.3, 'today spend lands on day 15');
+  const nov = f.catsByMonth['2026-11'];
+  assert.ok(nov.length > 0 && nov.length <= 9);
+  assert.equal(Math.round(nov.reduce((n, c) => n + c.spent, 0) * 100) / 100, f.month.spent, 'categories add up to month total');
+  assert.ok(f.accounts.find(a => a.name === 'Study Loan').owed > 0, 'owed shown positive');
+
+  const fl = d.sources.flow.summary;
+  assert.equal(fl.study.daily.length, 30);
+  assert.equal(fl.study.papers[0].code, 'FR');
+  const read = fl.habits.find(h => h.habit === 'Read');
+  assert.equal(read.days.length, 35);
+  assert.deepEqual(JSON.parse(JSON.stringify(read.days.slice(-3))), [1, 1, 1]);
+
+  const car = d.sources.garage.summary.cars[0];
+  assert.equal(car.monthly.length, 12);
+  const nov2 = car.monthly[11];
+  assert.equal(nov2.month, '2026-11');
+  assert.equal(nov2.fuel, 100);
+  assert.equal(car.monthly.find(m => m.month === '2026-06').service, 188);
+  assert.equal(car.history[0].date, '2026-06-20');
+  assert.ok(JSON.stringify(d).length < 200000, 'payload stays small');
 });
