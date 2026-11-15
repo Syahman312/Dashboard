@@ -7,7 +7,12 @@
     "test": "node --test test/*.test.js",
     "sample": "node dev/make-sample.js",
     "preview": "npm run sample && npx --yes http-server -c-1 -p 8080 . -o /apps-script/Index.html",
-    "push": "clasp push",
-    "deploy": "clasp push && clasp deploy --description \"dashboard\""
+    "setup": "node scripts/setup.js",
+    "deploy": "node scripts/deploy.js",
+    "push": "node -e \"require('./scripts/clasp').clasp(['push','-f'])\"",
+    "open": "node -e \"require('./scripts/clasp').clasp(['open-script'])\""
+  },
+  "devDependencies": {
+    "@google/clasp": "3.4.1"
   }
 }

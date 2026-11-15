@@ -23,7 +23,7 @@ Each problem links straight to the sheet row, and **Hide** removes ones you alre
 2. Create these files and paste in the contents from `apps-script/`:
    `Code.gs`, `Shared.gs`, `Garage.gs`, `Finance.gs`, `Flow.gs`, and an HTML file named `Index`.
    In **Project Settings**, tick *Show "appsscript.json"* and paste in `appsscript.json`.
-   (Or use clasp: `npm i -g @google/clasp`, `clasp login`, `clasp create --type standalone --rootDir apps-script`, `clasp push`.)
+   (After this first time, use `npm run deploy` instead. See *Publishing changes with one command* below.)
 3. **Project Settings → Script Properties**, add:
    - `FLOW_SHEET_ID`: the ID from the Flow Data sheet URL
    - `FINANCE_SHEET_ID`: the ID from the Finance tracker URL
@@ -40,6 +40,39 @@ Each problem links straight to the sheet row, and **Hide** removes ones you alre
 
 Data is cached for 30 minutes. **Refresh** reads the Sheets again. The page also keeps the last data on your device,
 so it shows straight away and updates behind it.
+
+## Publishing changes with one command (clasp)
+
+Do this once on your PC. After that, `npm run deploy` replaces copying files by hand.
+
+**One-time setup**
+
+1. Install **Node.js LTS** from <https://nodejs.org> (version 22 or newer).
+2. Turn on the **Google Apps Script API**: <https://script.google.com/home/usersettings> → *Google Apps Script API* → On.
+3. Get this repository onto your PC (GitHub Desktop, or `git clone https://github.com/syahman312/dashboard.git`),
+   then switch to the branch `claude/quirky-albattani-2xi1ko`.
+4. Open a terminal in that folder and run:
+   ```
+   npm install
+   npm run setup
+   ```
+   Setup signs you in to Google, asks for the **Script ID** (Apps Script editor → Project Settings ⚙ → IDs) and finds
+   your web app deployment. It saves both in `.clasp.json` and `.deployment-id`. Neither file is committed.
+
+**Every time after**
+
+```
+npm run deploy
+```
+
+This runs the tests, uploads all the files, and publishes a new version of the **same** web app, so the URL never changes.
+If the tests fail, nothing is uploaded.
+
+Other commands: `npm run push` uploads without publishing (to try things in the editor first), and `npm run open` opens the
+project in the Apps Script editor.
+
+> Note: the files in `apps-script/` are the master copy. A deploy overwrites whatever is in the online editor,
+> so make edits here rather than in the editor.
 
 ## Develop
 
