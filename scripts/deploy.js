@@ -3,14 +3,17 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { clasp, ROOT } = require('./clasp');
+const { clasp, deploymentIdFrom, ROOT } = require('./clasp');
 
 const stop = msg => { console.error('\n✗ ' + msg); process.exit(1); };
 
 if (!fs.existsSync(path.join(ROOT, '.clasp.json'))) stop('Not set up yet. Run "npm run setup" first.');
 const idFile = path.join(ROOT, '.deployment-id');
 if (!fs.existsSync(idFile)) stop('No deployment saved. Run "npm run setup" first.');
-const deploymentId = fs.readFileSync(idFile, 'utf8').trim();
+const saved = fs.readFileSync(idFile, 'utf8').trim();
+const deploymentId = deploymentIdFrom(saved);
+if (!/^AKfy[\w-]{20,}$/.test(deploymentId)) stop('The saved deployment ID does not look right: ' + saved + '\n  Run "npm run setup" again, or paste the Deployment ID (starts with AKfy) into .deployment-id');
+if (deploymentId !== saved) fs.writeFileSync(idFile, deploymentId + '\n'); // fix a pasted URL for next time
 
 const code = fs.readFileSync(path.join(ROOT, 'apps-script', 'Code.gs'), 'utf8');
 const version = (code.match(/DASH_VERSION = '([^']+)'/) || [])[1] || 'dev';
@@ -28,10 +31,10 @@ if (t.status !== 0) { process.stdout.write(t.stdout || ''); stop('Tests failed, 
 console.log('    ✓ tests pass');
 
 console.log('2/3 Uploading files to Apps Script…');
-if (clasp(['push', '-f']).status !== 0) stop('Upload failed (see above). If it mentions the Apps Script API, turn it on at https://script.google.com/home/usersettings');
+if (!clasp(['push', '-f']).ok) stop('Upload failed (see above). If it mentions the Apps Script API, turn it on at https://script.google.com/home/usersettings');
 
 console.log('3/3 Publishing a new version of the web app…');
-if (clasp(['redeploy', deploymentId, '-d', 'v' + version + ' ' + stamp]).status !== 0) stop('Publishing failed (see above).');
+if (!clasp(['redeploy', deploymentId, '-d', 'v' + version + ' ' + stamp]).ok) stop('Publishing failed (see above). The files were uploaded, but the web app still runs the previous version.');
 
 console.log('\n✓ Deployed v' + version + '. Reload the dashboard and press Refresh.');
 if (pagesChanged) console.log('  The phone app page (docs/index.html) changed: commit and push it so GitHub Pages updates.');

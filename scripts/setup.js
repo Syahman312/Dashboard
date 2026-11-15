@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { clasp } = require('./clasp');
+const { clasp, deploymentIdFrom } = require('./clasp');
 
 const ROOT = path.join(__dirname, '..');
 const CLASP_JSON = path.join(ROOT, '.clasp.json');
@@ -16,7 +16,7 @@ const ask = q => new Promise(res => rl.question(q, a => res(a.trim())));
   console.log('\nDashboard setup\n---------------');
   console.log('1) Signing in to Google (a browser window opens; skip if already signed in).');
   if ((await ask('   Sign in now? [Y/n] ')).toLowerCase() !== 'n') {
-    if (clasp(['login']).status !== 0) return fail('Sign-in did not finish.');
+    if (!clasp(['login'], { live: true }).ok) return fail('Sign-in did not finish.');
   }
 
   console.log('\n2) Script ID: in the Apps Script editor open Project Settings (gear icon) → IDs → Script ID.');
@@ -26,8 +26,8 @@ const ask = q => new Promise(res => rl.question(q, a => res(a.trim())));
   console.log('   Saved .clasp.json');
 
   console.log('\n3) Finding your web app deployment…');
-  const res = clasp(['list-deployments'], { capture: true });
-  const found = [...(res.stdout || '').matchAll(/^-\s+(\S+)\s+@(\d+)(?:\s+-\s+(.*))?$/gm)]
+  const res = clasp(['list-deployments'], { quiet: true });
+  const found = [...(res.output || '').matchAll(/^-\s+(\S+)\s+@(\d+)(?:\s+-\s+(.*))?$/gm)]
     .map(m => ({ id: m[1], version: +m[2], desc: m[3] || '' }));
   let deploymentId = '';
   if (found.length === 1) {
@@ -35,10 +35,10 @@ const ask = q => new Promise(res => rl.question(q, a => res(a.trim())));
     console.log('   Using deployment @' + found[0].version + ' ' + found[0].desc);
   } else {
     if (found.length) found.forEach((d, i) => console.log('   ' + (i + 1) + ') @' + d.version + ' ' + d.desc + '  ' + d.id));
-    else console.log('   Could not list deployments' + (res.stderr ? ': ' + res.stderr.trim() : '') + '.');
+    else console.log('   Could not list deployments' + (res.output ? ': ' + res.output.trim() : '') + '.');
     console.log('   (Deploy → Manage deployments → select the web app → copy the Deployment ID.)');
-    const a = await ask('   Pick a number or paste the Deployment ID: ');
-    deploymentId = found[+a - 1] ? found[+a - 1].id : a;
+    const a = await ask('   Pick a number, or paste the Deployment ID or web app URL: ');
+    deploymentId = found[+a - 1] ? found[+a - 1].id : deploymentIdFrom(a);
   }
   if (!deploymentId) return fail('No deployment chosen.');
   fs.writeFileSync(DEPLOY_FILE, deploymentId + '\n');
