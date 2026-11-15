@@ -1,0 +1,3 @@
+# Keep the same line endings on every computer (Windows Git would otherwise switch to CRLF).
+* text=auto eol=lf
+*.png binary

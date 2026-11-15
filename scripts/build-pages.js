@@ -22,7 +22,8 @@ const HEAD = [
 ].join('\n');
 
 function build() {
-  const src = fs.readFileSync(SRC, 'utf8');
+  // Windows checkouts may use \r\n; always build with \n so the output is the same everywhere.
+  const src = fs.readFileSync(SRC, 'utf8').replace(/\r\n/g, '\n');
   if (!src.includes('<!-- PAGES_HEAD -->')) throw new Error('Marker <!-- PAGES_HEAD --> missing from Index.html');
   return src
     .replace('<!DOCTYPE html>', '<!DOCTYPE html>\n<!-- Generated from apps-script/Index.html by scripts/build-pages.js. Do not edit. -->')
@@ -33,4 +34,10 @@ if (require.main === module) {
   fs.writeFileSync(OUT, build());
   console.log('Wrote docs/index.html');
 }
-module.exports = { build, OUT };
+/** True when docs/index.html matches what build() would write (line endings ignored). */
+function inSync() {
+  if (!fs.existsSync(OUT)) return false;
+  return fs.readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n') === build();
+}
+
+module.exports = { build, inSync, OUT };

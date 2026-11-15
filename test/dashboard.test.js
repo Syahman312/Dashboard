@@ -238,6 +238,7 @@ test('access key protects the data', () => {
 test('phone app page is in step with Index.html', () => {
   const fs = require('fs');
   const pages = require('../scripts/build-pages');
-  assert.equal(fs.readFileSync(pages.OUT, 'utf8'), pages.build(), 'run: npm run build:pages');
+  assert.ok(pages.inSync(), 'docs/index.html is out of date: run npm run build:pages');
+  assert.ok(!pages.build().includes('\r'), 'build output uses \\n line endings');
   assert.match(pages.build(), /^<!DOCTYPE html>/);
 });
