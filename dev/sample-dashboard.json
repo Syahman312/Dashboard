@@ -1,0 +1,678 @@
+{
+  "version": "1.0.0",
+  "generatedAt": 1794702600000,
+  "today": "2026-11-15",
+  "sources": {
+    "flow": {
+      "name": "Flow",
+      "ok": true,
+      "url": null,
+      "summary": {
+        "tasks": {
+          "today": [
+            {
+              "id": "t1",
+              "task": "Review bank recs",
+              "date": "2026-11-15",
+              "time": "09:00",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": true
+            },
+            {
+              "id": "t2",
+              "task": "Gym",
+              "date": "2026-11-15",
+              "time": "18:30",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": false
+            },
+            {
+              "id": "t3",
+              "task": "FR mock exam",
+              "date": "2026-11-15",
+              "time": "",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": true
+            },
+            {
+              "id": "t10",
+              "task": "Read notes",
+              "date": "2026-11-15",
+              "time": "",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": false
+            }
+          ],
+          "overdue": [
+            {
+              "id": "t5",
+              "task": "Call insurer",
+              "date": "2026-11-10",
+              "time": "",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": false
+            },
+            {
+              "id": "t4",
+              "task": "Pay credit card",
+              "date": "2026-11-12",
+              "time": "",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": false
+            }
+          ],
+          "top3": [
+            {
+              "id": "t1",
+              "task": "Review bank recs",
+              "date": "2026-11-15",
+              "time": "09:00",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": true
+            },
+            {
+              "id": "t3",
+              "task": "FR mock exam",
+              "date": "2026-11-15",
+              "time": "",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": true
+            }
+          ],
+          "inbox": 1,
+          "doneToday": 1,
+          "openTotal": 8,
+          "upcoming": [
+            {
+              "id": "t9",
+              "task": "Plan week",
+              "date": "2026-11-17",
+              "time": "9am",
+              "duration": 30,
+              "priority": "normal",
+              "area": "Work",
+              "top3": false
+            }
+          ],
+          "overdueCount": 2
+        },
+        "habits": [
+          {
+            "icon": "🏃",
+            "habit": "Run",
+            "target": 3,
+            "week": 1,
+            "doneToday": false,
+            "streak": 0,
+            "order": 1
+          },
+          {
+            "icon": "📚",
+            "habit": "Read",
+            "target": 7,
+            "week": 3,
+            "doneToday": true,
+            "streak": 3,
+            "order": 2
+          }
+        ],
+        "study": {
+          "next": {
+            "code": "FR",
+            "paper": "Financial Reporting",
+            "exam": "2026-12-04",
+            "daysLeft": 19,
+            "hours": 30,
+            "targetHours": 120,
+            "confidence": 2.67,
+            "status": "studying"
+          },
+          "today": 120,
+          "week": 390,
+          "last7": 390,
+          "daily": [
+            {
+              "date": "2026-11-09",
+              "minutes": 90
+            },
+            {
+              "date": "2026-11-10",
+              "minutes": 0
+            },
+            {
+              "date": "2026-11-11",
+              "minutes": 90
+            },
+            {
+              "date": "2026-11-12",
+              "minutes": 0
+            },
+            {
+              "date": "2026-11-13",
+              "minutes": 90
+            },
+            {
+              "date": "2026-11-14",
+              "minutes": 0
+            },
+            {
+              "date": "2026-11-15",
+              "minutes": 120
+            }
+          ],
+          "papers": 2
+        },
+        "close": {
+          "period": "2026-10",
+          "wd": 10,
+          "total": 4,
+          "done": 1,
+          "behind": 2,
+          "nextItems": [
+            {
+              "task": "Accruals",
+              "wd": 2
+            },
+            {
+              "task": "Fixed assets",
+              "wd": 5
+            },
+            {
+              "task": "Board pack",
+              "wd": 20
+            }
+          ]
+        },
+        "log": {
+          "total": 3,
+          "recent": 2,
+          "lastProblemAt": 1794672000000,
+          "dateOnlyRows": 2
+        }
+      },
+      "ms": 7
+    },
+    "finance": {
+      "name": "Finance",
+      "ok": true,
+      "url": null,
+      "summary": {
+        "netWorth": 12339.69,
+        "groups": {
+          "liquid": 2370.9,
+          "savings": 36000,
+          "debt": 26031.21
+        },
+        "debts": [
+          {
+            "name": "Car Loan",
+            "type": "borrow",
+            "owed": 15000
+          },
+          {
+            "name": "Study Loan",
+            "type": "borrow",
+            "owed": 9800
+          },
+          {
+            "name": "Affin Visa",
+            "type": "card",
+            "owed": 1231.21
+          }
+        ],
+        "month": {
+          "month": "2026-11",
+          "spent": 288.2,
+          "income": 3295,
+          "prevSpent": 563.4,
+          "prevSamePoint": 235.9,
+          "today": 20.3
+        },
+        "trend": [
+          {
+            "month": "2026-06",
+            "spent": 472.4,
+            "income": 3063
+          },
+          {
+            "month": "2026-07",
+            "spent": 487.9,
+            "income": 3063
+          },
+          {
+            "month": "2026-08",
+            "spent": 522.4,
+            "income": 3063
+          },
+          {
+            "month": "2026-09",
+            "spent": 472.4,
+            "income": 3063
+          },
+          {
+            "month": "2026-10",
+            "spent": 563.4,
+            "income": 3063
+          },
+          {
+            "month": "2026-11",
+            "spent": 288.2,
+            "income": 3295
+          }
+        ],
+        "topCategories": [
+          {
+            "category": "🍽️ Food & Drinks",
+            "spent": 76
+          },
+          {
+            "category": "📺 Netflix",
+            "spent": 54.9
+          },
+          {
+            "category": "⛽ Fuel",
+            "spent": 50
+          },
+          {
+            "category": "(no category)",
+            "spent": 42
+          },
+          {
+            "category": "🍜 Food",
+            "spent": 38.3
+          },
+          {
+            "category": "☕ Coffee",
+            "spent": 19
+          }
+        ],
+        "recent": [
+          {
+            "date": "2026-11-15",
+            "desc": "Food",
+            "cat": "🍜 Food",
+            "account": "Aeon Bank",
+            "amount": 232
+          },
+          {
+            "date": "2026-11-15",
+            "desc": "Food",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -20.3
+          },
+          {
+            "date": "2026-11-09",
+            "desc": "Transfer, withdraw",
+            "cat": "",
+            "account": "Maybank",
+            "amount": 953
+          },
+          {
+            "date": "2026-11-08",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -15.5
+          },
+          {
+            "date": "2026-11-08",
+            "desc": "Salary",
+            "cat": "💵 Income",
+            "account": "Maybank",
+            "amount": 3063
+          },
+          {
+            "date": "2026-11-08",
+            "desc": "Something",
+            "cat": "",
+            "account": "Maybank",
+            "amount": -30
+          }
+        ],
+        "latestDate": "2026-11-15",
+        "payslip": {
+          "date": "2026-10-23",
+          "employer": "Example Sdn Bhd",
+          "net": 3063,
+          "gross": 3500,
+          "daysAgo": 23,
+          "prevNet": 3063
+        },
+        "goals": [
+          {
+            "goal": "Emergency fund",
+            "type": "manual",
+            "target": 10000,
+            "saved": 4200,
+            "due": "2027-06-30",
+            "daysLeft": 227,
+            "achieved": false,
+            "pct": 42
+          }
+        ],
+        "log": {
+          "total": 10,
+          "recent": 10,
+          "lastProblemAt": 1794727813000,
+          "dateOnlyRows": 0
+        }
+      },
+      "ms": 10
+    },
+    "garage": {
+      "name": "Garage",
+      "ok": true,
+      "url": null,
+      "summary": {
+        "cars": [
+          {
+            "id": "car1",
+            "name": "Demo Car",
+            "plate": "ABC1234",
+            "year": "2015",
+            "odo": 120500,
+            "renewals": [
+              {
+                "label": "Road tax",
+                "date": "2026-12-09",
+                "daysLeft": 24
+              }
+            ],
+            "lastService": {
+              "date": "2026-06-20",
+              "items": [
+                "Engine oil and filter",
+                "Air filter",
+                "Fan Belt",
+                "Wiper blades"
+              ],
+              "cost": 188,
+              "daysAgo": 148,
+              "kmSince": 5300
+            },
+            "services": [
+              {
+                "item": "Spark Plugs",
+                "date": "2021-03-02",
+                "daysAgo": 2084,
+                "kmSince": 22500
+              },
+              {
+                "item": "Timing Belt",
+                "date": "2021-03-02",
+                "daysAgo": 2084,
+                "kmSince": 22500
+              },
+              {
+                "item": "Brake fluid",
+                "date": "2021-03-02",
+                "daysAgo": 2084,
+                "kmSince": 22500
+              },
+              {
+                "item": "Engine oil and filter",
+                "date": "2026-06-20",
+                "daysAgo": 148,
+                "kmSince": 5300
+              },
+              {
+                "item": "Air filter",
+                "date": "2026-06-20",
+                "daysAgo": 148,
+                "kmSince": 5300
+              },
+              {
+                "item": "Fan Belt",
+                "date": "2026-06-20",
+                "daysAgo": 148,
+                "kmSince": 5300
+              }
+            ],
+            "fuel": {
+              "monthCost": 100,
+              "last30Cost": 200,
+              "lastFill": {
+                "date": "2026-11-09",
+                "cost": 50,
+                "litres": 24.4,
+                "place": "Station"
+              },
+              "economy": {
+                "kmPerL": 8.98,
+                "rmPerKm": 0.23,
+                "fills": 10
+              }
+            },
+            "spendMonth": 100
+          }
+        ],
+        "counts": {
+          "logs": 2,
+          "fuel": 14,
+          "deleted": 1
+        }
+      },
+      "ms": 2
+    }
+  },
+  "issues": [
+    {
+      "source": "flow",
+      "level": "error",
+      "area": "sync",
+      "message": "Could not reach the server — check the Web App URL — 2× in the last 7 days",
+      "detail": "Last at 15 Nov 00:00 · from Windows PC"
+    },
+    {
+      "source": "finance",
+      "level": "error",
+      "area": "sync",
+      "message": "No connection to the script. Check the Web App URL — 6× in the last 7 days",
+      "detail": "Last at 15 Nov 15:30 · from Windows browser"
+    },
+    {
+      "source": "finance",
+      "level": "error",
+      "area": "gold",
+      "message": "Gold price failed: Failed to fetch — 4× in the last 7 days",
+      "detail": "Last at 14 Nov 12:03 · from Windows browser"
+    },
+    {
+      "source": "flow",
+      "level": "warn",
+      "area": "fields",
+      "message": "1 topic(s) have confidence outside 0–3",
+      "detail": "row 4"
+    },
+    {
+      "source": "flow",
+      "level": "warn",
+      "area": "links",
+      "message": "1 study session(s) point to a paper that does not exist",
+      "detail": "row 22"
+    },
+    {
+      "source": "flow",
+      "level": "warn",
+      "area": "study",
+      "message": "FR exam in 19 days with 30 of 120 target hours",
+      "detail": ""
+    },
+    {
+      "source": "flow",
+      "level": "warn",
+      "area": "fields",
+      "message": "1 task(s) have no title",
+      "detail": "row 9"
+    },
+    {
+      "source": "flow",
+      "level": "warn",
+      "area": "formats",
+      "message": "1 task(s) have a time not in HH:mm",
+      "detail": "row 10"
+    },
+    {
+      "source": "flow",
+      "level": "warn",
+      "area": "links",
+      "message": "1 task(s) point to an ACCA paper that does not exist",
+      "detail": "row 11"
+    },
+    {
+      "source": "flow",
+      "level": "warn",
+      "area": "links",
+      "message": "1 habit log entr(ies) point to a habit that does not exist",
+      "detail": "row 6"
+    },
+    {
+      "source": "finance",
+      "level": "warn",
+      "area": "amounts",
+      "message": "Account \"Study Loan\" shows amount owed as negative (-9800)",
+      "detail": "Other debts are positive. Use one sign for \"Owed\" so totals add up. Row 10"
+    },
+    {
+      "source": "finance",
+      "level": "warn",
+      "area": "categories",
+      "message": "2 transaction(s) in the last 90 days have no category",
+      "detail": "rows 126, 127"
+    },
+    {
+      "source": "finance",
+      "level": "warn",
+      "area": "accounts",
+      "message": "1 transaction(s) use account \"Old Wallet\", which is not in the Accounts tab",
+      "detail": ""
+    },
+    {
+      "source": "finance",
+      "level": "warn",
+      "area": "categories",
+      "message": "Category written 2 ways: 🍽️ Food & Drinks · 🍔 Food & Drinks",
+      "detail": ""
+    },
+    {
+      "source": "finance",
+      "level": "warn",
+      "area": "amounts",
+      "message": "1 positive amount(s) in spending category \"🍜 Food\" in the last 30 days",
+      "detail": "Refund, or is the sign wrong? e.g. 2026-11-15 RM 232.00 on Aeon Bank (row 110)"
+    },
+    {
+      "source": "finance",
+      "level": "warn",
+      "area": "payslips",
+      "message": "Payslip 2026-08-25: Gross − Deductions ≠ Net",
+      "detail": "row 4"
+    },
+    {
+      "source": "garage",
+      "level": "warn",
+      "area": "dates",
+      "message": "Date saved as \"0021-03-02\" (typo year) — using 2021-03-02 from the date column",
+      "detail": "row 10. Re-save this entry in Garage to fix the stored date."
+    },
+    {
+      "source": "garage",
+      "level": "warn",
+      "area": "odometer",
+      "message": "Demo Car: odometer goes backwards 1 time(s)",
+      "detail": "2026-10-12 (119190 km, row 22)"
+    },
+    {
+      "source": "garage",
+      "level": "warn",
+      "area": "renewals",
+      "message": "Demo Car: Road tax expires in 24 days (2026-12-09)",
+      "detail": ""
+    },
+    {
+      "source": "flow",
+      "level": "info",
+      "area": "fields",
+      "message": "1 done task(s) have no \"Done At\" time",
+      "detail": "row 8"
+    },
+    {
+      "source": "flow",
+      "level": "info",
+      "area": "formats",
+      "message": "2 _Log entr(ies) record only a date, without the time",
+      "detail": "Some clients write \"11/15/2026\" instead of a full timestamp. Write ISO timestamps everywhere (see CONVENTIONS.md)."
+    },
+    {
+      "source": "finance",
+      "level": "info",
+      "area": "housekeeping",
+      "message": "Tab \"Sheet1\" is empty and can be deleted",
+      "detail": ""
+    },
+    {
+      "source": "finance",
+      "level": "info",
+      "area": "categories",
+      "message": "Similar categories \"🍜 Food\" and \"🍽️ Food & Drinks\" — merge?",
+      "detail": ""
+    },
+    {
+      "source": "finance",
+      "level": "info",
+      "area": "duplicates",
+      "message": "1 possible duplicate transaction(s) in the last 60 days",
+      "detail": "row 130"
+    },
+    {
+      "source": "finance",
+      "level": "info",
+      "area": "reconciliation",
+      "message": "3 balance adjustments this month (net RM -66.35)",
+      "detail": "Frequent adjustments mean some spending is not being recorded."
+    },
+    {
+      "source": "garage",
+      "level": "info",
+      "area": "categories",
+      "message": "Service item \"Wiper blades\" is used in 1 log(s) but is not in the service list",
+      "detail": ""
+    },
+    {
+      "source": "garage",
+      "level": "info",
+      "area": "housekeeping",
+      "message": "1 deleted row(s) are still stored in the sheet",
+      "detail": ""
+    },
+    {
+      "source": "cross",
+      "level": "info",
+      "area": "fuel",
+      "message": "Fuel this month: RM 100.00 in Garage vs RM 50.00 in Finance",
+      "detail": "One of the apps is missing a fill-up."
+    }
+  ],
+  "counts": {
+    "error": 3,
+    "warn": 16,
+    "info": 9
+  }
+}
