@@ -42,7 +42,8 @@ function readGarage_(ss, ctx) {
         roadTax: toISODate_(rec.rtax),
         insurance: toISODate_(rec.ins || rec.insurance),
         tank: toNumber_(rec.tank),
-        __row: row.__row
+        __row: row.__row,
+        __gid: row.__gid
       };
       return;
     }
@@ -90,14 +91,18 @@ function readGarage_(ss, ctx) {
   allEntries.forEach(function (e) { if (e.carId && !cars[e.carId]) unknownCar.push(e); });
   if (unknownCar.length) issues.rows('warn', 'links', unknownCar.length + ' entr(ies) point to a car that no longer exists', unknownCar);
 
-  var unknownItems = {};
+  var unknownItems = {}, unknownFirst = {};
   logs.forEach(function (l) {
-    l.items.forEach(function (it) { if (!svcNames[it]) unknownItems[it] = (unknownItems[it] || 0) + 1; });
+    l.items.forEach(function (it) {
+      if (svcNames[it]) return;
+      unknownItems[it] = (unknownItems[it] || 0) + 1;
+      if (!unknownFirst[it]) unknownFirst[it] = l;
+    });
   });
   Object.keys(unknownItems).forEach(function (it) {
-    issues.add('info', 'categories', 'Service item "' + it + '" is used in ' + unknownItems[it] + ' log(s) but is not in the service list');
+    issues.add('info', 'categories', 'Service item "' + it + '" is used in ' + unknownItems[it] + ' log(s) but is not in the service list', '', unknownFirst[it]);
   });
-  if (deleted) issues.add('info', 'housekeeping', deleted + ' deleted row(s) are still stored in the sheet');
+  if (deleted) issues.add('info', 'housekeeping', deleted + ' deleted row(s) are still stored in the sheet', '', { gid: table.gid });
 
   /* --- per car summary --- */
   var carList = Object.keys(cars).map(function (id) {
@@ -174,7 +179,7 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
   var maxOdo = timeline.reduce(function (m, e) { return Math.max(m, e.odo); }, 0);
   var odo = Math.max(car.odo || 0, maxOdo) || null;
   if (car.odo && maxOdo > car.odo) {
-    issues.add('warn', 'odometer', car.name + ': car odometer (' + car.odo + ') is lower than a logged reading (' + maxOdo + ')');
+    issues.add('warn', 'odometer', car.name + ': car odometer (' + car.odo + ') is lower than a logged reading (' + maxOdo + ')', '', car);
   }
 
   // Renewals
@@ -183,10 +188,10 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
     if (!r[1]) return;
     var left = daysBetween_(ctx.today, r[1]);
     renewals.push({ label: r[0], date: r[1], daysLeft: left });
-    if (left < 0) issues.add('error', 'renewals', car.name + ': ' + r[0] + ' expired ' + (-left) + ' days ago');
-    else if (left <= 30) issues.add('warn', 'renewals', car.name + ': ' + r[0] + ' expires in ' + left + ' days (' + r[1] + ')');
+    if (left < 0) issues.add('error', 'renewals', car.name + ': ' + r[0] + ' expired ' + (-left) + ' days ago', '', car);
+    else if (left <= 30) issues.add('warn', 'renewals', car.name + ': ' + r[0] + ' expires in ' + left + ' days (' + r[1] + ')', '', car);
   });
-  if (!car.roadTax) issues.add('info', 'fields', car.name + ': no road tax expiry date saved');
+  if (!car.roadTax) issues.add('info', 'fields', car.name + ': no road tax expiry date saved', '', car);
 
   // Last time each service item was done
   var lastByItem = {};

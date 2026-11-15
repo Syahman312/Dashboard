@@ -270,6 +270,21 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 .issue .acts a, .linkbtn { color: var(--accent); text-decoration: none; background: none; border: 0; padding: 0; font-size: 12.5px; cursor: pointer; }
 .linkbtn.faint { color: var(--faint); }
 
+.issue.rec .m { color: var(--muted); }
+.fixbox { grid-column: 2; margin-top: 6px; }
+.fixbox summary { cursor: pointer; font-size: 12.5px; color: var(--accent); list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+.fixbox summary::-webkit-details-marker { display: none; }
+.fixbox summary::before { content: "▸"; font-size: 10px; transition: transform .15s; }
+.fixbox[open] summary::before { transform: rotate(90deg); }
+.fixbox ol { margin: 8px 0 4px; padding-left: 20px; font-size: 13.5px; color: var(--text); }
+.fixbox li { margin: 4px 0; }
+.where { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--card-2); color: var(--muted); margin-left: 6px; }
+.where.app { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.where.sheet { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.issue .acts a.open-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 8px; background: var(--accent); color: var(--accent-ink) !important; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+#toast { position: fixed; left: 50%; bottom: 24px; z-index: 60; transform: translate(-50%, 20px); opacity: 0; transition: opacity .2s, transform .2s; background: var(--card-3); border: 1px solid var(--line); box-shadow: 0 12px 32px rgba(0,0,0,.3); border-radius: 12px; padding: 10px 16px; font-size: 14px; max-width: calc(100vw - 32px); pointer-events: none; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 680px) { #toast { bottom: calc(84px + env(safe-area-inset-bottom)); } }
 .fresh { font-size: 11.5px; font-weight: 550; padding: 3px 9px; border-radius: 999px; background: var(--card-2); color: var(--muted); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .fresh .dot { width: 6px; height: 6px; }
 .banner { padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); margin-top: 14px; font-size: 13.5px; color: var(--muted); }
@@ -335,6 +350,7 @@ footer a { color: var(--muted); }
 
 <nav class="bnav" id="bnav" aria-label="Sections"></nav>
 <div id="tip" role="status" aria-live="polite"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function () {
@@ -404,6 +420,7 @@ footer a { color: var(--muted); }
     health: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
     left: '<path d="M15 18l-6-6 6-6"/>', right: '<path d="M9 18l6-6-6-6"/>', arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>'
   };
   var svgIcon = function (k, size) {
@@ -689,11 +706,13 @@ footer a { color: var(--muted); }
         S.data = typeof json === 'string' ? JSON.parse(json) : json;
         S.loadedAt = Date.now(); S.stale = false; S.animate = true;
         render();
+        if (S.recheckFrom) reportRecheck();
         lsSet(LS.data, typeof json === 'string' ? json : JSON.stringify(json));
       } catch (e) { fail(e); }
     };
     var fail = function (e) {
       setLoading(false);
+      S.recheckFrom = null;
       $('banner').innerHTML = '<div class="banner err"><b>Could not load the dashboard.</b>' + (S.data ? ' Showing the last saved data.' : '') +
         '<br><span class="muted">' + esc(e && e.message || e) + '</span></div>';
     };
@@ -1231,30 +1250,34 @@ footer a { color: var(--muted); }
    * Health
    * ======================================================= */
   function viewHealth(host, d) {
-    var filters = [['problems', 'Errors & warnings'], ['error', 'Errors'], ['warn', 'Warnings'], ['info', 'Tidy-ups'], ['all', 'All']];
+    var filters = [['problems', 'To fix'], ['error', 'Errors'], ['warn', 'Warnings'], ['info', 'Tidy-ups'], ['all', 'All']];
     var keep = function (i) { return S.filter === 'all' || (S.filter === 'problems' ? i.level !== 'info' : i.level === S.filter); };
     var visible = visibleIssues(d), hiddenCount = d.issues.length - visible.length, c = counts(d);
     var bySrc = { flow: [], finance: [], garage: [] };
     visible.filter(keep).forEach(function (i) { (bySrc[i.source] = bySrc[i.source] || []).push(i); });
+    var WHERE = { app: function (i) { return 'Fix in ' + (SRC_LABEL[i.source] === 'Money' ? 'Finance' : SRC_LABEL[i.source] || 'the app'); }, sheet: function () { return 'Fix in the sheet'; }, none: function () { return 'Nothing to edit'; } };
     var html = '<div class="health-head"><div><h2 style="margin:0;font-size:22px;letter-spacing:-.02em">Health check</h2>' +
-      '<div class="muted" style="font-size:13px;margin-top:2px">' + plural(c.error, 'error') + ' · ' + plural(c.warn, 'warning') + ' · ' + c.info + ' tidy-ups across your apps</div></div>' +
-      '<div class="seg-ctl" role="group" aria-label="Filter issues">' + filters.map(function (f) {
+      '<div class="muted" style="font-size:13px;margin-top:2px">' + plural(c.error, 'error') + ' · ' + plural(c.warn, 'warning') + ' · ' + c.info + ' tidy-ups. Open a problem, fix it, then press Recheck.</div></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div class="seg-ctl" role="group" aria-label="Filter issues">' + filters.map(function (f) {
         return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (S.filter === f[0]) + '">' + f[1] + '</button>';
-      }).join('') + '</div></div>';
+      }).join('') + '</div><button type="button" class="icon-btn" id="recheck">' + svgIcon('refresh') + 'Recheck</button></div></div>';
     html += '<div class="grid g3" style="align-items:start">' + Object.keys(bySrc).map(function (k) {
       var list = bySrc[k];
       if (k === 'cross' && !list.length) return '';
-      var body = list.length ? list.map(function (i) {
+      var body = list.length ? list.map(function (i, n) {
         var s = d.sources[i.source] || {};
-        var link = i.ref && s.url ? s.url + '#gid=' + i.ref.gid + '&range=' + i.ref.row + ':' + i.ref.row : null;
-        return '<div class="issue"><span class="dot ' + i.level + '"></span><div class="m"><span class="a">' + esc(i.area) + '</span>' + esc(i.message) + '</div>' +
-          (i.detail ? '<div class="d">' + esc(i.detail) + '</div>' : '') +
-          '<div class="acts">' + (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener">Open row ' + i.ref.row + ' ↗</a>' : '') +
-          '<button type="button" class="linkbtn faint" data-hide="' + esc(issueKey(i)) + '">Hide</button></div></div>';
-      }).join('') : '<div class="good" style="font-size:14px;padding:6px 0">✓ Nothing here</div>';
-      return '<div class="card">' + cardHead(SRC_LABEL[k] || k, '', freshBadge(d.sources[k])) + body + '</div>';
+        var link = i.ref && s.url ? s.url + '#gid=' + i.ref.gid + (i.ref.row ? '&range=' + i.ref.row + ':' + i.ref.row : '') : null;
+        var linkLabel = i.ref && i.ref.row ? 'Open row ' + i.ref.row : 'Open tab';
+        var fix = i.fix ? '<details class="fixbox"' + (n === 0 && i.level !== 'info' ? ' open' : '') + '><summary>How to fix <span class="where ' + esc(i.fix.where) + '">' + esc((WHERE[i.fix.where] || WHERE.none)(i)) + '</span></summary>' +
+          '<ol>' + i.fix.steps.map(function (st) { return '<li>' + esc(st) + '</li>'; }).join('') + '</ol></details>' : '';
+        return '<div class="issue' + (i.recovered ? ' rec' : '') + '"><span class="dot ' + (i.recovered ? 'ok' : i.level) + '"></span><div class="m"><span class="a">' + esc(i.area) + '</span>' + esc(i.message) + '</div>' +
+          (i.detail ? '<div class="d">' + esc(i.detail) + '</div>' : '') + fix +
+          '<div class="acts" style="margin-top:8px;align-items:center">' + (link ? '<a class="open-btn" href="' + esc(link) + '" target="_blank" rel="noopener">' + linkLabel + ' ↗</a>' : '') +
+          '<button type="button" class="linkbtn faint" data-hide="' + esc(issueKey(i)) + '" title="Hide on this device (for problems you have accepted)">Hide</button></div></div>';
+      }).join('') : '<div class="good" style="font-size:14px;padding:6px 0">✓ Nothing to fix</div>';
+      return '<div class="card">' + cardHead(SRC_LABEL[k] || k, list.length ? plural(list.length, 'item') : '', freshBadge(d.sources[k])) + body + '</div>';
     }).join('') + '</div>';
-    if (hiddenCount) html += '<div class="faint" style="font-size:13px;margin-top:12px">' + plural(hiddenCount, 'issue') + ' hidden · <button type="button" class="linkbtn" id="unhide">Show them again</button></div>';
+    if (hiddenCount) html += '<div class="faint" style="font-size:13px;margin-top:12px">' + plural(hiddenCount, 'problem') + ' hidden · <button type="button" class="linkbtn" id="unhide">Show them again</button></div>';
     host.innerHTML = html;
 
     each(host, '.seg-ctl button', function (b) {
@@ -1265,9 +1288,35 @@ footer a { color: var(--muted); }
         S.hidden[b.getAttribute('data-hide')] = Date.now();
         lsSet(LS.hidden, JSON.stringify(S.hidden));
         renderNav(); viewHealth(host, d);
+        toast('Hidden on this device');
       });
     });
+    $('recheck').addEventListener('click', recheck);
     if ($('unhide')) $('unhide').addEventListener('click', function () { S.hidden = {}; lsSet(LS.hidden, '{}'); renderNav(); viewHealth(host, d); });
+  }
+
+  /* Recheck: re-read the Sheets now and say what cleared. */
+  function recheck() {
+    if (!S.data) return;
+    S.recheckFrom = {};
+    S.data.issues.forEach(function (i) { S.recheckFrom[issueKey(i)] = i; });
+    toast('Rechecking your Sheets…', 60000);
+    load(true);
+  }
+  function reportRecheck() {
+    var before = S.recheckFrom; S.recheckFrom = null;
+    var now = {};
+    S.data.issues.forEach(function (i) { if (!i.recovered) now[issueKey(i)] = 1; });
+    var fixed = Object.keys(before).filter(function (k) { return !before[k].recovered && !now[k]; });
+    var left = visibleIssues(S.data).filter(function (i) { return i.level !== 'info'; }).length;
+    toast(fixed.length ? '✓ ' + plural(fixed.length, 'problem') + ' cleared · ' + left + ' left to fix' : 'Nothing new cleared yet · ' + left + ' left to fix. Changes made in an app show up after it syncs.', 5000);
+  }
+  var toastTimer;
+  function toast(msg, ms) {
+    var t = $('toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('on'); }, ms || 2500);
   }
 
   function renderFooter(d) {

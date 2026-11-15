@@ -9,7 +9,7 @@
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
  */
 
-var DASH_VERSION = '1.3.0';
+var DASH_VERSION = '1.4.0';
 var CACHE_KEY = 'dashboard:v2';
 var CACHE_SECONDS = 1800;     // 30 min; the warm-up trigger refreshes it every 15
 var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
@@ -172,6 +172,8 @@ function buildDashboard_(now, openById) {
   });
 
   out.issues = out.issues.concat(crossChecks_(out.sources, ctx));
+  markRecovered_(out.issues, out.sources);
+  addFixes_(out.issues);
   var rank = { error: 0, warn: 1, info: 2 };
   out.issues.sort(function (a, b) { return rank[a.level] - rank[b.level]; });
   out.counts = { error: 0, warn: 0, info: 0 };
@@ -191,7 +193,7 @@ function brief_(sources, issues, ctx) {
     var s = sources[k];
     if (!s) return;
     if (!s.ok) { push('bad', k, s.name + ' sheet could not be read'); return; }
-    var syncFails = issues.filter(function (i) { return i.source === k && i.area === 'sync'; });
+    var syncFails = issues.filter(function (i) { return i.source === k && i.area === 'sync' && !i.recovered; });
     if (syncFails.length) {
       var n = 0;
       syncFails.forEach(function (i) { var m = i.message.match(/(\d+)× in/); if (m) n = Math.max(n, +m[1]); });

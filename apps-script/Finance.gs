@@ -34,7 +34,7 @@ function readFinance_(ss, ctx) {
   });
 
   var empty = ss.getSheets().filter(function (s) { return s.getName() !== '_data' && s.getLastRow() === 0; });
-  empty.forEach(function (s) { issues.add('info', 'housekeeping', 'Tab "' + s.getName() + '" is empty and can be deleted'); });
+  empty.forEach(function (s) { issues.add('info', 'housekeeping', 'Tab "' + s.getName() + '" is empty and can be deleted', '', { gid: s.getSheetId() }); });
 
   var accounts = readAccounts_(T.Accounts, issues);
   var tx = readTransactions_(T.Transactions, accounts, ctx, issues);
@@ -91,7 +91,7 @@ function readAccounts_(table, issues) {
     var type = text_(r.Type).toLowerCase();
     var group = ACCOUNT_GROUPS[type];
     var balance = toAmount_(r.Balance), owed = toAmount_(r.Owed);
-    if (!group) issues.add('info', 'accounts', 'Account "' + name + '" has unknown type "' + type + '"', 'row ' + r.__row);
+    if (!group) issues.add('info', 'accounts', 'Account "' + name + '" has unknown type "' + type + '"', 'row ' + r.__row, r);
     if (group === 'debt' && owed !== null && owed < 0) {
       issues.add('warn', 'amounts', 'Account "' + name + '" shows amount owed as negative (' + owed + ')',
         'Other debts are positive. Use one sign for "Owed" so totals add up. Row ' + r.__row, r);
@@ -140,7 +140,7 @@ function readTransactions_(table, accounts, ctx, issues) {
     t.adjust = isAdjustment_(t);
     if (!t.cat && !t.transfer && t.date >= since90) noCat.push(t);
     if (t.account && accounts.list.length && !accounts.byName[t.account]) {
-      unknownAcc[t.account] = (unknownAcc[t.account] || 0) + 1;
+      (unknownAcc[t.account] = unknownAcc[t.account] || []).push(t);
     }
     list.push(t);
   });
@@ -149,7 +149,7 @@ function readTransactions_(table, accounts, ctx, issues) {
   if (badAmount.length) issues.rows('error', 'amounts', badAmount.length + ' transaction(s) have a missing or unreadable amount', badAmount);
   if (noCat.length) issues.rows('warn', 'categories', noCat.length + ' transaction(s) in the last 90 days have no category', noCat);
   Object.keys(unknownAcc).forEach(function (a) {
-    issues.add('warn', 'accounts', unknownAcc[a] + ' transaction(s) use account "' + a + '", which is not in the Accounts tab');
+    issues.rows('warn', 'accounts', unknownAcc[a].length + ' transaction(s) use account "' + a + '", which is not in the Accounts tab', unknownAcc[a]);
   });
 
   // Category consistency
@@ -169,14 +169,14 @@ function readTransactions_(table, accounts, ctx, issues) {
   if (adjMonth.length >= 3) {
     issues.add('info', 'reconciliation', adjMonth.length + ' balance adjustments this month (net RM ' +
       sum_(adjMonth, function (t) { return t.amount; }).toFixed(2) + ')',
-      'Frequent adjustments mean some spending is not being recorded.');
+      'Frequent adjustments mean some spending is not being recorded.', adjMonth[0]);
   }
 
   // Freshness
   list.forEach(function (t) { if (t.date <= ctx.today && (!out.latestDate || t.date > out.latestDate)) out.latestDate = t.date; });
   if (out.latestDate) {
     var gap = daysBetween_(out.latestDate, ctx.today);
-    if (gap > 3) issues.add('warn', 'freshness', 'No transactions recorded for ' + gap + ' days (last ' + out.latestDate + ')');
+    if (gap > 3) issues.add('warn', 'freshness', 'No transactions recorded for ' + gap + ' days (last ' + out.latestDate + ')', '', { gid: table.gid });
   }
   var future = list.filter(function (t) { return t.date > ctx.today; });
   if (future.length) issues.rows('info', 'dates', future.length + ' transaction(s) are dated in the future', future);
@@ -261,15 +261,21 @@ function readTransactions_(table, accounts, ctx, issues) {
 
 function checkCategories_(list, since30, issues) {
   // 1. Same name with different icons, e.g. "🍜 Food" vs "🍔 Food"
-  var byName = {};
+  var byName = {}, firstOf = {};
   list.forEach(function (t) {
     if (!t.cat) return;
     var k = t.catName.toLowerCase();
     (byName[k] = byName[k] || {})[t.cat] = (byName[k][t.cat] || 0) + 1;
+    if (!firstOf[t.cat]) firstOf[t.cat] = t;
   });
   Object.keys(byName).forEach(function (k) {
     var variants = Object.keys(byName[k]);
-    if (variants.length > 1) issues.add('warn', 'categories', 'Category written ' + variants.length + ' ways: ' + variants.join(' · '));
+    if (variants.length > 1) {
+      // Link to the less-used spelling: that is usually the one to change.
+      var rare = variants.slice().sort(function (a, b) { return byName[k][a] - byName[k][b]; })[0];
+      issues.add('warn', 'categories', 'Category written ' + variants.length + ' ways: ' + variants.join(' · '),
+        variants.map(function (v) { return v + ' ×' + byName[k][v]; }).join(', '), firstOf[rare]);
+    }
   });
 
   // 2. One name is the start of another, e.g. "Food" and "Food & Drinks"
@@ -288,7 +294,7 @@ function checkCategories_(list, since30, issues) {
   });
   var label = function (k) { return Object.keys(byName[k])[0]; };
   pairs.slice(0, 6).forEach(function (p) {
-    issues.add('info', 'categories', 'Similar categories "' + label(p[0]) + '" and "' + label(p[1]) + '" — merge?');
+    issues.add('info', 'categories', 'Similar categories "' + label(p[0]) + '" and "' + label(p[1]) + '" — merge?', '', firstOf[label(p[0])]);
   });
 
   // 3. Money coming IN on a category that is almost always money OUT
@@ -322,7 +328,7 @@ function readPayslips_(table, ctx, issues) {
       gross: toAmount_(r.Gross), deductions: toAmount_(r.Deductions) || 0, net: toAmount_(r.Net),
       __row: r.__row
     };
-    if (!p.date) { issues.add('warn', 'payslips', 'Payslip without a readable pay date', 'row ' + r.__row); return; }
+    if (!p.date) { issues.add('warn', 'payslips', 'Payslip without a readable pay date', 'row ' + r.__row, r); return; }
     if (p.basic !== null && p.gross !== null && Math.abs(p.basic + p.allowances - p.gross) > 0.05) {
       issues.add('warn', 'payslips', 'Payslip ' + p.date + ': Basic + Allowances ≠ Gross', 'row ' + r.__row, r);
     }
@@ -335,7 +341,7 @@ function readPayslips_(table, ctx, issues) {
   list.sort(function (a, b) { return a.date < b.date ? 1 : -1; });
   var last = list[0];
   var age = daysBetween_(last.date, ctx.today);
-  if (age > 35) issues.add('warn', 'payslips', 'Latest payslip is ' + age + ' days old (' + last.date + ') — add the new one?');
+  if (age > 35) issues.add('warn', 'payslips', 'Latest payslip is ' + age + ' days old (' + last.date + ') — add the new one?', '', { gid: table.gid });
   return { date: last.date, employer: last.employer, net: last.net, gross: last.gross, daysAgo: age, prevNet: list[1] ? list[1].net : null };
 }
 

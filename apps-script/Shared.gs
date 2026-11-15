@@ -176,11 +176,11 @@ function sum_(arr, fn) {
  */
 function readTable_(ss, name) {
   var sheet = name ? ss.getSheetByName(name) : ss.getSheets()[0];
-  if (!sheet) return { exists: false, name: name, headers: [], rows: [] };
+  if (!sheet) return { exists: false, name: name, gid: null, headers: [], rows: [] };
   var values = sheet.getDataRange().getValues();
-  if (!values.length) return { exists: true, name: sheet.getName(), headers: [], rows: [] };
-  var headers = values[0].map(function (h) { return text_(h); });
   var gid = sheet.getSheetId();
+  if (!values.length) return { exists: true, name: sheet.getName(), gid: gid, headers: [], rows: [] };
+  var headers = values[0].map(function (h) { return text_(h); });
   var rows = [];
   for (var r = 1; r < values.length; r++) {
     var row = values[r], blank = true, obj = { __row: r + 1, __gid: gid };
@@ -192,7 +192,7 @@ function readTable_(ss, name) {
     }
     if (!blank) rows.push(obj);
   }
-  return { exists: true, name: sheet.getName(), headers: headers, rows: rows };
+  return { exists: true, name: sheet.getName(), gid: gid, headers: headers, rows: rows };
 }
 
 /** Reports missing tabs / columns. Returns false when the tab is unusable. */
@@ -204,7 +204,7 @@ function checkColumns_(table, expected, issues, area) {
   var missing = expected.filter(function (h) { return table.headers.indexOf(h) < 0; });
   if (missing.length) {
     issues.add('error', area, 'Tab "' + table.name + '" is missing column(s): ' + missing.join(', '),
-      'Found: ' + table.headers.filter(String).join(', '));
+      'Found: ' + table.headers.filter(String).join(', '), { gid: table.gid });
   }
   return missing.length < expected.length;
 }
@@ -222,7 +222,13 @@ function makeIssues_(source) {
     /** ref (optional): { gid, row } so the page can link straight to the row. */
     add: function (level, area, message, detail, ref) {
       var i = { source: source, level: level, area: area, message: message, detail: detail || '' };
-      if (ref && ref.gid !== undefined && ref.gid !== null) i.ref = { gid: ref.gid, row: ref.row };
+      // ref may be { gid, row } or a record carrying __gid / __row
+      var gid = ref ? (ref.gid !== undefined ? ref.gid : ref.__gid) : null;
+      if (gid !== undefined && gid !== null) {
+        i.ref = { gid: gid };
+        var row = ref.row !== undefined ? ref.row : ref.__row;
+        if (row) i.ref.row = row;
+      }
       list.push(i);
     },
     /** Same as add, with the detail and link built from the offending rows. */
@@ -287,7 +293,8 @@ function summariseLog_(table, cols, ctx, issues, days) {
     var who = Object.keys(g.sources);
     issues.add(lvl, g.area,
       g.msg + ' — ' + g.count + '× in the last ' + (days || 7) + ' days',
-      'Last at ' + fmtDate_(new Date(g.last), 'd MMM HH:mm') + (who.length ? ' · from ' + who.join(', ') : ''));
+      'Last at ' + fmtDate_(new Date(g.last), 'd MMM HH:mm') + (who.length ? ' · from ' + who.join(', ') : ''), { gid: table.gid });
+    issues.list[issues.list.length - 1].at = g.last; // when it last failed (used to spot recovery)
   });
   return out;
 }

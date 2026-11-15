@@ -138,7 +138,7 @@ test('unset sheet ID is a clear error', () => {
 test('brief, coming up, freshness and row links', () => {
   const d = build();
   const texts = d.brief.map(b => b.text).join(' | ');
-  assert.match(texts, /Flow is failing to sync \(2 failures/);
+  assert.doesNotMatch(texts, /Flow is failing to sync/, 'Flow saved after its last failure: recovered');
   assert.match(texts, /Finance is failing to sync \(6 failures/);
   assert.match(texts, /Tasks: 4 due today, 2 overdue/);
   assert.match(texts, /FR exam in 19 days/);
@@ -241,4 +241,30 @@ test('phone app page is in step with Index.html', () => {
   assert.ok(pages.inSync(), 'docs/index.html is out of date: run npm run build:pages');
   assert.ok(!pages.build().includes('\r'), 'build output uses \\n line endings');
   assert.match(pages.build(), /^<!DOCTYPE html>/);
+});
+
+test('every problem says how to fix it and where to go', () => {
+  const d = build();
+  const noFix = d.issues.filter(i => !i.fix || !i.fix.steps.length);
+  assert.deepEqual(JSON.parse(JSON.stringify(noFix.map(i => i.source + '/' + i.area + ': ' + i.message))), []);
+  const noLink = d.issues.filter(i => !i.ref && i.source !== 'cross');
+  assert.deepEqual(JSON.parse(JSON.stringify(noLink.map(i => i.message))), [], 'every problem links to a row or tab');
+  const sync = d.issues.find(i => i.source === 'finance' && i.area === 'sync');
+  assert.match(sync.fix.steps[1], /Finance → Settings → Sync/);
+});
+
+test('a sync failure counts as recovered once the app saves again', () => {
+  const books = { g: fx.garage(), f: fx.finance(), w: fx.flow() };
+  // Flow failed on 15 Nov at midnight (date-only rows) and saved at 07:00: recovered.
+  const gs = load(PROPS);
+  const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(books[id]));
+  const flowSync = d.issues.find(i => i.source === 'flow' && i.area === 'sync');
+  assert.equal(flowSync.recovered, true);
+  assert.equal(flowSync.level, 'info');
+  assert.match(flowSync.message, /^Recovered: /);
+  assert.ok(!d.brief.some(b => /Flow is failing to sync/.test(b.text)), 'brief no longer warns about Flow sync');
+  // Finance last failed at 15:30, after its last save: still a live error.
+  const finSync = d.issues.find(i => i.source === 'finance' && i.area === 'sync');
+  assert.equal(finSync.level, 'error');
+  assert.ok(!finSync.recovered);
 });

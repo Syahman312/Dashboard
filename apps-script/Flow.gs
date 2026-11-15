@@ -30,7 +30,7 @@ function readFlow_(ss, ctx) {
   var log = summariseLog_(T['_Log'], { time: 'Time', msg: 'Message', area: 'Area', level: 'Level', source: 'Source' }, ctx, issues, 7);
   if (log.dateOnlyRows) {
     issues.add('info', 'formats', log.dateOnlyRows + ' _Log entr(ies) record only a date, without the time',
-      'Some clients write "11/15/2026" instead of a full timestamp. Write ISO timestamps everywhere (see CONVENTIONS.md).');
+      'Some clients write "11/15/2026" instead of a full timestamp. Write ISO timestamps everywhere (see CONVENTIONS.md).', { gid: T['_Log'].gid });
   }
 
   var lastChange = null;
@@ -91,8 +91,8 @@ function readTasks_(table, paperIds, ctx, issues) {
   if (badTime.length) issues.rows('warn', 'formats', badTime.length + ' task(s) have a time not in HH:mm', badTime);
   if (doneNoStamp.length) issues.rows('info', 'fields', doneNoStamp.length + ' done task(s) have no "Done At" time', doneNoStamp);
   if (badPaper.length) issues.rows('warn', 'links', badPaper.length + ' task(s) point to an ACCA paper that does not exist', badPaper);
-  if (out.overdueCount >= 5) issues.add('info', 'planning', out.overdueCount + ' overdue tasks — reschedule or drop some?');
-  if (!table.rows.length) issues.add('info', 'freshness', 'Tasks tab is empty — has Flow synced yet?');
+  if (out.overdueCount >= 5) issues.add('info', 'planning', out.overdueCount + ' overdue tasks — reschedule or drop some?', '', { gid: table.gid });
+  if (!table.rows.length) issues.add('info', 'freshness', 'Tasks tab is empty — has Flow synced yet?', '', { gid: table.gid });
   return out;
 }
 
@@ -144,7 +144,8 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
       if (!id) return;
       var p = {
         id: id, code: text_(r.Code), paper: text_(r.Paper), exam: toISODate_(r['Exam Date']),
-        targetHours: toNumber_(r['Target Hours']), status: text_(r.Status), minutes: 0, topics: 0, confSum: 0
+        targetHours: toNumber_(r['Target Hours']), status: text_(r.Status), minutes: 0, topics: 0, confSum: 0,
+        __row: r.__row, __gid: r.__gid
       };
       byId[id] = p; list.push(p);
     });
@@ -190,7 +191,7 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
     confidence: next.topics ? round2_(next.confSum / next.topics) : null, status: next.status
   } : null;
   if (nextOut && nextOut.targetHours && nextOut.daysLeft <= 30 && nextOut.hours < nextOut.targetHours * 0.6) {
-    issues.add('warn', 'study', next.code + ' exam in ' + nextOut.daysLeft + ' days with ' + nextOut.hours + ' of ' + nextOut.targetHours + ' target hours');
+    issues.add('warn', 'study', next.code + ' exam in ' + nextOut.daysLeft + ' days with ' + nextOut.hours + ' of ' + nextOut.targetHours + ' target hours', '', next);
   }
   return {
     byId: byId,

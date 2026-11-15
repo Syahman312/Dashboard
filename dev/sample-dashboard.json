@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "generatedAt": 1794702600000,
   "today": "2026-11-15",
   "sources": {
@@ -394,7 +394,7 @@
         },
         "lastChange": 1794697200000
       },
-      "ms": 9
+      "ms": 13
     },
     "finance": {
       "name": "Finance",
@@ -926,7 +926,7 @@
         },
         "lastChange": 1794700000000
       },
-      "ms": 14
+      "ms": 11
     },
     "garage": {
       "name": "Garage",
@@ -1153,18 +1153,23 @@
   },
   "issues": [
     {
-      "source": "flow",
-      "level": "error",
-      "area": "sync",
-      "message": "Could not reach the server — check the Web App URL — 2× in the last 7 days",
-      "detail": "Last at 15 Nov 00:00 · from Windows PC"
-    },
-    {
       "source": "finance",
       "level": "error",
       "area": "sync",
       "message": "No connection to the script. Check the Web App URL — 6× in the last 7 days",
-      "detail": "Last at 15 Nov 15:30 · from Windows browser"
+      "detail": "Last at 15 Nov 15:30 · from Windows browser",
+      "ref": {
+        "gid": 1001
+      },
+      "at": 1794727813000,
+      "fix": {
+        "where": "app",
+        "steps": [
+          "In Apps Script for the Finance app, open Deploy → Manage deployments and copy the Web app URL (ends in /exec).",
+          "On the device named below, open Finance → Settings → Sync, paste that URL and save.",
+          "Tap Sync now. Once it saves successfully this problem turns into \"recovered\" on its own."
+        ]
+      }
     },
     {
       "source": "garage",
@@ -1175,6 +1180,13 @@
       "ref": {
         "gid": 1000,
         "row": 13
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the row to see the entry and the date range suggested by the odometer.",
+          "In Garage, open that service log, set the correct date and save."
+        ]
       }
     },
     {
@@ -1186,6 +1198,12 @@
       "ref": {
         "gid": 1002,
         "row": 4
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the row to see the topic, then in Flow set its confidence again (0 = new, 3 = confident)."
+        ]
       }
     },
     {
@@ -1197,6 +1215,13 @@
       "ref": {
         "gid": 1003,
         "row": 22
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "These point to a paper, topic or habit that was deleted or never synced.",
+          "Open the rows, then in Flow pick the right paper or habit again (or delete the entry)."
+        ]
       }
     },
     {
@@ -1204,7 +1229,18 @@
       "level": "warn",
       "area": "study",
       "message": "FR exam in 19 days with 30 of 120 target hours",
-      "detail": ""
+      "detail": "",
+      "ref": {
+        "gid": 1001,
+        "row": 2
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Plan study sessions in Flow for the days left (1–2 hours a day closes most gaps).",
+          "Log each session in Flow → Study so the hours count. If you study but have not logged it, log it now."
+        ]
+      }
     },
     {
       "source": "flow",
@@ -1215,6 +1251,12 @@
       "ref": {
         "gid": 1000,
         "row": 9
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the rows to find the entries, then fill in the missing value in Flow."
+        ]
       }
     },
     {
@@ -1226,6 +1268,12 @@
       "ref": {
         "gid": 1000,
         "row": 10
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the task in Flow and pick the time again with the time picker (24-hour, e.g. 09:00)."
+        ]
       }
     },
     {
@@ -1237,6 +1285,13 @@
       "ref": {
         "gid": 1000,
         "row": 11
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "These point to a paper, topic or habit that was deleted or never synced.",
+          "Open the rows, then in Flow pick the right paper or habit again (or delete the entry)."
+        ]
       }
     },
     {
@@ -1248,6 +1303,13 @@
       "ref": {
         "gid": 1007,
         "row": 6
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "These point to a paper, topic or habit that was deleted or never synced.",
+          "Open the rows, then in Flow pick the right paper or habit again (or delete the entry)."
+        ]
       }
     },
     {
@@ -1255,7 +1317,18 @@
       "level": "warn",
       "area": "amounts",
       "message": "Account \"Study Loan\" shows amount owed as negative (-9800)",
-      "detail": "Other debts are positive. Use one sign for \"Owed\" so totals add up. Row 10"
+      "detail": "Other debts are positive. Use one sign for \"Owed\" so totals add up. Row 10",
+      "ref": {
+        "gid": 1006,
+        "row": 10
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "In Finance → Accounts, edit this account and enter the amount owed as a positive number.",
+          "All debts should use the same sign so totals and net worth add up."
+        ]
+      }
     },
     {
       "source": "finance",
@@ -1266,6 +1339,12 @@
       "ref": {
         "gid": 1005,
         "row": 126
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the rows to find them, then give each transaction a category in Finance."
+        ]
       }
     },
     {
@@ -1273,35 +1352,89 @@
       "level": "warn",
       "area": "accounts",
       "message": "1 transaction(s) use account \"Old Wallet\", which is not in the Accounts tab",
-      "detail": ""
+      "detail": "row 127",
+      "ref": {
+        "gid": 1005,
+        "row": 127
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Either add this account in Finance → Accounts,",
+          "or edit these transactions to use the right existing account."
+        ]
+      }
     },
     {
       "source": "finance",
       "level": "warn",
       "area": "categories",
       "message": "Category written 2 ways: 🍽️ Food & Drinks · 🍔 Food & Drinks",
-      "detail": ""
+      "detail": "🍽️ Food & Drinks ×72, 🍔 Food & Drinks ×1",
+      "ref": {
+        "gid": 1005,
+        "row": 128
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "In Finance → Categories, keep one version and merge the other into it (the link opens a transaction that uses the rarer one).",
+          "If there is no merge option, edit the category's icon so both match."
+        ]
+      }
     },
     {
       "source": "finance",
       "level": "warn",
       "area": "amounts",
       "message": "1 positive amount(s) in spending category \"🍜 Food\" in the last 30 days",
-      "detail": "Refund, or is the sign wrong? e.g. 2026-11-15 RM 232.00 on Aeon Bank (row 110)"
+      "detail": "Refund, or is the sign wrong? e.g. 2026-11-15 RM 232.00 on Aeon Bank (row 110)",
+      "ref": {
+        "gid": 1005,
+        "row": 110
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the row. If it is a refund, that is fine: hide this problem.",
+          "If it is income or a transfer, change its category in Finance (e.g. Income or Transfer). If the sign is wrong, edit the amount."
+        ]
+      }
     },
     {
       "source": "finance",
       "level": "warn",
       "area": "payslips",
       "message": "Payslip 2026-08-25: Gross − Deductions ≠ Net",
-      "detail": "row 4"
+      "detail": "row 4",
+      "ref": {
+        "gid": 1003,
+        "row": 4
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the row and check the figures against the payslip PDF, then correct them in Finance."
+        ]
+      }
     },
     {
       "source": "finance",
       "level": "warn",
       "area": "gold",
       "message": "Gold price failed: Failed to fetch — 4× in the last 7 days",
-      "detail": "Last at 14 Nov 12:03 · from Windows browser"
+      "detail": "Last at 14 Nov 12:03 · from Windows browser",
+      "ref": {
+        "gid": 1001
+      },
+      "at": 1794628980000,
+      "fix": {
+        "where": "none",
+        "steps": [
+          "Maybank blocks the price check when it runs from the browser, so it fails every time.",
+          "Lasting fix: move the gold price fetch into the Finance app's Apps Script (ask Claude). Until then, enter the gold price by hand."
+        ]
+      }
     },
     {
       "source": "garage",
@@ -1312,6 +1445,13 @@
       "ref": {
         "gid": 1000,
         "row": 10
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "The year was stored wrongly (e.g. 0021 instead of 2021). The dashboard reads it correctly, but the app may not.",
+          "In Garage, open that entry, pick the date again from the date picker and save."
+        ]
       }
     },
     {
@@ -1323,6 +1463,13 @@
       "ref": {
         "gid": 1000,
         "row": 23
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "One entry has a date or odometer reading that does not fit with the entries before and after it.",
+          "Open the row, compare it with its neighbours, then correct the date or odometer in Garage."
+        ]
       }
     },
     {
@@ -1330,7 +1477,18 @@
       "level": "warn",
       "area": "renewals",
       "message": "Demo Car: Road tax expires in 24 days (2026-12-09)",
-      "detail": ""
+      "detail": "",
+      "ref": {
+        "gid": 1000,
+        "row": 9
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Renew it (MyJPJ / Pos Malaysia for road tax, or your insurer).",
+          "Then update the expiry date in Garage → your car → Road tax / Insurance."
+        ]
+      }
     },
     {
       "source": "flow",
@@ -1341,6 +1499,32 @@
       "ref": {
         "gid": 1000,
         "row": 8
+      },
+      "fix": {
+        "where": "none",
+        "steps": [
+          "Older tasks were ticked off before Flow recorded the time. Nothing to fix; hide this if it bothers you."
+        ]
+      }
+    },
+    {
+      "source": "flow",
+      "level": "info",
+      "area": "sync",
+      "message": "Recovered: Could not reach the server — check the Web App URL — 2× in the last 7 days",
+      "detail": "Last at 15 Nov 00:00 · from Windows PC · the app has saved successfully since",
+      "ref": {
+        "gid": 1008
+      },
+      "at": 1794672000000,
+      "recovered": true,
+      "fix": {
+        "where": "app",
+        "steps": [
+          "In Apps Script for the Flow app, open Deploy → Manage deployments and copy the Web app URL (ends in /exec).",
+          "On the device named below, open Flow → Settings → Sync, paste that URL and save.",
+          "Tap Sync now. Once it saves successfully this problem turns into \"recovered\" on its own."
+        ]
       }
     },
     {
@@ -1348,21 +1532,51 @@
       "level": "info",
       "area": "formats",
       "message": "2 _Log entr(ies) record only a date, without the time",
-      "detail": "Some clients write \"11/15/2026\" instead of a full timestamp. Write ISO timestamps everywhere (see CONVENTIONS.md)."
+      "detail": "Some clients write \"11/15/2026\" instead of a full timestamp. Write ISO timestamps everywhere (see CONVENTIONS.md).",
+      "ref": {
+        "gid": 1008
+      },
+      "fix": {
+        "where": "none",
+        "steps": [
+          "This is in Flow's code, not your data: some devices log only the date.",
+          "Ask Claude to change Flow to write full timestamps. It does no harm meanwhile."
+        ]
+      }
     },
     {
       "source": "finance",
       "level": "info",
       "area": "housekeeping",
       "message": "Tab \"Sheet1\" is empty and can be deleted",
-      "detail": ""
+      "detail": "",
+      "ref": {
+        "gid": 1000
+      },
+      "fix": {
+        "where": "sheet",
+        "steps": [
+          "In the Finance tracker sheet, right-click the empty tab → Delete."
+        ]
+      }
     },
     {
       "source": "finance",
       "level": "info",
       "area": "categories",
       "message": "Similar categories \"🍜 Food\" and \"🍽️ Food & Drinks\" — merge?",
-      "detail": ""
+      "detail": "",
+      "ref": {
+        "gid": 1005,
+        "row": 110
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Decide whether these are really different. If not, merge them in Finance → Categories.",
+          "If they are meant to be different, hide this problem."
+        ]
+      }
     },
     {
       "source": "finance",
@@ -1373,6 +1587,13 @@
       "ref": {
         "gid": 1005,
         "row": 132
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the rows and compare them with your bank statement.",
+          "Delete the extra copy in Finance. If both are real (two identical purchases), hide this problem."
+        ]
       }
     },
     {
@@ -1380,41 +1601,75 @@
       "level": "info",
       "area": "reconciliation",
       "message": "3 balance adjustments this month (net RM -66.35)",
-      "detail": "Frequent adjustments mean some spending is not being recorded."
+      "detail": "Frequent adjustments mean some spending is not being recorded.",
+      "ref": {
+        "gid": 1005,
+        "row": 122
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Each adjustment means the app and the bank disagreed. Look for the spending you missed on the statement.",
+          "Record it as normal transactions next time instead of adjusting the balance. This clears at the start of next month."
+        ]
+      }
     },
     {
       "source": "garage",
       "level": "info",
       "area": "categories",
       "message": "Service item \"Wiper blades\" is used in 1 log(s) but is not in the service list",
-      "detail": ""
+      "detail": "",
+      "ref": {
+        "gid": 1000,
+        "row": 11
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "In Garage, add \"Wiper blades\" to the service list (Settings → Service items),",
+          "or edit the log to use an item that is already in the list."
+        ]
+      }
     },
     {
       "source": "garage",
       "level": "info",
       "area": "housekeeping",
       "message": "1 deleted row(s) are still stored in the sheet",
-      "detail": ""
+      "detail": "",
+      "ref": {
+        "gid": 1000
+      },
+      "fix": {
+        "where": "none",
+        "steps": [
+          "Harmless: deleted entries are kept so other devices learn about the deletion.",
+          "Optional tidy-up: in the sheet, filter the \"deleted\" column for \"yes\" and delete those rows."
+        ]
+      }
     },
     {
       "source": "cross",
       "level": "info",
       "area": "fuel",
       "message": "Fuel this month: RM 100.00 in Garage vs RM 50.00 in Finance",
-      "detail": "One of the apps is missing a fill-up."
+      "detail": "One of the apps is missing a fill-up.",
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Compare this month's fill-ups in Garage with fuel spending in Finance.",
+          "Add the missing fill-up to whichever app does not have it."
+        ]
+      }
     }
   ],
   "counts": {
-    "error": 3,
+    "error": 2,
     "warn": 17,
-    "info": 9
+    "info": 10
   },
   "brief": [
-    {
-      "tone": "bad",
-      "src": "flow",
-      "text": "Flow is failing to sync (2 failures this week) — check its Web App URL"
-    },
     {
       "tone": "bad",
       "src": "finance",

@@ -15,7 +15,11 @@ app last saved to the Sheet, so a broken sync is obvious.
 There is also a **Health check** that lists problems in each app's data, such as missing columns, impossible dates,
 categories written two ways, a negative debt, money in on a spending category, links to records that don't exist,
 duplicates, stale data, and the sync and gold-price failures from each app's own log.
-Each problem links straight to the sheet row, and **Hide** removes ones you already know about (on that device).
+Each problem has **How to fix** steps saying where to fix it (in the app, in the sheet, or nothing to edit), an
+**Open row** / **Open tab** button that jumps to the exact place, and **Hide** for problems you accept (on that device).
+After fixing, press **Recheck**: the Sheets are read again and the page tells you how many problems cleared.
+Sync failures turn into "Recovered" by themselves once the app saves successfully again.
+The fix steps live in `apps-script/Fixes.gs`.
 
 ## Set up (about 10 minutes)
 
