@@ -41,6 +41,21 @@ Each problem links straight to the sheet row, and **Hide** removes ones you alre
 Data is cached for 30 minutes. **Refresh** reads the Sheets again. The page also keeps the last data on your device,
 so it shows straight away and updates behind it.
 
+## Home-screen icon
+
+The icon lives in `docs/icons/` (`icon.svg` is the source; the PNGs are made from it).
+
+- **Android / desktop:** the dashboard uses the icon as its favicon, so *Add to Home screen* in Chrome on the
+  dashboard itself picks it up.
+- **iPhone:** Apps Script wraps the page in Google's own frame, which never carries an iPhone icon. A small
+  launcher page in `docs/` does instead:
+  1. In GitHub, open **Settings → Pages**, choose **Deploy from a branch**, branch `claude/quirky-albattani-2xi1ko`,
+     folder **/docs**, then **Save**. After a minute it is live at <https://syahman312.github.io/Dashboard/>.
+  2. On the iPhone, open that link **in Safari**, paste your web app URL (ends in `/exec`) and tap **Save**.
+  3. Tap **Share → Add to Home Screen**. The icon opens straight into the dashboard.
+
+  Your web app URL is never committed. It is stored only in the home-screen shortcut and on your phone.
+
 ## Publishing changes with one command (clasp)
 
 Do this once on your PC. After that, `npm run deploy` replaces copying files by hand.

@@ -9,7 +9,7 @@
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
  */
 
-var DASH_VERSION = '1.2.0';
+var DASH_VERSION = '1.2.1';
 var CACHE_KEY = 'dashboard:v2';
 var CACHE_SECONDS = 1800;     // 30 min; the warm-up trigger refreshes it every 15
 var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
@@ -20,10 +20,18 @@ var SOURCES = [
   { key: 'garage', name: 'Garage', prop: 'GARAGE_SHEET_ID', reader: function (ss, ctx) { return readGarage_(ss, ctx); } }
 ];
 
+// Home-screen / tab icon, served from the public repo (docs/icons). Apps Script needs a URL ending in .png.
+var ICON_URL = 'https://raw.githubusercontent.com/Syahman312/Dashboard/claude/quirky-albattani-2xi1ko/docs/icons/icon-192.png';
+
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
+  var page = HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Dashboard')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
+  // Nice-to-haves: never let them stop the page from loading.
+  try { page.setFaviconUrl(ICON_URL); } catch (e) { /* icon unavailable */ }
+  try { page.addMetaTag('mobile-web-app-capable', 'yes'); } catch (e) { /* tag not allowed */ }
+  try { page.addMetaTag('apple-mobile-web-app-capable', 'yes'); } catch (e) { /* tag not allowed */ }
+  return page;
 }
 
 /** Called from the page. Returns a JSON string (Dates can't cross google.script.run). */
