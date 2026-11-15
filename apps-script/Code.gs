@@ -1,6 +1,9 @@
 /**
  * Morning Dashboard — read-only view over the Garage, Finance and Flow Sheets.
  *
+ * The code only ever reads. Apps Script needs the full "spreadsheets" scope for
+ * SpreadsheetApp.openById (the readonly scope is not accepted for it).
+ *
  * Deploy as a Web App: Execute as "Me", Who has access "Only myself".
  * Sheet IDs live in Script Properties (Project Settings → Script Properties):
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
@@ -90,8 +93,10 @@ function testDashboard() {
   var d = buildDashboard_(new Date());
   Object.keys(d.sources).forEach(function (k) {
     var s = d.sources[k];
-    Logger.log('%s: %s (%sms) %s', s.name, s.ok ? 'OK' : 'FAILED', s.ms, s.error || '');
+    Logger.log(s.name + ': ' + (s.ok ? 'OK' : 'FAILED') + ' (' + s.ms + 'ms) ' + (s.error || ''));
   });
-  Logger.log('Issues: %s errors, %s warnings, %s info', d.counts.error, d.counts.warn, d.counts.info);
-  d.issues.forEach(function (i) { Logger.log('[%s] %s/%s: %s', i.level, i.source, i.area, i.message); });
+  Logger.log('Issues: ' + d.counts.error + ' errors, ' + d.counts.warn + ' warnings, ' + d.counts.info + ' info');
+  d.issues.forEach(function (i) {
+    Logger.log('[' + i.level + '] ' + i.source + '/' + i.area + ': ' + i.message + (i.detail ? ' — ' + i.detail : ''));
+  });
 }

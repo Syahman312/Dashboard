@@ -25,7 +25,7 @@ duplicates, stale data, and the sync and gold-price failures from each app's own
    - `GARAGE_SHEET_ID`: the ID from the Car Tracker URL
 
    (The ID is the long part of the URL between `/d/` and `/edit`.)
-4. In the editor, run **`testDashboard`** once. Google asks you to grant *read-only* access to Sheets.
+4. In the editor, run **`testDashboard`** once. Google asks you to allow access to your Sheets. (Apps Script needs full Sheets access to open a Sheet by its ID, but the dashboard code never writes.)
    The execution log lists each sheet as OK or FAILED, followed by every issue found.
 5. **Deploy → New deployment → Web app**. Set *Execute as: Me* and *Who has access: Only myself*.
    Open the URL, and on your phone use *Add to Home Screen*.

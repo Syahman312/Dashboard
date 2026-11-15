@@ -54,7 +54,7 @@ log_(level, area, message, detail) -> appends to _Log
 ```
 
 - Return JSON with `ContentService` and `{ ok: true, data }` or `{ ok: false, error }`. Never return a bare string.
-- A reader that only reads uses the `spreadsheets.readonly` scope (the dashboard does this).
+- Apps Script's `SpreadsheetApp.openById` needs the full `spreadsheets` scope; `spreadsheets.readonly` is rejected. A read-only app enforces that in code by never calling a write method.
 
 ## 5. Style
 
