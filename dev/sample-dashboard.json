@@ -1,12 +1,12 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "generatedAt": 1794702600000,
   "today": "2026-11-15",
   "sources": {
     "flow": {
       "name": "Flow",
       "ok": true,
-      "url": null,
+      "url": "https://docs.google.com/spreadsheets/d/sample-flow/edit",
       "summary": {
         "tasks": {
           "today": [
@@ -204,14 +204,15 @@
           "recent": 2,
           "lastProblemAt": 1794672000000,
           "dateOnlyRows": 2
-        }
+        },
+        "lastChange": 1794697200000
       },
       "ms": 7
     },
     "finance": {
       "name": "Finance",
       "ok": true,
-      "url": null,
+      "url": "https://docs.google.com/spreadsheets/d/sample-finance/edit",
       "summary": {
         "netWorth": 12339.69,
         "groups": {
@@ -240,6 +241,7 @@
           "month": "2026-11",
           "spent": 348.2,
           "income": 3295,
+          "projected": 696.4,
           "prevSpent": 563.4,
           "prevSamePoint": 235.9,
           "today": 20.3
@@ -372,14 +374,15 @@
           "recent": 10,
           "lastProblemAt": 1794727813000,
           "dateOnlyRows": 0
-        }
+        },
+        "lastChange": 1794700000000
       },
       "ms": 9
     },
     "garage": {
       "name": "Garage",
       "ok": true,
-      "url": null,
+      "url": "https://docs.google.com/spreadsheets/d/sample-garage/edit",
       "summary": {
         "cars": [
           {
@@ -467,9 +470,10 @@
           "logs": 3,
           "fuel": 14,
           "deleted": 1
-        }
+        },
+        "lastChange": 1794657600000
       },
-      "ms": 1
+      "ms": 2
     }
   },
   "issues": [
@@ -492,21 +496,33 @@
       "level": "error",
       "area": "dates",
       "message": "Date saved as \"0009-10-26\" — the date column says 2009-10-26, which is before the car was made (2015)",
-      "detail": "row 13. At 117900 km it most likely happened between 2026-08-24 and 2026-08-31. Fix the date in Garage."
+      "detail": "row 13. At 117900 km it most likely happened between 2026-08-24 and 2026-08-31. Fix the date in Garage.",
+      "ref": {
+        "gid": 1000,
+        "row": 13
+      }
     },
     {
       "source": "flow",
       "level": "warn",
       "area": "fields",
       "message": "1 topic(s) have confidence outside 0–3",
-      "detail": "row 4"
+      "detail": "row 4",
+      "ref": {
+        "gid": 1002,
+        "row": 4
+      }
     },
     {
       "source": "flow",
       "level": "warn",
       "area": "links",
       "message": "1 study session(s) point to a paper that does not exist",
-      "detail": "row 22"
+      "detail": "row 22",
+      "ref": {
+        "gid": 1003,
+        "row": 22
+      }
     },
     {
       "source": "flow",
@@ -520,28 +536,44 @@
       "level": "warn",
       "area": "fields",
       "message": "1 task(s) have no title",
-      "detail": "row 9"
+      "detail": "row 9",
+      "ref": {
+        "gid": 1000,
+        "row": 9
+      }
     },
     {
       "source": "flow",
       "level": "warn",
       "area": "formats",
       "message": "1 task(s) have a time not in HH:mm",
-      "detail": "row 10"
+      "detail": "row 10",
+      "ref": {
+        "gid": 1000,
+        "row": 10
+      }
     },
     {
       "source": "flow",
       "level": "warn",
       "area": "links",
       "message": "1 task(s) point to an ACCA paper that does not exist",
-      "detail": "row 11"
+      "detail": "row 11",
+      "ref": {
+        "gid": 1000,
+        "row": 11
+      }
     },
     {
       "source": "flow",
       "level": "warn",
       "area": "links",
       "message": "1 habit log entr(ies) point to a habit that does not exist",
-      "detail": "row 6"
+      "detail": "row 6",
+      "ref": {
+        "gid": 1007,
+        "row": 6
+      }
     },
     {
       "source": "finance",
@@ -555,7 +587,11 @@
       "level": "warn",
       "area": "categories",
       "message": "2 transaction(s) in the last 90 days have no category",
-      "detail": "rows 126, 127"
+      "detail": "rows 126, 127",
+      "ref": {
+        "gid": 1005,
+        "row": 126
+      }
     },
     {
       "source": "finance",
@@ -597,14 +633,22 @@
       "level": "warn",
       "area": "dates",
       "message": "Date saved as \"0021-03-02\" (typo year) — reading it as 2021-03-02",
-      "detail": "row 10. Re-save this entry in Garage to fix the stored date."
+      "detail": "row 10. Re-save this entry in Garage to fix the stored date.",
+      "ref": {
+        "gid": 1000,
+        "row": 10
+      }
     },
     {
       "source": "garage",
       "level": "warn",
       "area": "odometer",
       "message": "Demo Car: odometer goes backwards 1 time(s)",
-      "detail": "2026-10-12 (119190 km, row 23)"
+      "detail": "2026-10-12 (119190 km, row 23)",
+      "ref": {
+        "gid": 1000,
+        "row": 23
+      }
     },
     {
       "source": "garage",
@@ -618,7 +662,11 @@
       "level": "info",
       "area": "fields",
       "message": "1 done task(s) have no \"Done At\" time",
-      "detail": "row 8"
+      "detail": "row 8",
+      "ref": {
+        "gid": 1000,
+        "row": 8
+      }
     },
     {
       "source": "flow",
@@ -646,7 +694,11 @@
       "level": "info",
       "area": "duplicates",
       "message": "1 possible duplicate transaction(s) in the last 60 days",
-      "detail": "row 132"
+      "detail": "row 132",
+      "ref": {
+        "gid": 1005,
+        "row": 132
+      }
     },
     {
       "source": "finance",
@@ -681,5 +733,72 @@
     "error": 3,
     "warn": 17,
     "info": 9
-  }
+  },
+  "brief": [
+    {
+      "tone": "bad",
+      "src": "flow",
+      "text": "Flow is failing to sync (2 failures this week) — check its Web App URL"
+    },
+    {
+      "tone": "bad",
+      "src": "finance",
+      "text": "Finance is failing to sync (6 failures this week) — check its Web App URL"
+    },
+    {
+      "tone": "warn",
+      "src": "flow",
+      "text": "Tasks: 4 due today, 2 overdue"
+    },
+    {
+      "tone": "warn",
+      "src": "flow",
+      "text": "FR exam in 19 days — 30 of 120 h studied"
+    },
+    {
+      "tone": "warn",
+      "src": "flow",
+      "text": "Month-end close 2026-10: 2 item(s) behind (today is WD10)"
+    },
+    {
+      "tone": "warn",
+      "src": "finance",
+      "text": "Spent RM 348.20 this month, RM 112.30 more than this point last month (on pace for RM 696)"
+    },
+    {
+      "tone": "warn",
+      "src": "garage",
+      "text": "Demo Car road tax due in 24 days"
+    }
+  ],
+  "upcoming": [
+    {
+      "date": "2026-11-17",
+      "days": 2,
+      "label": "Plan week",
+      "src": "flow",
+      "tone": ""
+    },
+    {
+      "date": "2026-11-23",
+      "days": 8,
+      "label": "Payday (expected)",
+      "src": "finance",
+      "tone": "good"
+    },
+    {
+      "date": "2026-12-04",
+      "days": 19,
+      "label": "FR exam",
+      "src": "flow",
+      "tone": "warn"
+    },
+    {
+      "date": "2026-12-09",
+      "days": 24,
+      "label": "Demo Car road tax",
+      "src": "garage",
+      "tone": "warn"
+    }
+  ]
 }

@@ -17,7 +17,7 @@ function garage() {
     const id = 'svc-' + n.toLowerCase().replace(/\s+/g, '-');
     rows.push([id, JSON.stringify({ id, kind: 'svc', name: n, deleted: 0, updated: 1 }), 'svc', '', '', n, '', '', '']);
   });
-  const car = { id: 'car1', kind: 'car', name: 'Demo Car', plate: 'ABC1234', year: '2015', odo: 120500, rtax: addDays(TODAY, 24), tank: 40, updated: 1 };
+  const car = { id: 'car1', kind: 'car', name: 'Demo Car', plate: 'ABC1234', year: '2015', odo: 120500, rtax: addDays(TODAY, 24), tank: 40, updated: Date.parse('2026-11-14T20:00:00+08:00') };
   rows.push(['car1', JSON.stringify(car), 'car', '', 120500, 'Demo Car', '', '', '']);
 
   const log = (id, date, odo, items, cost, extra) => {
@@ -91,7 +91,7 @@ function finance() {
   for (let i = 0; i < 6; i++) log.push(['11/15/2026 1' + i + ':30:13', 'Windows browser', '2026-11-15.2', 'sync', 'No connection to the script. Check the Web App URL', 'online: true']);
   for (let i = 0; i < 4; i++) log.push(['11/14/2026 12:0' + i + ':00', 'Windows browser', '2026-11-15.2', 'gold', 'Gold price failed: Failed to fetch', '']);
 
-  return { Sheet1: [], Log: log, Goals: goals, Payslips: pay, _data: [['{"cfg":{}}']], Transactions: tx, Accounts: accounts,
+  return { Sheet1: [], Log: log, Goals: goals, Payslips: pay, _data: [['{"cfg":{},"tx":[{"id":"a","u":1794558494023,"date":"2022-10-09"},{"id":"b","u":17'], ['94700000000,"date":"2026-11-15"}]}']], Transactions: tx, Accounts: accounts,
     Statements: [['Month', 'Account', 'File', 'Link']] };
 }
 
@@ -99,7 +99,7 @@ function finance() {
 function flow() {
   const tasks = [['ID', 'Updated', 'Task', 'Date', 'Time', 'Duration (min)', 'Done', 'Done At', 'Priority', 'Area', 'Repeat', 'Repeat Spawned', 'Paper ID', 'Google Calendar', 'Event ID', 'Top 3', 'Notes']];
   const t = (id, task, date, time, done, doneAt, top3, paper) =>
-    tasks.push([id, 1, task, date ? d(date) : '', time || '', 30, done ? true : false, doneAt || '', 'normal', 'Work', '', '', paper || '', '', '', top3 ? true : false, '']);
+    tasks.push([id, Date.parse('2026-11-15T07:00:00+08:00'), task, date ? d(date) : '', time || '', 30, done ? true : false, doneAt || '', 'normal', 'Work', '', '', paper || '', '', '', top3 ? true : false, '']);
   t('t1', 'Review bank recs', TODAY, '09:00', false, '', true);
   t('t2', 'Gym', TODAY, '18:30', false, '', false);
   t('t3', 'FR mock exam', TODAY, '', false, '', true, 'p1');

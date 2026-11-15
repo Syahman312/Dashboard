@@ -134,3 +134,45 @@ test('unset sheet ID is a clear error', () => {
   const d = gs.buildDashboard_(fx.NOW, () => { throw new Error('should not open'); });
   assert.match(d.sources.flow.error, /FLOW_SHEET_ID/);
 });
+
+test('brief, coming up, freshness and row links', () => {
+  const d = build();
+  const texts = d.brief.map(b => b.text).join(' | ');
+  assert.match(texts, /Flow is failing to sync \(2 failures/);
+  assert.match(texts, /Finance is failing to sync \(6 failures/);
+  assert.match(texts, /Tasks: 4 due today, 2 overdue/);
+  assert.match(texts, /FR exam in 19 days/);
+  assert.match(texts, /on pace for RM \d+/);
+  assert.match(texts, /Demo Car road tax due in 24 days/);
+  assert.equal(d.brief[0].tone, 'bad', 'sync problems lead');
+
+  const up = d.upcoming.map(u => u.date + ' ' + u.label);
+  assert.ok(up.includes('2026-11-17 Plan week'));
+  assert.ok(up.includes('2026-11-23 Payday (expected)'));
+  assert.ok(up.includes('2026-12-04 FR exam'));
+  assert.ok(up.includes('2026-12-09 Demo Car road tax'));
+  assert.deepEqual(JSON.parse(JSON.stringify(up)), JSON.parse(JSON.stringify(up)).slice().sort());
+
+  assert.equal(d.sources.flow.summary.lastChange, Date.parse('2026-11-15T07:00:00+08:00'));
+  assert.equal(d.sources.finance.summary.lastChange, 1794700000000, 'scans _data across cells');
+  assert.equal(d.sources.garage.summary.lastChange, Date.parse('2026-11-14T20:00:00+08:00'));
+
+  const noTitle = d.issues.find(i => /have no title/.test(i.message));
+  assert.deepEqual(JSON.parse(JSON.stringify(noTitle.ref)), { gid: 1000, row: 9 });
+  const typo = d.issues.find(i => /0021-03-02/.test(i.message));
+  assert.equal(typo.ref.row, 10);
+});
+
+test('cache splits large payloads into chunks and joins them back', () => {
+  const gs = load(PROPS);
+  const store = {};
+  gs.CacheService.getScriptCache = () => ({
+    get: k => store[k] === undefined ? null : store[k],
+    getAll: ks => Object.fromEntries(ks.filter(k => k in store).map(k => [k, store[k]])),
+    putAll: o => Object.assign(store, o)
+  });
+  const big = JSON.stringify({ x: 'y'.repeat(250000) });
+  gs.cachePut_(big);
+  assert.equal(store[gs.CACHE_KEY], '3');
+  assert.equal(gs.cacheGet_(), big);
+});

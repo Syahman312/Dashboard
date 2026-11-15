@@ -8,7 +8,7 @@ const fx = require('../test/fixtures');
 const books = { g: fx.garage(), f: fx.finance(), w: fx.flow() };
 const gs = load({ GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w' });
 const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(books[id]));
-Object.values(d.sources).forEach(s => { s.url = null; });
+Object.keys(d.sources).forEach(k => { d.sources[k].url = 'https://docs.google.com/spreadsheets/d/sample-' + k + '/edit'; });
 const out = path.join(__dirname, 'sample-dashboard.json');
 fs.writeFileSync(out, JSON.stringify(d, null, 2));
 console.log('Wrote', out, '-', d.counts);

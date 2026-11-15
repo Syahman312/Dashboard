@@ -8,9 +8,14 @@ One screen to check every morning. It **reads** (and never writes) the Sheets be
 | **Finance** | Finance tracker | Spending this month vs last, 6-month trend, top categories, net worth, debts, payslip, goals |
 | **Garage** | Car Tracker | Road tax countdown, last service, items longest since done, fuel economy and spend |
 
+At the top, a **Morning brief** sums the day up in a few sentences (sync problems first), and **Coming up** lists every dated
+item in the next 45 days from all three apps: tasks, exams, road tax, goals and expected payday. Each card shows when its
+app last saved to the Sheet, so a broken sync is obvious.
+
 There is also a **Health check** that lists problems in each app's data, such as missing columns, impossible dates,
 categories written two ways, a negative debt, money in on a spending category, links to records that don't exist,
 duplicates, stale data, and the sync and gold-price failures from each app's own log.
+Each problem links straight to the sheet row, and **Hide** removes ones you already know about (on that device).
 
 ## Set up (about 10 minutes)
 
@@ -30,7 +35,11 @@ duplicates, stale data, and the sync and gold-price failures from each app's own
 5. **Deploy → New deployment → Web app**. Set *Execute as: Me* and *Who has access: Only myself*.
    Open the URL, and on your phone use *Add to Home Screen*.
 
-Data is cached for 5 minutes. **Refresh** reads the Sheets again.
+6. Optional, for instant opening: run **`installWarmUp`** once from the editor (it asks for permission to run on a timer).
+   From 6am until midnight it re-reads the Sheets every 15 minutes, so the page never waits about 12 seconds for them.
+
+Data is cached for 30 minutes. **Refresh** reads the Sheets again. The page also keeps the last data on your device,
+so it shows straight away and updates behind it.
 
 ## Develop
 

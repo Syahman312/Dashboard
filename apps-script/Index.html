@@ -100,6 +100,23 @@ a.pill { color: inherit; text-decoration: none; }
 .banner.err { border-color: var(--bad); }
 .skeleton { height: 220px; border-radius: var(--radius); background: linear-gradient(90deg, var(--card) 0%, var(--card-2) 50%, var(--card) 100%); background-size: 200% 100%; animation: sh 1.2s infinite linear; }
 @keyframes sh { to { background-position: -200% 0; } }
+.topgrid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+@media (max-width: 980px) { .topgrid { grid-template-columns: 1fr; } }
+.brief { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.brief li { display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 12px; align-items: center; font-size: 15px; }
+.brief li::before { content: ""; align-self: stretch; border-radius: 2px; background: var(--info); }
+.brief li.bad::before { background: var(--bad); } .brief li.warn::before { background: var(--warn); } .brief li.good::before { background: var(--good); }
+.brief .src { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+.up li .when { display: inline-block; min-width: 54px; font-size: 12px; color: var(--muted); }
+.up li .when.soon { color: var(--warn); }
+.fresh { font-size: 11.5px; font-weight: 500; text-transform: none; letter-spacing: 0; padding: 2px 8px; border-radius: 999px; background: var(--card-2); color: var(--muted); white-space: nowrap; }
+.fresh.ok { color: var(--good); } .fresh.warn { color: var(--warn); } .fresh.bad { color: var(--bad); }
+.h2r { display: inline-flex; gap: 8px; align-items: center; }
+.issue .acts { grid-column: 2; display: flex; gap: 12px; font-size: 12.5px; margin-top: 2px; }
+.issue .acts a, .linkbtn { color: var(--accent); text-decoration: none; background: none; border: 0; padding: 0; font-size: 12.5px; cursor: pointer; }
+.linkbtn.faint { color: var(--faint); }
+.hidden-note { font-size: 13px; color: var(--faint); margin-top: 10px; }
+.banner.stale { border-color: var(--line); color: var(--muted); font-size: 13.5px; padding: 8px 12px; }
 footer { margin-top: 26px; color: var(--faint); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
 footer a { color: var(--muted); }
 </style>
@@ -120,6 +137,11 @@ footer a { color: var(--muted); }
   <div id="banner"></div>
   <div class="attention" id="attention"></div>
 
+  <section class="topgrid" id="top" hidden>
+    <article class="card"><h2><span>Morning brief</span></h2><ul class="brief" id="brief"></ul></article>
+    <article class="card up"><h2><span>Coming up</span><span class="faint">next 45 days</span></h2><ul class="list" id="upcoming"></ul></article>
+  </section>
+
   <main class="grid" id="grid">
     <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
   </main>
@@ -137,7 +159,11 @@ footer a { color: var(--muted); }
 
 <script>
 (function () {
-  var state = { data: null, filter: 'problems' };
+  var state = { data: null, filter: 'problems', loadedAt: 0, hidden: {} };
+  var LS_DATA = 'dash:last', LS_HIDDEN = 'dash:hidden';
+  var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } };
+  try { state.hidden = JSON.parse(lsGet(LS_HIDDEN) || '{}') || {}; } catch (e) { state.hidden = {}; }
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) {
     return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -158,18 +184,35 @@ footer a { color: var(--muted); }
   var ago = function (days) { return days === 0 ? 'today' : days === 1 ? 'yesterday' : days + ' days ago'; };
   var mins = function (m) { m = Math.round(m || 0); return m >= 60 ? Math.floor(m/60) + 'h ' + (m%60 ? m%60 + 'm' : '') : m + 'm'; };
   var plural = function (n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); };
+  var clock = function (ms) { var t = new Date(ms + 8 * 3600e3); return String(t.getUTCHours()).padStart(2,'0') + ':' + String(t.getUTCMinutes()).padStart(2,'0'); };
+  var rel = function (ms, now) {
+    var m = Math.round((now - ms) / 60000);
+    if (m < 2) return 'just now';
+    if (m < 60) return m + ' min ago';
+    var h = Math.round(m / 60);
+    if (h < 24) return h + ' h ago';
+    var dd = Math.round(h / 24);
+    return dd === 1 ? 'yesterday' : dd + ' days ago';
+  };
+  // Hidden issues are matched without their numbers, so "5× this week" stays hidden at "6×".
+  var issueKey = function (i) { return [i.source, i.area, i.message.replace(/\d+(\.\d+)?/g, '#')].join('|'); };
 
   function load(force) {
     $('refresh').disabled = true;
     $('refresh').textContent = '↻ Loading…';
     var done = function (json) {
       $('refresh').disabled = false; $('refresh').textContent = '↻ Refresh';
-      try { state.data = typeof json === 'string' ? JSON.parse(json) : json; render(); }
-      catch (e) { fail(e); }
+      try {
+        state.data = typeof json === 'string' ? JSON.parse(json) : json;
+        state.loadedAt = Date.now();
+        state.stale = false;
+        render();
+        lsSet(LS_DATA, typeof json === 'string' ? json : JSON.stringify(json));
+      } catch (e) { fail(e); }
     };
     var fail = function (e) {
       $('refresh').disabled = false; $('refresh').textContent = '↻ Refresh';
-      $('banner').innerHTML = '<div class="banner err"><b>Could not load the dashboard.</b><br><span class="muted">' + esc(e && e.message || e) + '</span></div>';
+      $('banner').innerHTML = '<div class="banner err"><b>Could not load the dashboard.</b>' + (state.data ? ' Showing the last saved data.' : '') + '<br><span class="muted">' + esc(e && e.message || e) + '</span></div>';
       if (!state.data) $('grid').innerHTML = '';
     };
     if (window.google && google.script && google.script.run) {
@@ -188,18 +231,35 @@ footer a { color: var(--muted); }
     var hour = new Date(d.generatedAt + 8 * 3600e3).getUTCHours();
     $('hello').textContent = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
     $('date').textContent = DAYS[today.getUTCDay()] + ', ' + today.getUTCDate() + ' ' + MONTHS[today.getUTCMonth()] + ' ' + today.getUTCFullYear();
-    var t = new Date(d.generatedAt + 8 * 3600e3);
-    $('updated').textContent = 'Updated ' + String(t.getUTCHours()).padStart(2,'0') + ':' + String(t.getUTCMinutes()).padStart(2,'0');
-    $('banner').innerHTML = '';
+    $('updated').textContent = 'Data from ' + clock(d.generatedAt);
+    $('banner').innerHTML = state.stale ? '<div class="banner stale">Showing saved data from ' + clock(d.generatedAt) + ' while it refreshes…</div>' : '';
 
+    renderTop(d);
     renderAttention(d);
     $('grid').innerHTML = cardFlow(d.sources.flow) + cardMoney(d.sources.finance) + cardGarage(d.sources.garage);
     renderHealth(d);
     renderFooter(d);
   }
 
+  function renderTop(d) {
+    var brief = d.brief || [], up = d.upcoming || [];
+    $('top').hidden = !brief.length && !up.length;
+    $('brief').innerHTML = brief.length ? brief.map(function (b) {
+      return '<li class="' + esc(b.tone) + '"><span>' + esc(b.text) + '</span><span class="src">' + esc(SRC_LABEL[b.src] || '') + '</span></li>';
+    }).join('') : '<li class="good"><span>All quiet.</span></li>';
+    $('upcoming').innerHTML = up.length ? up.map(function (u) {
+      var when = u.days === 0 ? 'Today' : u.days === 1 ? 'Tomorrow' : shortDate(u.date);
+      return '<li><span class="t"><span class="when' + (u.days <= 7 ? ' soon' : '') + '">' + when + '</span>' + esc(u.label) + '</span><span class="r faint">' + (u.days > 1 ? u.days + 'd' : '') + '</span></li>';
+    }).join('') : '<li class="empty">Nothing dated in the next 45 days.</li>';
+  }
+
+  function visibleIssues(d) {
+    return d.issues.filter(function (i) { return !state.hidden[issueKey(i)]; });
+  }
+
   function renderAttention(d) {
-    var c = d.counts, html = '';
+    var c = { error: 0, warn: 0, info: 0 }, html = '';
+    visibleIssues(d).forEach(function (i) { c[i.level]++; });
     if (!c.error && !c.warn) html += '<span class="pill"><span class="dot ok"></span>All three apps look healthy</span>';
     if (c.error) html += '<a class="pill" href="#health" data-f="error"><span class="dot error"></span>' + plural(c.error, 'error') + '</a>';
     if (c.warn) html += '<a class="pill" href="#health" data-f="warn"><span class="dot warn"></span>' + plural(c.warn, 'warning') + '</a>';
@@ -211,7 +271,14 @@ footer a { color: var(--muted); }
   }
 
   function head(title, src) {
-    return '<h2><span>' + title + '</span>' + (src && src.url ? '<a href="' + esc(src.url) + '" target="_blank" rel="noopener">Open sheet ↗</a>' : '') + '</h2>';
+    var fresh = '';
+    if (src && src.ok && src.summary && 'lastChange' in src.summary) {
+      var lc = src.summary.lastChange, now = state.data.generatedAt;
+      var age = lc ? (now - lc) / 3600e3 : Infinity;
+      fresh = '<span class="fresh ' + (age < 24 ? 'ok' : age < 72 ? 'warn' : 'bad') + '" title="Last time the app saved to its sheet">' +
+        (lc ? 'saved ' + rel(lc, now) : 'no saves seen') + '</span>';
+    }
+    return '<h2><span>' + title + '</span><span class="h2r">' + fresh + (src && src.url ? '<a href="' + esc(src.url) + '" target="_blank" rel="noopener">Open ↗</a>' : '') + '</span></h2>';
   }
   function failed(title, src) {
     return '<article class="card">' + head(title, src) + '<div class="empty bad">Could not read this sheet.</div><div class="faint" style="font-size:13px">' + esc(src && src.error) + '</div></article>';
@@ -234,6 +301,9 @@ footer a { color: var(--muted); }
     var top = tk.top3.slice(0, 3);
     if (top.length) html += '<h3>Top 3</h3><ul class="list">' + top.map(function (t) { return '<li><span class="t">' + esc(t.task) + '</span><span class="r">' + (t.time ? esc(t.time) : t.date ? shortDate(t.date) : '') + '</span></li>'; }).join('') + '</ul>';
 
+    if (!tk.openTotal && !tk.doneToday && !s.lastChange) {
+      html += '<div class="banner" style="margin:12px 0 0;font-size:13.5px">No tasks have reached the sheet yet. Open Flow on your PC and check <b>Settings › Web App URL</b> matches the current deployment.</div>';
+    }
     html += '<h3>Due today</h3>';
     html += tk.today.length ? '<ul class="list">' + tk.today.slice(0, 7).map(function (t) { return taskLi(t); }).join('') + '</ul>' : '<div class="empty">Nothing scheduled for today.</div>';
     if (tk.overdue.length) html += '<h3>Overdue</h3><ul class="list">' + tk.overdue.slice(0, 4).map(function (t) { return taskLi(t, true); }).join('') + '</ul>';
@@ -283,7 +353,7 @@ footer a { color: var(--muted); }
       var cls = diff > 0 ? 'bad' : 'good';
       html += '<div class="muted" style="font-size:13px">Spent in ' + MONTHS[+m.month.slice(5,7)-1] + ' so far</div>' +
         '<div class="big num">' + rm(m.spent) + '</div>' +
-        '<div class="num" style="font-size:13px;margin:2px 0 12px"><span class="' + cls + '">' + (diff > 0 ? '▲ ' : '▼ ') + rm(Math.abs(diff)) + '</span> <span class="faint">vs same day last month</span></div>';
+        '<div class="num" style="font-size:13px;margin:2px 0 12px"><span class="' + cls + '">' + (diff > 0 ? '▲ ' : '▼ ') + rm(Math.abs(diff)) + '</span> <span class="faint">vs same day last month' + (m.projected ? ' · on pace for ' + rm(m.projected, 0) : '') + '</span></div>';
       html += '<div class="kpis">' + kpi(rm(m.today), 'spent today') + kpi(rm(m.income, 0), 'income this month') + kpi(rm(s.netWorth, 0), 'net worth') + '</div>';
     }
     if (s.trend && s.trend.length) {
@@ -364,15 +434,33 @@ footer a { color: var(--muted); }
       return state.filter === 'all' || (state.filter === 'problems' ? i.level !== 'info' : i.level === state.filter);
     };
     var bySrc = { flow: [], finance: [], garage: [] };
-    d.issues.filter(keep).forEach(function (i) { (bySrc[i.source] = bySrc[i.source] || []).push(i); });
+    var visible = visibleIssues(d);
+    visible.filter(keep).forEach(function (i) { (bySrc[i.source] = bySrc[i.source] || []).push(i); });
+    var hiddenCount = d.issues.length - visible.length;
     $('issues').innerHTML = Object.keys(bySrc).map(function (k) {
       var list = bySrc[k];
       if (k === 'cross' && !list.length) return '';
       var body = list.length ? list.map(function (i) {
-        return '<div class="issue"><span class="dot ' + i.level + '"></span><div class="m"><span class="a">' + esc(i.area) + '</span>' + esc(i.message) + '</div>' + (i.detail ? '<div class="d">' + esc(i.detail) + '</div>' : '') + '</div>';
+        var src = d.sources[i.source] || {};
+        var link = i.ref && src.url ? src.url + '#gid=' + i.ref.gid + '&range=' + i.ref.row + ':' + i.ref.row : null;
+        return '<div class="issue"><span class="dot ' + i.level + '"></span><div class="m"><span class="a">' + esc(i.area) + '</span>' + esc(i.message) + '</div>' +
+          (i.detail ? '<div class="d">' + esc(i.detail) + '</div>' : '') +
+          '<div class="acts">' + (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener">Open row ' + i.ref.row + ' ↗</a>' : '') +
+          '<button type="button" class="linkbtn faint" data-hide="' + esc(issueKey(i)) + '">Hide</button></div></div>';
       }).join('') : '<div class="ok-msg">✓ Nothing here</div>';
       return '<div class="card"><h2><span>' + SRC_LABEL[k] + '</span><span class="faint">' + list.length + '</span></h2>' + body + '</div>';
-    }).join('');
+    }).join('') + (hiddenCount ? '<div class="hidden-note" style="grid-column:1/-1">' + plural(hiddenCount, 'issue') + ' hidden · <button type="button" class="linkbtn" id="unhide">Show them again</button></div>' : '');
+    Array.prototype.forEach.call($('issues').querySelectorAll('[data-hide]'), function (b) {
+      b.addEventListener('click', function () {
+        state.hidden[b.getAttribute('data-hide')] = Date.now();
+        lsSet(LS_HIDDEN, JSON.stringify(state.hidden));
+        renderAttention(state.data); renderHealth(state.data);
+      });
+    });
+    if ($('unhide')) $('unhide').addEventListener('click', function () {
+      state.hidden = {}; lsSet(LS_HIDDEN, '{}');
+      renderAttention(state.data); renderHealth(state.data);
+    });
   }
 
   function renderFooter(d) {
@@ -386,7 +474,18 @@ footer a { color: var(--muted); }
   }
 
   $('refresh').addEventListener('click', function () { load(true); });
+
+  // Show the last data straight away, then fetch fresh data behind it.
+  try {
+    var saved = lsGet(LS_DATA);
+    if (saved) { state.data = JSON.parse(saved); state.stale = true; render(); }
+  } catch (e) { state.data = null; }
   load(false);
+
+  // Coming back to the tab later (e.g. the next morning) refreshes it.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && Date.now() - state.loadedAt > 10 * 60e3) load(false);
+  });
 })();
 </script>
 </body>

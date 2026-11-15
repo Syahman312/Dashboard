@@ -16,7 +16,7 @@ function readGarage_(ss, ctx) {
   }
 
   var badJson = [], badDates = [], noDate = [], noCost = [], noOdo = [];
-  var unknownCar = [], deleted = 0;
+  var unknownCar = [], deleted = 0, lastChange = null;
   var cars = {}, svcNames = {}, logs = [], fuels = [];
 
   table.rows.forEach(function (row) {
@@ -27,6 +27,8 @@ function readGarage_(ss, ctx) {
     }
     rec = rec || {};
     var kind = text_(rec.kind || row.type);
+    var upd = toNumber_(rec.updated);
+    if (upd && upd > 1e11 && (!lastChange || upd > lastChange)) lastChange = upd;
     if (rec.deleted === 1 || rec.deleted === true || toBool_(row.deleted)) { deleted++; return; }
 
     if (kind === 'svc') { svcNames[text_(rec.name || row.item)] = true; return; }
@@ -67,7 +69,8 @@ function readGarage_(ss, ctx) {
       place: text_(rec.place),
       items: kind === 'log' ? text_(rec.item || row.item).split(/\s*,\s*/).filter(String) : [],
       guessedFrom: guessedFrom || null,
-      __row: row.__row
+      __row: row.__row,
+      __gid: row.__gid
     };
     guessedFrom = null;
     if (entry.cost === null) noCost.push(row);
@@ -76,16 +79,16 @@ function readGarage_(ss, ctx) {
   });
 
   /* --- data quality --- */
-  if (badJson.length) issues.add('error', 'records', badJson.length + ' row(s) have unreadable JSON', rowList_(badJson));
+  if (badJson.length) issues.rows('error', 'records', badJson.length + ' row(s) have unreadable JSON', badJson);
   checkGuessedDates_(logs.concat(fuels), cars, issues);
-  if (badDates.length) issues.add('error', 'dates', badDates.length + ' entr(ies) have an impossible date', rowList_(badDates));
-  if (noDate.length) issues.add('error', 'dates', noDate.length + ' entr(ies) have no date', rowList_(noDate));
-  if (noCost.length) issues.add('warn', 'fields', noCost.length + ' entr(ies) have no cost', rowList_(noCost));
-  if (noOdo.length) issues.add('warn', 'fields', noOdo.length + ' entr(ies) have no odometer reading', rowList_(noOdo));
+  if (badDates.length) issues.rows('error', 'dates', badDates.length + ' entr(ies) have an impossible date', badDates);
+  if (noDate.length) issues.rows('error', 'dates', noDate.length + ' entr(ies) have no date', noDate);
+  if (noCost.length) issues.rows('warn', 'fields', noCost.length + ' entr(ies) have no cost', noCost);
+  if (noOdo.length) issues.rows('warn', 'fields', noOdo.length + ' entr(ies) have no odometer reading', noOdo);
 
   var allEntries = logs.concat(fuels);
   allEntries.forEach(function (e) { if (e.carId && !cars[e.carId]) unknownCar.push(e); });
-  if (unknownCar.length) issues.add('warn', 'links', unknownCar.length + ' entr(ies) point to a car that no longer exists', rowList_(unknownCar));
+  if (unknownCar.length) issues.rows('warn', 'links', unknownCar.length + ' entr(ies) point to a car that no longer exists', unknownCar);
 
   var unknownItems = {};
   logs.forEach(function (l) {
@@ -105,7 +108,8 @@ function readGarage_(ss, ctx) {
   return {
     summary: {
       cars: carList,
-      counts: { logs: logs.length, fuel: fuels.length, deleted: deleted }
+      counts: { logs: logs.length, fuel: fuels.length, deleted: deleted },
+      lastChange: lastChange
     },
     issues: issues.list
   };
@@ -125,7 +129,7 @@ function checkGuessedDates_(entries, cars, issues) {
     var year = car && toNumber_(car.year);
     if (!year || +e.date.slice(0, 4) >= year) {
       issues.add('warn', 'dates', 'Date saved as "' + e.guessedFrom + '" (typo year) — reading it as ' + e.date,
-        'row ' + e.__row + '. Re-save this entry in Garage to fix the stored date.');
+        'row ' + e.__row + '. Re-save this entry in Garage to fix the stored date.', { gid: e.__gid, row: e.__row });
       return;
     }
     var hint = '';
@@ -142,7 +146,8 @@ function checkGuessedDates_(entries, cars, issues) {
       }
     }
     issues.add('error', 'dates', 'Date saved as "' + e.guessedFrom + '" — the date column says ' + e.date +
-      ', which is before the car was made (' + year + ')', 'row ' + e.__row + '.' + hint + ' Fix the date in Garage.');
+      ', which is before the car was made (' + year + ')', 'row ' + e.__row + '.' + hint + ' Fix the date in Garage.',
+      { gid: e.__gid, row: e.__row });
     e.date = null; // keep it out of the timeline and totals
   });
 }
@@ -163,7 +168,8 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
   }
   if (backwards.length) {
     issues.add('warn', 'odometer', car.name + ': odometer goes backwards ' + backwards.length + ' time(s)',
-      backwards.slice(0, 3).map(function (e) { return e.date + ' (' + e.odo + ' km, row ' + e.__row + ')'; }).join(', '));
+      backwards.slice(0, 3).map(function (e) { return e.date + ' (' + e.odo + ' km, row ' + e.__row + ')'; }).join(', '),
+      { gid: backwards[0].__gid, row: backwards[0].__row });
   }
   var maxOdo = timeline.reduce(function (m, e) { return Math.max(m, e.odo); }, 0);
   var odo = Math.max(car.odo || 0, maxOdo) || null;

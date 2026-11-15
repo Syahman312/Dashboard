@@ -33,8 +33,15 @@ function readFlow_(ss, ctx) {
       'Some clients write "11/15/2026" instead of a full timestamp. Write ISO timestamps everywhere (see CONVENTIONS.md).');
   }
 
+  var lastChange = null;
+  Object.keys(T).forEach(function (name) {
+    if (!T[name].exists || name.charAt(0) === '_') return;
+    var t = latestTimestamp_(T[name].rows, 'Updated');
+    if (t !== null && t <= ctx.now + 864e5 && (lastChange === null || t > lastChange)) lastChange = t;
+  });
+
   return {
-    summary: { tasks: tasks, habits: habits, study: papers.summary, close: close, log: log },
+    summary: { tasks: tasks, habits: habits, study: papers.summary, close: close, log: log, lastChange: lastChange },
     issues: issues.list
   };
 }
@@ -79,11 +86,11 @@ function readTasks_(table, paperIds, ctx, issues) {
   out.overdue = out.overdue.slice(0, 8);
   out.upcoming = out.upcoming.slice(0, 5);
 
-  if (noTitle.length) issues.add('warn', 'fields', noTitle.length + ' task(s) have no title', rowList_(noTitle));
-  if (badDate.length) issues.add('warn', 'dates', badDate.length + ' task(s) have an unreadable date', rowList_(badDate));
-  if (badTime.length) issues.add('warn', 'formats', badTime.length + ' task(s) have a time not in HH:mm', rowList_(badTime));
-  if (doneNoStamp.length) issues.add('info', 'fields', doneNoStamp.length + ' done task(s) have no "Done At" time', rowList_(doneNoStamp));
-  if (badPaper.length) issues.add('warn', 'links', badPaper.length + ' task(s) point to an ACCA paper that does not exist', rowList_(badPaper));
+  if (noTitle.length) issues.rows('warn', 'fields', noTitle.length + ' task(s) have no title', noTitle);
+  if (badDate.length) issues.rows('warn', 'dates', badDate.length + ' task(s) have an unreadable date', badDate);
+  if (badTime.length) issues.rows('warn', 'formats', badTime.length + ' task(s) have a time not in HH:mm', badTime);
+  if (doneNoStamp.length) issues.rows('info', 'fields', doneNoStamp.length + ' done task(s) have no "Done At" time', doneNoStamp);
+  if (badPaper.length) issues.rows('warn', 'links', badPaper.length + ' task(s) point to an ACCA paper that does not exist', badPaper);
   if (out.overdueCount >= 5) issues.add('info', 'planning', out.overdueCount + ' overdue tasks — reschedule or drop some?');
   if (!table.rows.length) issues.add('info', 'freshness', 'Tasks tab is empty — has Flow synced yet?');
   return out;
@@ -112,7 +119,7 @@ function readHabits_(habitsT, logT, ctx, issues) {
       h.days[d] = true;
     });
   }
-  if (orphan.length) issues.add('warn', 'links', orphan.length + ' habit log entr(ies) point to a habit that does not exist', rowList_(orphan));
+  if (orphan.length) issues.rows('warn', 'links', orphan.length + ' habit log entr(ies) point to a habit that does not exist', orphan);
 
   Object.keys(habits).forEach(function (id) {
     var h = habits[id];
@@ -148,7 +155,7 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
       if (c !== null && (c < 0 || c > 3)) badConf.push(r);
       if (p && c !== null) { p.topics++; p.confSum += c; }
     });
-    if (badConf.length) issues.add('warn', 'fields', badConf.length + ' topic(s) have confidence outside 0–3', rowList_(badConf));
+    if (badConf.length) issues.rows('warn', 'fields', badConf.length + ' topic(s) have confidence outside 0–3', badConf);
   }
   var week = weekStart_(ctx.today), since7 = addDays_(ctx.today, -6);
   var study = { today: 0, week: 0, last7: 0, days: {} };
@@ -165,8 +172,8 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
       if (d >= week && d <= ctx.today) study.week += min;
       if (d >= since7 && d <= ctx.today) { study.last7 += min; study.days[d] = (study.days[d] || 0) + min; }
     });
-    if (orphan.length) issues.add('warn', 'links', orphan.length + ' study session(s) point to a paper that does not exist', rowList_(orphan));
-    if (badMin.length) issues.add('warn', 'fields', badMin.length + ' study session(s) have no minutes', rowList_(badMin));
+    if (orphan.length) issues.rows('warn', 'links', orphan.length + ' study session(s) point to a paper that does not exist', orphan);
+    if (badMin.length) issues.rows('warn', 'fields', badMin.length + ' study session(s) have no minutes', badMin);
   }
   var daily = [];
   for (var i = 6; i >= 0; i--) { var dd = addDays_(ctx.today, -i); daily.push({ date: dd, minutes: study.days[dd] || 0 }); }
@@ -207,7 +214,7 @@ function readClose_(checkT, logT, ctx, issues) {
     });
   if (!items.length) return null;
   var noWd = items.filter(function (i) { return i.wd === null; });
-  if (noWd.length) issues.add('info', 'fields', noWd.length + ' close checklist item(s) have no working day (WD)', rowList_(noWd));
+  if (noWd.length) issues.rows('info', 'fields', noWd.length + ' close checklist item(s) have no working day (WD)', noWd);
 
   // The close for last month runs in the first working days of this month.
   var period = addMonths_(monthKey_(ctx.today), -1);

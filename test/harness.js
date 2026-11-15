@@ -20,8 +20,10 @@ function formatDate(date, tz, pattern) {
 
 /** tabs: { 'Tab name': [[header...], [row...], ...] } */
 function fakeSpreadsheet(tabs) {
-  const sheets = Object.keys(tabs).map(name => ({
+  const sheets = Object.keys(tabs).map((name, i) => ({
     getName: () => name,
+    getSheetId: () => 1000 + i,
+    getRange: (r, c, nr, nc) => ({ getValues: () => tabs[name].slice(r - 1, r - 1 + nr).map(row => row.slice(c - 1, c - 1 + nc)) }),
     getLastRow: () => tabs[name].length,
     getDataRange: () => ({ getValues: () => tabs[name].map(r => r.slice()) })
   }));
@@ -37,7 +39,7 @@ function load(props) {
     Utilities: { formatDate },
     Logger: { log: () => {} },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => (props || {})[k] || null }) },
-    CacheService: { getUserCache: () => ({ get: () => null, put: () => {} }) }
+    CacheService: { getScriptCache: () => ({ get: () => null, put: () => {}, getAll: () => ({}), putAll: () => {} }) }
   };
   vm.createContext(context);
   ['Shared.gs', 'Garage.gs', 'Finance.gs', 'Flow.gs', 'Code.gs'].forEach(f => {

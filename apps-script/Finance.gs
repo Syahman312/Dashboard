@@ -41,6 +41,7 @@ function readFinance_(ss, ctx) {
   var pay = readPayslips_(T.Payslips, ctx, issues);
   var goals = readGoals_(T.Goals, ctx);
   var log = summariseLog_(T.Log, { time: 'Time', msg: 'What happened', area: 'Area', source: 'Device' }, ctx, issues, 7);
+  var lastChange = lastAppWrite_(ss, ctx);
 
   return {
     summary: {
@@ -54,10 +55,28 @@ function readFinance_(ss, ctx) {
       latestDate: tx.latestDate,
       payslip: pay,
       goals: goals,
-      log: log
+      log: log,
+      lastChange: lastChange
     },
     issues: issues.list
   };
+}
+
+/**
+ * When did the Wallet app last save? Its _data tab stores records with a
+ * "u" (updated, epoch ms) stamp. We only scan for those numbers; the store
+ * itself is never parsed or changed.
+ */
+function lastAppWrite_(ss, ctx) {
+  var sh = ss.getSheetByName('_data');
+  if (!sh || !sh.getLastRow()) return null;
+  var text = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().join('');
+  var re = /"u":(\d{13})/g, m, max = null;
+  while ((m = re.exec(text))) {
+    var t = +m[1];
+    if (t <= ctx.now + 864e5 && (max === null || t > max)) max = t;
+  }
+  return max;
 }
 
 function readAccounts_(table, issues) {
@@ -72,7 +91,7 @@ function readAccounts_(table, issues) {
     if (!group) issues.add('info', 'accounts', 'Account "' + name + '" has unknown type "' + type + '"', 'row ' + r.__row);
     if (group === 'debt' && owed !== null && owed < 0) {
       issues.add('warn', 'amounts', 'Account "' + name + '" shows amount owed as negative (' + owed + ')',
-        'Other debts are positive. Use one sign for "Owed" so totals add up. Row ' + r.__row);
+        'Other debts are positive. Use one sign for "Owed" so totals add up. Row ' + r.__row, r);
     }
     var a = { name: name, type: type, group: group || 'other', balance: balance, owed: owed };
     out.list.push(a);
@@ -109,7 +128,8 @@ function readTransactions_(table, accounts, ctx, issues) {
       catName: stripIcon_(r.Category),
       account: text_(r.Account),
       amount: toAmount_(r.Amount),
-      __row: r.__row
+      __row: r.__row,
+      __gid: r.__gid
     };
     if (!t.date) { badDate.push(r); return; }
     if (t.amount === null) { badAmount.push(r); return; }
@@ -122,9 +142,9 @@ function readTransactions_(table, accounts, ctx, issues) {
     list.push(t);
   });
 
-  if (badDate.length) issues.add('error', 'dates', badDate.length + ' transaction(s) have a missing or unreadable date', rowList_(badDate));
-  if (badAmount.length) issues.add('error', 'amounts', badAmount.length + ' transaction(s) have a missing or unreadable amount', rowList_(badAmount));
-  if (noCat.length) issues.add('warn', 'categories', noCat.length + ' transaction(s) in the last 90 days have no category', rowList_(noCat));
+  if (badDate.length) issues.rows('error', 'dates', badDate.length + ' transaction(s) have a missing or unreadable date', badDate);
+  if (badAmount.length) issues.rows('error', 'amounts', badAmount.length + ' transaction(s) have a missing or unreadable amount', badAmount);
+  if (noCat.length) issues.rows('warn', 'categories', noCat.length + ' transaction(s) in the last 90 days have no category', noCat);
   Object.keys(unknownAcc).forEach(function (a) {
     issues.add('warn', 'accounts', unknownAcc[a] + ' transaction(s) use account "' + a + '", which is not in the Accounts tab');
   });
@@ -139,7 +159,7 @@ function readTransactions_(table, accounts, ctx, issues) {
     var k = [t.date, t.account, t.amount, t.cat, t.desc].join('|');
     if (seen[k]) dups.push(t); else seen[k] = true;
   });
-  if (dups.length) issues.add('info', 'duplicates', dups.length + ' possible duplicate transaction(s) in the last 60 days', rowList_(dups));
+  if (dups.length) issues.rows('info', 'duplicates', dups.length + ' possible duplicate transaction(s) in the last 60 days', dups);
 
   // Balance adjustments are a sign the app and the bank drifted apart
   var adjMonth = list.filter(function (t) { return t.adjust && monthKey_(t.date) === month; });
@@ -156,7 +176,7 @@ function readTransactions_(table, accounts, ctx, issues) {
     if (gap > 3) issues.add('warn', 'freshness', 'No transactions recorded for ' + gap + ' days (last ' + out.latestDate + ')');
   }
   var future = list.filter(function (t) { return t.date > ctx.today; });
-  if (future.length) issues.add('info', 'dates', future.length + ' transaction(s) are dated in the future', rowList_(future));
+  if (future.length) issues.rows('info', 'dates', future.length + ' transaction(s) are dated in the future', future);
 
   // Totals
   var real = list.filter(function (t) { return !t.transfer && !t.adjust; });
@@ -174,8 +194,10 @@ function readTransactions_(table, accounts, ctx, issues) {
   var prevSamePoint = round2_(-sum_(real.filter(function (t) {
     return monthKey_(t.date) === prevMonth && +t.date.slice(8, 10) <= dayOfMonth && t.amount < 0;
   }), function (t) { return t.amount; }));
+  var daysInMonth = new Date(Date.UTC(+month.slice(0, 4), +month.slice(5, 7), 0)).getUTCDate();
   out.month = {
     month: month, spent: cur.spent, income: cur.income,
+    projected: dayOfMonth >= 3 ? round2_(cur.spent / dayOfMonth * daysInMonth) : null,
     prevSpent: prev.spent, prevSamePoint: prevSamePoint,
     today: round2_(-sum_(real.filter(function (t) { return t.date === ctx.today && t.amount < 0; }), function (t) { return t.amount; }))
   };
@@ -246,7 +268,7 @@ function checkCategories_(list, since30, issues) {
     if (s.neg >= 5 && s.neg / (s.neg + s.pos) >= 0.9 && s.recentPos.length) {
       var eg = s.recentPos[0];
       issues.add('warn', 'amounts', s.recentPos.length + ' positive amount(s) in spending category "' + c + '" in the last 30 days',
-        'Refund, or is the sign wrong? e.g. ' + eg.date + ' RM ' + eg.amount.toFixed(2) + ' on ' + eg.account + ' (' + rowList_(s.recentPos, 3) + ')');
+        'Refund, or is the sign wrong? e.g. ' + eg.date + ' RM ' + eg.amount.toFixed(2) + ' on ' + eg.account + ' (' + rowList_(s.recentPos, 3) + ')', eg);
     }
   });
 }
@@ -263,10 +285,10 @@ function readPayslips_(table, ctx, issues) {
     };
     if (!p.date) { issues.add('warn', 'payslips', 'Payslip without a readable pay date', 'row ' + r.__row); return; }
     if (p.basic !== null && p.gross !== null && Math.abs(p.basic + p.allowances - p.gross) > 0.05) {
-      issues.add('warn', 'payslips', 'Payslip ' + p.date + ': Basic + Allowances ≠ Gross', 'row ' + r.__row);
+      issues.add('warn', 'payslips', 'Payslip ' + p.date + ': Basic + Allowances ≠ Gross', 'row ' + r.__row, r);
     }
     if (p.gross !== null && p.net !== null && Math.abs(p.gross - p.deductions - p.net) > 0.05) {
-      issues.add('warn', 'payslips', 'Payslip ' + p.date + ': Gross − Deductions ≠ Net', 'row ' + r.__row);
+      issues.add('warn', 'payslips', 'Payslip ' + p.date + ': Gross − Deductions ≠ Net', 'row ' + r.__row, r);
     }
     list.push(p);
   });

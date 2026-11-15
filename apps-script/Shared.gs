@@ -180,9 +180,10 @@ function readTable_(ss, name) {
   var values = sheet.getDataRange().getValues();
   if (!values.length) return { exists: true, name: sheet.getName(), headers: [], rows: [] };
   var headers = values[0].map(function (h) { return text_(h); });
+  var gid = sheet.getSheetId();
   var rows = [];
   for (var r = 1; r < values.length; r++) {
-    var row = values[r], blank = true, obj = { __row: r + 1 };
+    var row = values[r], blank = true, obj = { __row: r + 1, __gid: gid };
     for (var c = 0; c < headers.length; c++) {
       if (!headers[c]) continue;
       var v = row[c];
@@ -216,12 +217,32 @@ function checkColumns_(table, expected, issues, area) {
  */
 function makeIssues_(source) {
   var list = [];
-  return {
+  var api = {
     list: list,
-    add: function (level, area, message, detail) {
-      list.push({ source: source, level: level, area: area, message: message, detail: detail || '' });
+    /** ref (optional): { gid, row } so the page can link straight to the row. */
+    add: function (level, area, message, detail, ref) {
+      var i = { source: source, level: level, area: area, message: message, detail: detail || '' };
+      if (ref && ref.gid !== undefined && ref.gid !== null) i.ref = { gid: ref.gid, row: ref.row };
+      list.push(i);
+    },
+    /** Same as add, with the detail and link built from the offending rows. */
+    rows: function (level, area, message, rows, extra) {
+      var first = rows[0] || {};
+      api.add(level, area, message, rowList_(rows) + (extra ? '. ' + extra : ''),
+        { gid: first.__gid, row: first.__row });
     }
   };
+  return api;
+}
+
+/** Latest timestamp found in a column across rows (epoch ms), or null. */
+function latestTimestamp_(rows, field) {
+  var max = null;
+  rows.forEach(function (r) {
+    var t = toTimestamp_(r[field]);
+    if (t !== null && (max === null || t > max)) max = t;
+  });
+  return max;
 }
 
 /** Lists the first few sheet rows, e.g. "rows 4, 9, 12 (+3 more)". */
