@@ -107,10 +107,12 @@ project in the Apps Script editor.
 
 ## Works on every device
 
+- **iPhone / Android / iPad:** swipe left or right to move between tabs (charts and the habit grid keep their own
+  drag-to-read; the screen edges stay free for the phone's back gesture).
 - **iPhone / Android:** tabs at the bottom, 44px tap targets, tap a chart or category to see its numbers,
   pull down to refresh in the home-screen app, works offline with your last data, no zoom when typing.
 - **iPad:** two-column layout in portrait and three in landscape; touch-sized controls.
-- **PC:** wider layout on large screens; keys **1–5** switch tabs and **R** refreshes.
+- **PC:** wider layout on large screens; keys **1–5** or **← →** switch tabs and **R** refreshes.
 - **Everywhere:** the Back button moves between tabs, and links like `#money` open that tab.
 
 ## Develop

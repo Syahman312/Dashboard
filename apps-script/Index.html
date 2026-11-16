@@ -98,6 +98,15 @@ a { color: var(--accent); }
 .view { display: none; padding-top: 18px; }
 .view.on { display: block; animation: rise .35s cubic-bezier(.2,.7,.2,1); }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* Moving between tabs slides in from the side you are heading towards */
+.view.on.from-r { animation: fromR .3s cubic-bezier(.2,.7,.2,1); }
+.view.on.from-l { animation: fromL .3s cubic-bezier(.2,.7,.2,1); }
+@keyframes fromR { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
+@keyframes fromL { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
+/* Swiping: vertical scrolling and pinch-zoom stay with the browser; sideways drags switch tabs */
+.wrap { overflow-x: clip; touch-action: pan-y pinch-zoom; }
+.view { will-change: auto; }
+.bnav button.peek, .tab.peek { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 .grid { display: grid; gap: 14px; }
@@ -891,9 +900,12 @@ footer a { color: var(--muted); }
     each(document, '[data-v]', function (b) { b.addEventListener('click', function () { go(b.getAttribute('data-v')); }); });
   }
 
+  function viewIndex(k) { for (var i = 0; i < VIEWS.length; i++) if (VIEWS[i].key === k) return i; return 0; }
+
   function go(view, opts) {
     if (!VIEWS.some(function (v) { return v.key === view; })) view = 'overview';
     var changed = S.view !== view;
+    S.dir = changed ? (viewIndex(view) > viewIndex(S.view) ? 1 : -1) : 0;
     S.view = view;
     if (!(opts && opts.fromHistory) && location.hash !== '#' + view) {
       try { history.pushState(null, '', '#' + view); } catch (e) { /* sandboxed frame */ }
@@ -923,8 +935,13 @@ footer a { color: var(--muted); }
 
   function renderView() {
     if (!S.data) return;
-    each(document, '.view', function (v) { v.classList.toggle('on', v.getAttribute('data-view') === S.view); });
+    each(document, '.view', function (v) {
+      v.classList.remove('from-r', 'from-l');
+      v.classList.toggle('on', v.getAttribute('data-view') === S.view);
+    });
     var host = $('v-' + S.view);
+    if (S.dir) host.classList.add(S.dir > 0 ? 'from-r' : 'from-l');
+    S.dir = 0;
     ({ overview: viewOverview, flow: viewFlow, money: viewMoney, garage: viewGarage, health: viewHealth })[S.view](host, S.data);
     bindAppLinks(host); countUp(host); fillBars(host);
     S.animate = false;
@@ -1464,8 +1481,71 @@ footer a { color: var(--muted); }
     if (MODE === 'setup') return;
     var n = parseInt(e.key, 10);
     if (n >= 1 && n <= VIEWS.length) { go(VIEWS[n - 1].key); e.preventDefault(); }
+    else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !(e.target.closest && e.target.closest('.chart'))) {
+      var to = viewIndex(S.view) + (e.key === 'ArrowRight' ? 1 : -1);
+      if (to >= 0 && to < VIEWS.length) { go(VIEWS[to].key); e.preventDefault(); }
+    }
     else if (e.key === 'r' || e.key === 'R') { load(true); e.preventDefault(); }
   });
+
+  // Phones and tablets: swipe sideways to move to the next / previous tab
+  (function () {
+    if (!('ontouchstart' in window)) return;
+    var EDGE = 24;             // leave the screen edges to the phone's own back gesture
+    var sx = null, sy = 0, st = 0, dx = 0, axis = null, view = null;
+    function peek(k) {
+      each(document, '.peek', function (b) { b.classList.remove('peek'); });
+      if (k) each(document, '[data-v="' + k + '"]', function (b) { b.classList.add('peek'); });
+    }
+    function reset(animated) {
+      if (!view) return;
+      var v = view;
+      v.style.transition = animated ? 'transform .22s ease, opacity .22s ease' : '';
+      v.style.transform = ''; v.style.opacity = '';
+      setTimeout(function () { v.style.transition = ''; }, 240);
+    }
+    document.addEventListener('touchstart', function (e) {
+      sx = null;
+      if (MODE === 'setup' || e.touches.length !== 1 || !S.data) return;
+      var t = e.touches[0];
+      if (t.clientX < EDGE || t.clientX > window.innerWidth - EDGE) return;
+      // Charts and the habit grid use sideways drags for reading values
+      if (e.target.closest && e.target.closest('.chart, .cells, input, textarea, select, .tabs, .seg-ctl, .bnav, .top')) return;
+      sx = t.clientX; sy = t.clientY; st = Date.now(); dx = 0; axis = null; view = $('v-' + S.view);
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (sx === null) return;
+      var t = e.touches[0], mx = t.clientX - sx, my = t.clientY - sy;
+      if (axis === null && (Math.abs(mx) > 10 || Math.abs(my) > 10)) axis = Math.abs(mx) > Math.abs(my) * 1.3 ? 'x' : 'y';
+      if (axis !== 'x') return;
+      dx = mx;
+      var i = viewIndex(S.view), atEnd = (dx < 0 && i === VIEWS.length - 1) || (dx > 0 && i === 0);
+      var move = atEnd ? dx * 0.15 : dx * 0.55;   // stiff at the first and last tab
+      view.style.transition = 'none';
+      view.style.transform = 'translateX(' + move + 'px)';
+      view.style.opacity = String(1 - Math.min(Math.abs(move) / 700, 0.3));
+      peek(atEnd ? null : VIEWS[i + (dx < 0 ? 1 : -1)].key);
+      hideTip();
+    }, { passive: true });
+    function end() {
+      if (sx === null) return;
+      sx = null; peek(null);
+      if (axis !== 'x') return;
+      var i = viewIndex(S.view);
+      var fast = Math.abs(dx) / Math.max(1, Date.now() - st) > 0.5;
+      var to = (Math.abs(dx) > window.innerWidth * 0.22 || (fast && Math.abs(dx) > 40)) ? i + (dx < 0 ? 1 : -1) : i;
+      if (to !== i && to >= 0 && to < VIEWS.length) {
+        var v = view;
+        v.style.transition = 'transform .14s ease-in, opacity .14s ease-in';
+        v.style.transform = 'translateX(' + (dx < 0 ? -1 : 1) * window.innerWidth * 0.3 + 'px)';
+        v.style.opacity = '0';
+        setTimeout(function () { v.style.transition = ''; v.style.transform = ''; v.style.opacity = ''; go(VIEWS[to].key); }, 140);
+        if (navigator.vibrate) { try { navigator.vibrate(8); } catch (err) { /* not allowed */ } }
+      } else reset(true);
+    }
+    document.addEventListener('touchend', end);
+    document.addEventListener('touchcancel', function () { sx = null; peek(null); reset(true); });
+  })();
 
   // Home-screen app: pull down to refresh (iOS has no built-in one there)
   (function () {
