@@ -9,7 +9,7 @@
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
  */
 
-var DASH_VERSION = '1.9.0';
+var DASH_VERSION = '2.0.0';
 var CACHE_KEY = 'dashboard:v2';
 var CACHE_SECONDS = 1800;     // 30 min; the warm-up trigger refreshes it every 15
 var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
@@ -17,7 +17,8 @@ var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
 var SOURCES = [
   { key: 'flow', name: 'Flow', prop: 'FLOW_SHEET_ID', appProp: 'FLOW_APP_URL', reader: function (ss, ctx) { return readFlow_(ss, ctx); } },
   { key: 'finance', name: 'Finance', prop: 'FINANCE_SHEET_ID', appProp: 'FINANCE_APP_URL', reader: function (ss, ctx) { return readFinance_(ss, ctx); } },
-  { key: 'garage', name: 'Garage', prop: 'GARAGE_SHEET_ID', appProp: 'GARAGE_APP_URL', reader: function (ss, ctx) { return readGarage_(ss, ctx); } }
+  { key: 'garage', name: 'Garage', prop: 'GARAGE_SHEET_ID', appProp: 'GARAGE_APP_URL', reader: function (ss, ctx) { return readGarage_(ss, ctx); } },
+  { key: 'vault', name: 'Vault', prop: 'VAULT_SHEET_ID', appProp: 'VAULT_APP_URL', optional: true, reader: function (ss, ctx) { return readVault_(ss, ctx); } }
 ];
 
 // Home-screen / tab icon, served from the public repo (docs/icons). Apps Script needs a URL ending in .png.
@@ -173,6 +174,7 @@ function buildDashboard_(now, openById) {
     var id = props.getProperty(src.prop);
     var s = { name: src.name, ok: false, url: id ? 'https://docs.google.com/spreadsheets/d/' + id + '/edit' : null,
       appUrl: safeAppUrl_(props.getProperty(src.appProp)), appProp: src.appProp };
+    if (!id && src.optional) { s.off = true; s.ms = 0; out.sources[src.key] = s; return; }
     try {
       if (!id) throw new Error('Script Property ' + src.prop + ' is not set');
       var ss = openById(id);
@@ -188,6 +190,18 @@ function buildDashboard_(now, openById) {
     out.sources[src.key] = s;
   });
 
+  // Budget (Dashboard sheet → Budget tab), compared with this month's spending
+  var dashId = props.getProperty('DASHBOARD_SHEET_ID'), fin = out.sources.finance;
+  if (dashId && fin && fin.ok) {
+    try {
+      var b = applyBudget_(fin.summary, readBudget_(openById(dashId)), ctx);
+      fin.summary.budget = b.budget;
+      out.issues = out.issues.concat(b.issues);
+    } catch (e) {
+      out.issues.push({ source: 'finance', level: 'info', area: 'budget', message: 'Could not read the Budget tab', detail: String(e && e.message || e) });
+    }
+  }
+
   out.issues = out.issues.concat(crossChecks_(out.sources, ctx));
   markRecovered_(out.issues, out.sources);
   addFixes_(out.issues);
@@ -197,7 +211,109 @@ function buildDashboard_(now, openById) {
   out.issues.forEach(function (i) { out.counts[i.level]++; });
   out.brief = brief_(out.sources, out.issues, ctx);
   out.upcoming = upcoming_(out.sources, ctx);
+  out.todayStrip = today_(out.sources, ctx);
+  out.sync = syncHealth_(out.sources, out.issues, ctx);
+  out.alerts = alerts_(out.sources, out.sync, ctx);
   return out;
+}
+
+/* ---------- Overview building blocks ---------- */
+
+/** Today strip: tasks and habits due, next Garage reminder, Vault documents expiring within 30 days. */
+function today_(sources, ctx) {
+  var t = { tasks: null, habits: null, garage: null, vault: null };
+  var f = sources.flow && sources.flow.ok ? sources.flow.summary : null;
+  if (f) {
+    t.tasks = { due: f.tasks.today.length, overdue: f.tasks.overdueCount || 0, done: f.tasks.doneToday,
+      items: f.tasks.today.slice(0, 4).map(function (x) { return { task: x.task, time: x.time, top3: x.top3 }; }) };
+    var active = (f.habits || []);
+    t.habits = { total: active.length, done: active.filter(function (h) { return h.doneToday; }).length,
+      items: active.map(function (h) { return { icon: h.icon, habit: h.habit, done: h.doneToday, due: !h.doneToday && h.week < h.target }; }) };
+  }
+  var g = sources.garage && sources.garage.ok ? sources.garage.summary.cars : [];
+  var reminders = [];
+  g.forEach(function (c) { c.renewals.forEach(function (r) { reminders.push({ car: c.name, label: r.label, date: r.date, daysLeft: r.daysLeft }); }); });
+  reminders.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  t.garage = reminders[0] || null;
+  var v = sources.vault && sources.vault.ok ? sources.vault.summary : null;
+  if (v) t.vault = { count: v.expiring30.length + v.expired.length, expired: v.expired.length, items: v.expired.concat(v.expiring30).slice(0, 4) };
+  return t;
+}
+
+/**
+ * Sync health: when each app last saved to its sheet, and whether its sync is failing.
+ * status: ok | stale (no save for 3+ days) | broken (failing since its last save) | error (sheet unreadable) | off
+ */
+function syncHealth_(sources, issues, ctx) {
+  return Object.keys(sources).map(function (k) {
+    var s = sources[k];
+    var row = { key: k, name: s.name, lastChange: s.summary ? s.summary.lastChange || null : null, lastFailure: null, failures: 0 };
+    issues.forEach(function (i) {
+      if (i.source !== k || i.area !== 'sync' || !i.at) return;
+      if (!row.lastFailure || i.at > row.lastFailure) row.lastFailure = i.at;
+      var m = i.message.match(/(\d+)× in/); if (m && !i.recovered) row.failures += +m[1];
+    });
+    if (s.off) row.status = 'off';
+    else if (!s.ok) row.status = 'error';
+    else if (row.lastFailure && (!row.lastChange || row.lastFailure > row.lastChange + 60e3)) row.status = 'broken';
+    else if (!row.lastChange || ctx.now - row.lastChange > 3 * 864e5) row.status = 'stale';
+    else row.status = 'ok';
+    return row;
+  });
+}
+
+/** Everything that needs action, across all apps, in one list (most urgent first). */
+function alerts_(sources, sync, ctx) {
+  var out = [];
+  var add = function (level, src, title, detail, date, view) {
+    out.push({ level: level, src: src, title: title, detail: detail || '', date: date || null,
+      days: date ? daysBetween_(ctx.today, date) : null, view: view || src });
+  };
+  sync.forEach(function (r) {
+    if (r.status === 'broken') add('bad', r.key, r.name + ' sync is failing', r.failures ? r.failures + ' failures this week' : 'Its last save is older than its last failure', null, 'health');
+    if (r.status === 'error') add('bad', r.key, 'Cannot read the ' + r.name + ' sheet', 'Check its Sheet ID in Script Properties', null, 'health');
+  });
+  var f = sources.flow && sources.flow.ok ? sources.flow.summary : null;
+  if (f) {
+    f.tasks.overdue.slice(0, 5).forEach(function (t) { add('bad', 'flow', 'Overdue: ' + t.task, '', t.date, 'flow'); });
+    if (f.tasks.overdueCount > 5) add('bad', 'flow', (f.tasks.overdueCount - 5) + ' more overdue tasks', '', null, 'flow');
+    var x = f.study && f.study.next;
+    if (x && x.daysLeft <= 30 && x.targetHours && x.hours < x.targetHours * 0.6) add('warn', 'flow', x.code + ' exam: ' + x.hours + ' of ' + x.targetHours + ' h studied', '', x.exam, 'flow');
+  }
+  var g = sources.garage && sources.garage.ok ? sources.garage.summary.cars : [];
+  g.forEach(function (c) {
+    c.renewals.forEach(function (r) {
+      if (r.daysLeft < 0) add('bad', 'garage', c.name + ' ' + r.label.toLowerCase() + ' expired', '', r.date, 'garage');
+      else if (r.daysLeft <= 60) add(r.daysLeft <= 30 ? 'warn' : 'info', 'garage', c.name + ' ' + r.label.toLowerCase() + ' renewal', '', r.date, 'garage');
+    });
+  });
+  var v = sources.vault && sources.vault.ok ? sources.vault.summary : null;
+  if (v) {
+    v.expired.forEach(function (d) { add('bad', 'vault', d.title + ' has expired', (d.icon ? d.icon + ' ' : '') + d.category + (d.owner && d.owner !== 'Me' ? ' · ' + d.owner : ''), d.expiry, 'vault'); });
+    v.upcoming.filter(function (d) { return d.daysLeft <= Math.max(30, d.lead); }).forEach(function (d) {
+      add(d.daysLeft <= 30 ? 'warn' : 'info', 'vault', d.title + ' expires', (d.icon ? d.icon + ' ' : '') + d.category + (d.owner && d.owner !== 'Me' ? ' · ' + d.owner : ''), d.expiry, 'vault');
+    });
+  }
+  var fin = sources.finance && sources.finance.ok ? sources.finance.summary : null;
+  if (fin) {
+    (fin.recurring || []).filter(function (r) { return r.daysUntil >= -3 && r.daysUntil <= 7; }).forEach(function (r) {
+      add('info', 'finance', r.name + ' · RM ' + r.amount.toFixed(2), 'Expected from ' + r.account, r.next, 'money');
+    });
+    if (fin.budget) fin.budget.rows.filter(function (b) { return b.budget > 0 && b.spent > b.budget; }).forEach(function (b) {
+      add('warn', 'finance', 'Over budget: ' + b.category, 'RM ' + b.spent.toFixed(2) + ' of RM ' + b.budget.toFixed(2), null, 'money');
+    });
+    if (fin.payslip && fin.payslip.daysAgo > 35) add('info', 'finance', 'Add your latest payslip', 'Last one ' + fin.payslip.date, null, 'money');
+  }
+  var rank = { bad: 0, warn: 1, info: 2 };
+  return out.sort(function (a, b) {
+    var byLevel = rank[a.level] - rank[b.level];
+    if (byLevel) return byLevel;
+    // Sync problems lead: nothing else is trustworthy while an app cannot save.
+    var sa = a.view === 'health' ? 0 : 1, sb = b.view === 'health' ? 0 : 1;
+    if (sa !== sb) return sa - sb;
+    var da = a.date || '9999-99-99', db = b.date || '9999-99-99';
+    return da < db ? -1 : da > db ? 1 : 0;
+  });
 }
 
 /** A handful of plain sentences for the top of the page. tone: bad | warn | good | info */

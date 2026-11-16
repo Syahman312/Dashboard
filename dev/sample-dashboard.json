@@ -1,5 +1,5 @@
 {
-  "version": "1.9.0",
+  "version": "2.0.0",
   "generatedAt": 1794702600000,
   "today": "2026-11-15",
   "sources": {
@@ -396,7 +396,7 @@
         },
         "lastChange": 1794697200000
       },
-      "ms": 11
+      "ms": 8
     },
     "finance": {
       "name": "Finance",
@@ -901,6 +901,65 @@
             "transfer": false
           }
         ],
+        "monthCats": [
+          {
+            "category": "🍽️ Food & Drinks",
+            "spent": 76,
+            "count": 4
+          },
+          {
+            "category": "📺 Netflix",
+            "spent": 54.9,
+            "count": 1
+          },
+          {
+            "category": "⛽ Fuel",
+            "spent": 50,
+            "count": 1
+          },
+          {
+            "category": "(no category)",
+            "spent": 42,
+            "count": 2
+          },
+          {
+            "category": "🍣 Belanja Family",
+            "spent": 40,
+            "count": 1
+          },
+          {
+            "category": "🍜 Food",
+            "spent": 38.3,
+            "count": 3
+          },
+          {
+            "category": "🍰 Belanja GF",
+            "spent": 20,
+            "count": 1
+          },
+          {
+            "category": "☕ Coffee",
+            "spent": 19,
+            "count": 2
+          },
+          {
+            "category": "🍔 Food & Drinks",
+            "spent": 8,
+            "count": 1
+          }
+        ],
+        "recurring": [
+          {
+            "name": "Netflix",
+            "category": "📺 Netflix",
+            "account": "Affin Visa",
+            "amount": 54.9,
+            "last": "2026-11-06",
+            "next": "2026-12-06",
+            "daysUntil": 21,
+            "months": 6
+          }
+        ],
         "latestDate": "2026-11-15",
         "payslip": {
           "date": "2026-10-23",
@@ -928,7 +987,45 @@
           "lastProblemAt": 1794727813000,
           "dateOnlyRows": 0
         },
-        "lastChange": 1794700000000
+        "lastChange": 1794700000000,
+        "budget": {
+          "total": 600,
+          "spent": 348.2,
+          "left": 251.8,
+          "pct": 58,
+          "pacePct": 50,
+          "rows": [
+            {
+              "category": "🍜 Food",
+              "budget": 20,
+              "spent": 38.3,
+              "left": -18.3,
+              "pct": 191
+            },
+            {
+              "category": "📺 Netflix",
+              "budget": 60,
+              "spent": 54.9,
+              "left": 5.1,
+              "pct": 91
+            },
+            {
+              "category": "🍽️ Food & Drinks",
+              "budget": 150,
+              "spent": 84,
+              "left": 66,
+              "pct": 56
+            },
+            {
+              "category": "⛽ Fuel",
+              "budget": 200,
+              "spent": 50,
+              "left": 150,
+              "pct": 25
+            }
+          ],
+          "unbudgeted": 121
+        }
       },
       "ms": 12
     },
@@ -1154,7 +1251,115 @@
         },
         "lastChange": 1794657600000
       },
-      "ms": 2
+      "ms": 4
+    },
+    "vault": {
+      "name": "Vault",
+      "ok": true,
+      "url": "https://docs.google.com/spreadsheets/d/sample-vault/edit",
+      "appUrl": null,
+      "appProp": "VAULT_APP_URL",
+      "summary": {
+        "total": 6,
+        "expiring30": [
+          {
+            "title": "Medical (encrypted)",
+            "category": "Medical",
+            "icon": "🩺",
+            "owner": "Me",
+            "expiry": "2026-11-25",
+            "daysLeft": 10,
+            "lead": 30
+          },
+          {
+            "title": "Driving licence",
+            "category": "Identity",
+            "icon": "🪪",
+            "owner": "Me",
+            "expiry": "2026-12-05",
+            "daysLeft": 20,
+            "lead": 30
+          }
+        ],
+        "expired": [
+          {
+            "title": "Car insurance",
+            "category": "Insurance",
+            "icon": "🛡️",
+            "owner": "Me",
+            "expiry": "2026-11-12",
+            "daysLeft": -3,
+            "lead": 30
+          }
+        ],
+        "upcoming": [
+          {
+            "title": "Medical (encrypted)",
+            "category": "Medical",
+            "icon": "🩺",
+            "owner": "Me",
+            "expiry": "2026-11-25",
+            "daysLeft": 10,
+            "lead": 30
+          },
+          {
+            "title": "Driving licence",
+            "category": "Identity",
+            "icon": "🪪",
+            "owner": "Me",
+            "expiry": "2026-12-05",
+            "daysLeft": 20,
+            "lead": 30
+          },
+          {
+            "title": "Passport",
+            "category": "Travel",
+            "icon": "✈️",
+            "owner": "Me",
+            "expiry": "2027-03-15",
+            "daysLeft": 120,
+            "lead": 180
+          },
+          {
+            "title": "Wife passport",
+            "category": "Travel",
+            "icon": "✈️",
+            "owner": "Wife",
+            "expiry": "2027-12-20",
+            "daysLeft": 400,
+            "lead": 180
+          }
+        ],
+        "byCategory": [
+          {
+            "category": "Travel",
+            "icon": "✈️",
+            "count": 2
+          },
+          {
+            "category": "Identity",
+            "icon": "🪪",
+            "count": 1
+          },
+          {
+            "category": "Insurance",
+            "icon": "🛡️",
+            "count": 1
+          },
+          {
+            "category": "Medical",
+            "icon": "🩺",
+            "count": 1
+          },
+          {
+            "category": "Warranty & Receipts",
+            "icon": "🧾",
+            "count": 1
+          }
+        ],
+        "lastChange": 1794787200000
+      },
+      "ms": 1
     }
   },
   "issues": [
@@ -1192,6 +1397,24 @@
         "steps": [
           "Open the row to see the entry and the date range suggested by the odometer.",
           "In Garage, open that service log, set the correct date and save."
+        ]
+      }
+    },
+    {
+      "source": "vault",
+      "level": "error",
+      "area": "expiry",
+      "message": "Car insurance expired 3 days ago (2026-11-12)",
+      "detail": "",
+      "ref": {
+        "gid": 1000,
+        "row": 4
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Renew the document with whoever issues it.",
+          "Then open it in Vault, attach the new copy and update its expiry date (the old one is kept as history)."
         ]
       }
     },
@@ -1497,6 +1720,58 @@
       }
     },
     {
+      "source": "vault",
+      "level": "warn",
+      "area": "dates",
+      "message": "1 document(s) have an expiry date that cannot be read",
+      "detail": "row 8",
+      "ref": {
+        "gid": 1000,
+        "row": 8
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Open the document in Vault and pick its expiry date again with the date picker."
+        ]
+      }
+    },
+    {
+      "source": "vault",
+      "level": "warn",
+      "area": "expiry",
+      "message": "Medical (encrypted) expires in 10 days (2026-11-25)",
+      "detail": "Renewal window for Medical is 30 days",
+      "ref": {
+        "gid": 1000,
+        "row": 7
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Renew the document with whoever issues it.",
+          "Then open it in Vault, attach the new copy and update its expiry date (the old one is kept as history)."
+        ]
+      }
+    },
+    {
+      "source": "finance",
+      "level": "warn",
+      "area": "budget",
+      "message": "🍜 Food: RM 38.30 spent of RM 20.00 budget (over by RM 18.30)",
+      "detail": "",
+      "ref": {
+        "gid": 1000
+      },
+      "fix": {
+        "where": "sheet",
+        "steps": [
+          "If the spending is right, raise that category's amount in the Budget tab of your Dashboard sheet.",
+          "Otherwise it is a nudge to spend less there for the rest of the month."
+        ]
+      }
+    },
+    {
       "source": "flow",
       "level": "info",
       "area": "fields",
@@ -1656,6 +1931,59 @@
       }
     },
     {
+      "source": "vault",
+      "level": "info",
+      "area": "expiry",
+      "message": "Driving licence expires in 20 days (2026-12-05)",
+      "detail": "Renewal window for Identity is 30 days",
+      "ref": {
+        "gid": 1000,
+        "row": 3
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Renew the document with whoever issues it.",
+          "Then open it in Vault, attach the new copy and update its expiry date (the old one is kept as history)."
+        ]
+      }
+    },
+    {
+      "source": "vault",
+      "level": "info",
+      "area": "expiry",
+      "message": "Passport expires in 120 days (2027-03-15)",
+      "detail": "Renewal window for Travel is 180 days",
+      "ref": {
+        "gid": 1000,
+        "row": 2
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "Renew the document with whoever issues it.",
+          "Then open it in Vault, attach the new copy and update its expiry date (the old one is kept as history)."
+        ]
+      }
+    },
+    {
+      "source": "finance",
+      "level": "info",
+      "area": "budget",
+      "message": "On pace for RM 696 this month, above the RM 600 budget",
+      "detail": "",
+      "ref": {
+        "gid": 1000
+      },
+      "fix": {
+        "where": "sheet",
+        "steps": [
+          "If the spending is right, raise that category's amount in the Budget tab of your Dashboard sheet.",
+          "Otherwise it is a nudge to spend less there for the rest of the month."
+        ]
+      }
+    },
+    {
       "source": "cross",
       "level": "info",
       "area": "fuel",
@@ -1671,9 +1999,9 @@
     }
   ],
   "counts": {
-    "error": 2,
-    "warn": 17,
-    "info": 10
+    "error": 3,
+    "warn": 20,
+    "info": 13
   },
   "brief": [
     {
@@ -1735,6 +2063,218 @@
       "label": "Demo Car road tax",
       "src": "garage",
       "tone": "warn"
+    }
+  ],
+  "todayStrip": {
+    "tasks": {
+      "due": 4,
+      "overdue": 2,
+      "done": 1,
+      "items": [
+        {
+          "task": "Review bank recs",
+          "time": "09:00",
+          "top3": true
+        },
+        {
+          "task": "Gym",
+          "time": "18:30",
+          "top3": false
+        },
+        {
+          "task": "FR mock exam",
+          "time": "",
+          "top3": true
+        },
+        {
+          "task": "Read notes",
+          "time": "",
+          "top3": false
+        }
+      ]
+    },
+    "habits": {
+      "total": 2,
+      "done": 1,
+      "items": [
+        {
+          "icon": "🏃",
+          "habit": "Run",
+          "done": false,
+          "due": true
+        },
+        {
+          "icon": "📚",
+          "habit": "Read",
+          "done": true,
+          "due": false
+        }
+      ]
+    },
+    "garage": {
+      "car": "Demo Car",
+      "label": "Road tax",
+      "date": "2026-12-09",
+      "daysLeft": 24
+    },
+    "vault": {
+      "count": 3,
+      "expired": 1,
+      "items": [
+        {
+          "title": "Car insurance",
+          "category": "Insurance",
+          "icon": "🛡️",
+          "owner": "Me",
+          "expiry": "2026-11-12",
+          "daysLeft": -3,
+          "lead": 30
+        },
+        {
+          "title": "Medical (encrypted)",
+          "category": "Medical",
+          "icon": "🩺",
+          "owner": "Me",
+          "expiry": "2026-11-25",
+          "daysLeft": 10,
+          "lead": 30
+        },
+        {
+          "title": "Driving licence",
+          "category": "Identity",
+          "icon": "🪪",
+          "owner": "Me",
+          "expiry": "2026-12-05",
+          "daysLeft": 20,
+          "lead": 30
+        }
+      ]
+    }
+  },
+  "sync": [
+    {
+      "key": "flow",
+      "name": "Flow",
+      "lastChange": 1794697200000,
+      "lastFailure": 1794672000000,
+      "failures": 0,
+      "status": "ok"
+    },
+    {
+      "key": "finance",
+      "name": "Finance",
+      "lastChange": 1794700000000,
+      "lastFailure": 1794727813000,
+      "failures": 6,
+      "status": "broken"
+    },
+    {
+      "key": "garage",
+      "name": "Garage",
+      "lastChange": 1794657600000,
+      "lastFailure": null,
+      "failures": 0,
+      "status": "ok"
+    },
+    {
+      "key": "vault",
+      "name": "Vault",
+      "lastChange": 1794787200000,
+      "lastFailure": null,
+      "failures": 0,
+      "status": "ok"
+    }
+  ],
+  "alerts": [
+    {
+      "level": "bad",
+      "src": "finance",
+      "title": "Finance sync is failing",
+      "detail": "6 failures this week",
+      "date": null,
+      "days": null,
+      "view": "health"
+    },
+    {
+      "level": "bad",
+      "src": "flow",
+      "title": "Overdue: Call insurer",
+      "detail": "",
+      "date": "2026-11-10",
+      "days": -5,
+      "view": "flow"
+    },
+    {
+      "level": "bad",
+      "src": "flow",
+      "title": "Overdue: Pay credit card",
+      "detail": "",
+      "date": "2026-11-12",
+      "days": -3,
+      "view": "flow"
+    },
+    {
+      "level": "bad",
+      "src": "vault",
+      "title": "Car insurance has expired",
+      "detail": "🛡️ Insurance",
+      "date": "2026-11-12",
+      "days": -3,
+      "view": "vault"
+    },
+    {
+      "level": "warn",
+      "src": "vault",
+      "title": "Medical (encrypted) expires",
+      "detail": "🩺 Medical",
+      "date": "2026-11-25",
+      "days": 10,
+      "view": "vault"
+    },
+    {
+      "level": "warn",
+      "src": "flow",
+      "title": "FR exam: 30 of 120 h studied",
+      "detail": "",
+      "date": "2026-12-04",
+      "days": 19,
+      "view": "flow"
+    },
+    {
+      "level": "warn",
+      "src": "vault",
+      "title": "Driving licence expires",
+      "detail": "🪪 Identity",
+      "date": "2026-12-05",
+      "days": 20,
+      "view": "vault"
+    },
+    {
+      "level": "warn",
+      "src": "garage",
+      "title": "Demo Car road tax renewal",
+      "detail": "",
+      "date": "2026-12-09",
+      "days": 24,
+      "view": "garage"
+    },
+    {
+      "level": "warn",
+      "src": "finance",
+      "title": "Over budget: 🍜 Food",
+      "detail": "RM 38.30 of RM 20.00",
+      "date": null,
+      "days": null,
+      "view": "money"
+    },
+    {
+      "level": "info",
+      "src": "vault",
+      "title": "Passport expires",
+      "detail": "✈️ Travel",
+      "date": "2027-03-15",
+      "days": 120,
+      "view": "vault"
     }
   ]
 }

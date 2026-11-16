@@ -55,6 +55,8 @@ function readFinance_(ss, ctx) {
       accounts: accounts.list.map(function (a) { return { name: a.name, type: a.type, group: a.group, balance: a.balance, owed: a.owed === null ? null : Math.abs(a.owed) }; }),
       topCategories: tx.topCategories,
       recent: tx.recent,
+      monthCats: tx.monthCats,
+      recurring: tx.recurring,
       latestDate: tx.latestDate,
       payslip: pay,
       goals: goals,
@@ -114,7 +116,7 @@ function readAccounts_(table, issues) {
 }
 
 function readTransactions_(table, accounts, ctx, issues) {
-  var out = { month: null, trend: [], topCategories: [], recent: [], latestDate: null, daily: null, catsByMonth: {} };
+  var out = { month: null, trend: [], topCategories: [], recent: [], latestDate: null, daily: null, catsByMonth: {}, monthCats: [], recurring: [] };
   if (!table.exists) return out;
 
   var month = monthKey_(ctx.today);
@@ -251,6 +253,20 @@ function readTransactions_(table, accounts, ctx, issues) {
   out.topCategories = Object.keys(byCat).map(function (k) { return { category: k, spent: round2_(byCat[k]) }; })
     .sort(function (a, b) { return b.spent - a.spent; }).slice(0, 6);
 
+  // Every category's spending this month (for budgets)
+  out.monthCats = (out.catsByMonth[month] || []).filter(function (c) { return !c.other; });
+  if ((out.catsByMonth[month] || []).some(function (c) { return c.other; })) {
+    var full = {};
+    real.forEach(function (t) {
+      if (monthKey_(t.date) !== month || t.amount >= 0) return;
+      var k = t.cat || '(no category)';
+      full[k] = (full[k] || 0) - t.amount;
+    });
+    out.monthCats = Object.keys(full).map(function (k) { return { category: k, spent: round2_(full[k]) }; });
+  }
+
+  out.recurring = detectRecurring_(real, ctx);
+
   out.recent = list.filter(function (t) { return !t.adjust && t.date <= ctx.today; })
     .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : a.__row - b.__row; })
     .slice(0, 12)
@@ -357,4 +373,42 @@ function readGoals_(table, ctx) {
       pct: target && saved !== null ? Math.min(100, Math.round(saved / target * 100)) : null
     };
   }).filter(function (g) { return g.goal && !g.achieved; }).slice(0, 5);
+}
+
+/**
+ * Payments that come back about once a month for a similar amount (subscriptions,
+ * bills, loan instalments). Everyday spending is excluded: it happens many times a
+ * month and the amounts vary. Returns the next expected date for each.
+ */
+function detectRecurring_(real, ctx) {
+  var since = addDays_(ctx.today, -185);
+  var groups = {};
+  real.forEach(function (t) {
+    if (t.amount >= 0 || t.date < since || t.date > ctx.today) return;
+    var name = t.desc && !/^imported/i.test(t.desc) ? t.desc : t.catName;
+    if (!name) return;
+    var k = name.toLowerCase().replace(/\s+/g, ' ').trim();
+    (groups[k] = groups[k] || { name: name, cat: t.cat, account: t.account, items: [] }).items.push(t);
+  });
+  var out = [];
+  Object.keys(groups).forEach(function (k) {
+    var g = groups[k], items = g.items.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var months = {};
+    items.forEach(function (t) { months[monthKey_(t.date)] = (months[monthKey_(t.date)] || 0) + 1; });
+    var mKeys = Object.keys(months);
+    if (mKeys.length < 2) return;                                   // seen in at least two months
+    if (items.length / mKeys.length > 1.4) return;                  // about once a month, not daily spending
+    var recent = items.slice(-3).map(function (t) { return -t.amount; });
+    var lo = Math.min.apply(null, recent), hi = Math.max.apply(null, recent);
+    if (lo <= 0 || hi / lo > 1.35) return;                          // similar amount each time
+    var last = items[items.length - 1];
+    if (daysBetween_(last.date, ctx.today) > 40) return;            // still active
+    var day = +last.date.slice(8, 10);
+    var nk = addMonths_(monthKey_(last.date), 1);
+    var dim = new Date(Date.UTC(+nk.slice(0, 4), +nk.slice(5, 7), 0)).getUTCDate();
+    var next = nk + '-' + pad_(Math.min(day, dim));
+    out.push({ name: g.name, category: g.cat, account: last.account, amount: round2_(-last.amount),
+      last: last.date, next: next, daysUntil: daysBetween_(ctx.today, next), months: mKeys.length });
+  });
+  return out.sort(function (a, b) { return a.next < b.next ? -1 : 1; });
 }

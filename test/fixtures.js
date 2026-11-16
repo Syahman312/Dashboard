@@ -146,4 +146,30 @@ function flow() {
     _Deleted: [['Time (ms)', 'List', 'ID', 'When']] };
 }
 
-module.exports = { TODAY, NOW, garage, finance, flow };
+/* ---------------- Vault ---------------- */
+function vault() {
+  const docs = [['ID', 'Created', 'Updated', 'Title', 'Category', 'Owner', 'DocNumber', 'Issuer', 'IssueDate', 'ExpiryDate', 'RenewalLeadDays', 'Tags', 'Files', 'LinkedApp', 'LinkedID', 'Notes', 'Status', 'Pinned', 'Extra', 'PrevID', 'Encrypted']];
+  const doc = (id, title, cat, owner, expiry, lead, status, enc) =>
+    docs.push([id, 1, Date.parse('2026-11-16T08:00:00+08:00'), title, cat, owner, 'SECRET-' + id, 'Issuer', '', expiry ? d(expiry) : '', lead === undefined ? '' : lead, '', '', '', '', 'private note', status || 'Active', false, '{}', '', enc ? true : false]);
+  doc('v1', 'Passport', 'Travel', 'Me', addDays(TODAY, 120));            // inside the 180-day travel window
+  doc('v2', 'Driving licence', 'Identity', 'Me', addDays(TODAY, 20));    // within 30 days
+  doc('v3', 'Car insurance', 'Insurance', 'Me', addDays(TODAY, -3));     // expired
+  doc('v4', 'Wife passport', 'Travel', 'Wife', addDays(TODAY, 400));
+  doc('v5', 'Old IC', 'Identity', 'Me', addDays(TODAY, -100), '', 'Archived'); // archived: ignored
+  doc('v6', 'gAAAAABl9x2EncryptedTitle', 'Medical', 'Me', addDays(TODAY, 10), '', 'Active', true);
+  doc('v7', 'Warranty TV', 'Warranty & Receipts', 'Household', 'soon');  // unreadable date
+  const cats = [['Name', 'Icon', 'Colour', 'FolderID', 'LeadDays', 'Fields', 'Encrypt', 'Order'],
+    ['Identity', '🪪', '#5B8DEF', 'f1', 30, '', 'ask', 1], ['Travel', '✈️', '#3FB6A8', 'f2', 180, '', '', 2],
+    ['Insurance', '🛡️', '#8E7CC3', 'f3', 30, '', '', 4], ['Medical', '🩺', '#E06C75', 'f4', 30, '', '', 9],
+    ['Warranty & Receipts', '🧾', '#9AA0A6', 'f5', 30, '', '', 10]];
+  return { Documents: docs, Categories: cats, People: [['Name', 'Relationship', 'Colour']], Reminders: [['DocID', 'Date', 'Kind', 'CalendarEventID', 'Done']],
+    _Log: [['Time', 'Action', 'DocID', 'Detail'], ['2026-11-16T08:44:04.756Z', 'setup', '', 'Initial setup, version 1.0.0']] };
+}
+
+/* ---------------- Dashboard (budget) ---------------- */
+function dashboard() {
+  return { Budget: [['Category', 'Monthly budget (RM)', 'Notes'],
+    ['🍽️ Food & Drinks', 150, ''], ['🍜 Food', 20, 'deliberately low: over budget'], ['⛽ Fuel', 200, ''], ['📺 Netflix', 60, ''], ['Total', 600, '']] };
+}
+
+module.exports = { TODAY, NOW, garage, finance, flow, vault, dashboard };

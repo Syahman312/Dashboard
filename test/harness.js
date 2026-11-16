@@ -50,7 +50,7 @@ function load(props) {
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {}, getAll: () => ({}), putAll: () => {} }) }
   };
   vm.createContext(context);
-  ['Shared.gs', 'Garage.gs', 'Finance.gs', 'Flow.gs', 'Fixes.gs', 'Code.gs'].forEach(f => {
+  ['Shared.gs', 'Garage.gs', 'Finance.gs', 'Flow.gs', 'Vault.gs', 'Budget.gs', 'Fixes.gs', 'Code.gs'].forEach(f => {
     vm.runInContext(fs.readFileSync(path.join(SRC, f), 'utf8'), context, { filename: f });
   });
   return context;

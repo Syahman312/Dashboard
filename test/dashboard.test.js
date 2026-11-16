@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const { load, fakeSpreadsheet } = require('./harness');
 const fx = require('./fixtures');
 
-const PROPS = { GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w' };
-const BOOKS = { g: fx.garage(), f: fx.finance(), w: fx.flow() };
+const PROPS = { GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w', VAULT_SHEET_ID: 'v', DASHBOARD_SHEET_ID: 'd' };
+const BOOKS = { g: fx.garage(), f: fx.finance(), w: fx.flow(), v: fx.vault(), d: fx.dashboard() };
 
 function build() {
   const gs = load(PROPS);
@@ -311,4 +311,76 @@ test('app links come from Script Properties and must be https', () => {
   assert.equal(d.sources.finance.appUrl, null, 'non-https rejected');
   assert.equal(d.sources.garage.appUrl, 'https://script.google.com/macros/s/AKfyGarage/exec');
   assert.equal(d.sources.finance.appProp, 'FINANCE_APP_URL');
+});
+
+test('vault: expiring documents, lead times and privacy', () => {
+  const d = build();
+  const v = d.sources.vault;
+  assert.ok(v.ok, v.error);
+  const s = v.summary;
+  assert.equal(s.total, 6, 'archived document ignored');
+  assert.deepEqual(JSON.parse(JSON.stringify(s.expired.map(x => x.title))), ['Car insurance']);
+  assert.deepEqual(JSON.parse(JSON.stringify(s.expiring30.map(x => x.title))), ['Medical (encrypted)', 'Driving licence']);
+  const json = JSON.stringify(d);
+  assert.ok(!json.includes('SECRET-'), 'document numbers never sent');
+  assert.ok(!json.includes('private note'), 'notes never sent');
+  assert.ok(!json.includes('EncryptedTitle'), 'encrypted titles never sent');
+  const i = d.issues.filter(x => x.source === 'vault');
+  assert.ok(i.some(x => x.level === 'error' && /Car insurance expired 3 days ago/.test(x.message)));
+  assert.ok(i.some(x => /Passport expires in 120 days/.test(x.message)), 'travel lead time is 180 days');
+  assert.ok(i.some(x => /expiry date that cannot be read/.test(x.message)));
+  assert.ok(i.every(x => x.fix), 'every vault problem has fix steps');
+});
+
+test('vault is optional', () => {
+  const gs = load({ GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w' });
+  const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(BOOKS[id]));
+  assert.equal(d.sources.vault.off, true);
+  assert.ok(!d.issues.some(i => i.source === 'vault'));
+  assert.equal(d.todayStrip.vault, null);
+});
+
+test('money: budget and recurring payments', () => {
+  const d = build();
+  const f = d.sources.finance.summary;
+  const b = f.budget;
+  assert.equal(b.total, 600);
+  assert.equal(b.spent, f.month.spent);
+  const food = b.rows.find(r => r.category === '🍜 Food');
+  assert.ok(food.spent > food.budget, 'over budget');
+  assert.ok(d.issues.some(i => i.area === 'budget' && /Food: RM .*over by/.test(i.message)));
+  assert.ok(b.rows[0].pct >= b.rows[b.rows.length - 1].pct, 'most-used budget first');
+  const netflix = f.recurring.find(r => /netflix/i.test(r.name));
+  assert.ok(netflix, 'Netflix detected as recurring');
+  assert.equal(netflix.amount, 54.9);
+  assert.ok(!f.recurring.some(r => /food/i.test(r.name)), 'everyday spending is not recurring');
+});
+
+test('today strip, sync health and alerts', () => {
+  const d = build();
+  const t = d.todayStrip;
+  assert.equal(t.tasks.due, 4);
+  assert.equal(t.tasks.overdue, 2);
+  assert.ok(t.habits.items.some(h => h.habit === 'Read' && h.done));
+  assert.ok(t.habits.items.some(h => h.habit === 'Run' && h.due));
+  assert.equal(t.garage.label, 'Road tax');
+  assert.equal(t.vault.count, 3);
+  assert.equal(t.vault.expired, 1);
+
+  const sync = Object.fromEntries(d.sync.map(r => [r.key, r]));
+  assert.equal(sync.flow.status, 'ok', 'Flow saved after its last failure');
+  assert.equal(sync.finance.status, 'broken', 'Finance failed after its last save');
+  assert.equal(sync.vault.status, 'ok');
+
+  const a = d.alerts;
+  const levels = a.map(x => x.level);
+  assert.deepEqual(levels, levels.slice().sort((x, y) => ['bad', 'warn', 'info'].indexOf(x) - ['bad', 'warn', 'info'].indexOf(y)), 'most urgent first');
+  const titles = a.map(x => x.title).join(' | ');
+  assert.match(titles, /Finance sync is failing/);
+  assert.equal(a[0].title, 'Finance sync is failing', 'broken sync leads the list');
+  assert.match(titles, /Overdue: Call insurer/);
+  assert.match(titles, /Car insurance has expired/);
+  assert.match(titles, /Demo Car road tax renewal/);
+  assert.match(titles, /Over budget: 🍜 Food/);
+  assert.match(titles, /Driving licence expires/);
 });

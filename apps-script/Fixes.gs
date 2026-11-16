@@ -125,6 +125,19 @@ var FIX_RULES = [
     'Open Flow on your PC and tap Sync. If it fails, see the sync problem above (Web App URL).'
   ] },
 
+  /* ---------- Vault ---------- */
+  { source: 'vault', area: 'expiry', where: 'app', steps: [
+    'Renew the document with whoever issues it.',
+    'Then open it in Vault, attach the new copy and update its expiry date (the old one is kept as history).'
+  ] },
+  { source: 'vault', area: 'dates', where: 'app', steps: ['Open the document in Vault and pick its expiry date again with the date picker.'] },
+
+  /* ---------- Budget ---------- */
+  { source: 'finance', area: 'budget', where: 'sheet', steps: [
+    'If the spending is right, raise that category\'s amount in the Budget tab of your Dashboard sheet.',
+    'Otherwise it is a nudge to spend less there for the rest of the month.'
+  ] },
+
   /* ---------- Across apps ---------- */
   { source: 'cross', area: 'fuel', where: 'app', steps: [
     'Compare this month\'s fill-ups in Garage with fuel spending in Finance.',
@@ -132,7 +145,7 @@ var FIX_RULES = [
   ] }
 ];
 
-var APP_NAMES = { flow: 'Flow', finance: 'Finance', garage: 'Garage', cross: 'the apps' };
+var APP_NAMES = { flow: 'Flow', finance: 'Finance', garage: 'Garage', vault: 'Vault', cross: 'the apps' };
 
 /** Adds `fix: { where, steps }` to each issue that has a matching rule. */
 function addFixes_(issues) {

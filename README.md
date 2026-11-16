@@ -35,8 +35,14 @@ The fix steps live in `apps-script/Fixes.gs`.
 
    (The ID is the long part of the URL between `/d/` and `/edit`.)
 
-   Optional, for the **Open app** buttons: add the address you open each app with as
-   `FLOW_APP_URL`, `FINANCE_APP_URL` and `GARAGE_APP_URL` (https links only).
+   Optional:
+   - `VAULT_SHEET_ID`: the ID of your **Vault Data** sheet (adds the Vault tab, Vault expiry alerts and the Today strip card).
+   - `DASHBOARD_SHEET_ID`: the ID of your **Dashboard** sheet, for the budget. Then run **`createBudgetTab`** once from the
+     editor: it adds a **Budget** tab (Category | Monthly budget) pre-filled with your usual spending; edit the amounts.
+     This tab is the only thing the dashboard ever writes, and only when you run that function.
+
+   Also optional, for the **Open app** buttons: add the address you open each app with as
+   `FLOW_APP_URL`, `FINANCE_APP_URL`, `GARAGE_APP_URL` and `VAULT_APP_URL` (https links only).
 4. In the editor, run **`testDashboard`** once. Google asks you to allow access to your Sheets. (Apps Script needs full Sheets access to open a Sheet by its ID, but the dashboard code never writes.)
    The execution log lists each sheet as OK or FAILED, followed by every issue found.
 5. **Deploy → New deployment → Web app**. Set *Execute as: Me* and *Who has access: Only myself*.
@@ -109,6 +115,15 @@ project in the Apps Script editor.
 
 > Note: the files in `apps-script/` are the master copy. A deploy overwrites whatever is in the online editor,
 > so make edits here rather than in the editor.
+
+## Overview
+
+- **Today strip:** tasks and habits due today (Flow), the next Garage reminder, and Vault documents expiring within 30 days.
+- **Alerts:** one list of everything that needs action across the apps (failing syncs first, then overdue and expired
+  items, then by date): overdue tasks, road tax and insurance, expiring documents, bills due this week, budgets overspent.
+- **Money snapshot:** net worth, this month's spend against budget (the line marks where you should be by today) and
+  upcoming recurring payments, which are detected from your transactions (charged about monthly, similar amount).
+- **Sync health:** when each app last saved to its sheet, and whether its sync is failing.
 
 ## Works on every device
 
