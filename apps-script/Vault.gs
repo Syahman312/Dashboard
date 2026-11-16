@@ -65,6 +65,8 @@ function readVault_(ss, ctx) {
       expiring30: dated.filter(function (d) { return d.daysLeft >= 0 && d.daysLeft <= 30; }).map(clean),
       expired: dated.filter(function (d) { return d.daysLeft < 0; }).map(clean),
       upcoming: dated.filter(function (d) { return d.daysLeft >= 0; }).slice(0, 12).map(clean),
+      timeline: dated.slice(0, 200).map(clean),
+      owners: docs.map(function (d) { return d.owner; }).filter(function (o, i, a) { return o && a.indexOf(o) === i; }),
       byCategory: Object.keys(byCat).map(function (k) { return byCat[k]; }).sort(function (a, b) { return b.count - a.count; }),
       lastChange: lastChange
     },

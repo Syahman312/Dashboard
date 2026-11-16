@@ -250,6 +250,16 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
     });
   }
 
+  // Each fill-up with its fuel economy (km since the previous fill / litres put in)
+  var withOdo = myFuel.filter(function (f) { return f.odo !== null; });
+  var fills = withOdo.slice(-16).map(function (f, i, arr) {
+    var prev = i ? arr[i - 1] : null;
+    var km = prev && f.odo > prev.odo ? f.odo - prev.odo : null;
+    var kmPerL = km && f.litres ? round2_(km / f.litres) : null;
+    if (kmPerL !== null && (kmPerL < 3 || kmPerL > 30)) kmPerL = null; // partial fill or typo: leave it out
+    return { date: f.date, cost: f.cost, litres: f.litres, odo: f.odo, place: f.place, km: km, kmPerL: kmPerL };
+  }).slice(1);
+
   var history = myLogs.slice().reverse().slice(0, 15).map(function (l) {
     return { date: l.date, items: l.items, cost: l.cost, odo: l.odo };
   });
@@ -278,6 +288,7 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
     spendMonth: spendMonth,
     monthly: monthly,
     history: history,
+    fills: fills,
     totals: {
       fuel12: sum_(monthly, function (m) { return m.fuel; }),
       service12: sum_(monthly, function (m) { return m.service; }),

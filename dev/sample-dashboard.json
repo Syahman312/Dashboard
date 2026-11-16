@@ -1,5 +1,5 @@
 {
-  "version": "2.0.1",
+  "version": "2.1.0",
   "generatedAt": 1794702600000,
   "today": "2026-11-15",
   "sources": {
@@ -396,7 +396,7 @@
         },
         "lastChange": 1794697200000
       },
-      "ms": 8
+      "ms": 11
     },
     "finance": {
       "name": "Finance",
@@ -899,6 +899,230 @@
             "account": "Maybank",
             "amount": -50,
             "transfer": false
+          },
+          {
+            "date": "2026-11-05",
+            "desc": "Coffee",
+            "cat": "☕ Coffee",
+            "account": "Maybank",
+            "amount": -9.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-11-05",
+            "desc": "Coffee",
+            "cat": "☕ Coffee",
+            "account": "Maybank",
+            "amount": -9.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-11-04",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -26,
+            "transfer": false
+          },
+          {
+            "date": "2026-11-04",
+            "desc": "Belanja GF",
+            "cat": "🍰 Belanja GF",
+            "account": "Maybank",
+            "amount": -20,
+            "transfer": false
+          },
+          {
+            "date": "2026-11-04",
+            "desc": "Belanja Family",
+            "cat": "🍣 Belanja Family",
+            "account": "Maybank",
+            "amount": -40,
+            "transfer": false
+          },
+          {
+            "date": "2026-11-02",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -22.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-11-02",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-31",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -19,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-30",
+            "desc": "Petrol",
+            "cat": "⛽ Fuel",
+            "account": "Maybank",
+            "amount": -50,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-29",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -15.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-29",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-27",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -12,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-25",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -26,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-25",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-24",
+            "desc": "Petrol",
+            "cat": "⛽ Fuel",
+            "account": "Maybank",
+            "amount": -50,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-23",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -22.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-21",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -19,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-21",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-19",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -15.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-18",
+            "desc": "Petrol",
+            "cat": "⛽ Fuel",
+            "account": "Maybank",
+            "amount": -50,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-17",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -12,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-17",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-13",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-09",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -15.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-09",
+            "desc": "Salary",
+            "cat": "💵 Income",
+            "account": "Maybank",
+            "amount": 3063,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-09",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-07",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -12,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-07",
+            "desc": "Netflix",
+            "cat": "📺 Netflix",
+            "account": "Affin Visa",
+            "amount": -54.9,
+            "transfer": false
           }
         ],
         "monthCats": [
@@ -1027,7 +1251,7 @@
           "unbudgeted": 121
         }
       },
-      "ms": 11
+      "ms": 14
     },
     "garage": {
       "name": "Garage",
@@ -1237,6 +1461,125 @@
                 "odo": 98000
               }
             ],
+            "fills": [
+              {
+                "date": "2026-08-17",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 117520,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-08-24",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 117780,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-08-31",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 118040,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-09-07",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 118300,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-09-14",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 118560,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-09-21",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 118820,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-09-28",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 119080,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-10-05",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 119340,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-10-12",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 119190,
+                "place": "Station",
+                "km": null,
+                "kmPerL": null
+              },
+              {
+                "date": "2026-10-19",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 119450,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-10-26",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 119710,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-11-02",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 119970,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              },
+              {
+                "date": "2026-11-09",
+                "cost": 50,
+                "litres": 24.4,
+                "odo": 120230,
+                "place": "Station",
+                "km": 260,
+                "kmPerL": 10.66
+              }
+            ],
             "totals": {
               "fuel12": 700,
               "service12": 188,
@@ -1251,7 +1594,7 @@
         },
         "lastChange": 1794657600000
       },
-      "ms": 2
+      "ms": 4
     },
     "vault": {
       "name": "Vault",
@@ -1329,6 +1672,58 @@
             "daysLeft": 400,
             "lead": 180
           }
+        ],
+        "timeline": [
+          {
+            "title": "Car insurance",
+            "category": "Insurance",
+            "icon": "🛡️",
+            "owner": "Me",
+            "expiry": "2026-11-12",
+            "daysLeft": -3,
+            "lead": 30
+          },
+          {
+            "title": "Medical (encrypted)",
+            "category": "Medical",
+            "icon": "🩺",
+            "owner": "Me",
+            "expiry": "2026-11-25",
+            "daysLeft": 10,
+            "lead": 30
+          },
+          {
+            "title": "Driving licence",
+            "category": "Identity",
+            "icon": "🪪",
+            "owner": "Me",
+            "expiry": "2026-12-05",
+            "daysLeft": 20,
+            "lead": 30
+          },
+          {
+            "title": "Passport",
+            "category": "Travel",
+            "icon": "✈️",
+            "owner": "Me",
+            "expiry": "2027-03-15",
+            "daysLeft": 120,
+            "lead": 180
+          },
+          {
+            "title": "Wife passport",
+            "category": "Travel",
+            "icon": "✈️",
+            "owner": "Wife",
+            "expiry": "2027-12-20",
+            "daysLeft": 400,
+            "lead": 180
+          }
+        ],
+        "owners": [
+          "Me",
+          "Wife",
+          "Household"
         ],
         "byCategory": [
           {

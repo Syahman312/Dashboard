@@ -395,6 +395,33 @@ input, select, textarea { font-size: 16px !important; }
 .synct tr:first-child td { border-top: 0; }
 .st { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--card-2); white-space: nowrap; }
 .st.ok { color: var(--good); } .st.stale { color: var(--warn); } .st.broken, .st.error { color: var(--bad); } .st.off { color: var(--faint); }
+/* Interactive bits shared by all tabs */
+.ring { flex: none; display: block; }
+.ring .rv { transition: stroke-dashoffset 1s cubic-bezier(.2,.7,.2,1); }
+.ring .rl { font-weight: 700; fill: var(--text); font-variant-numeric: tabular-nums; }
+.chips2 { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.chips2 button { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.chips2 button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chips2 .cn { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px; font-size: 11px; font-weight: 700; background: color-mix(in srgb, currentColor 16%, transparent); }
+@media (pointer: coarse) { .chips2 button { min-height: 40px; padding: 0 14px; } }
+details.xrow { border-top: 1px solid var(--line); }
+details.xrow:first-of-type { border-top: 0; }
+details.xrow > summary { list-style: none; display: flex; gap: 10px; justify-content: space-between; align-items: center; padding: 10px 0; cursor: pointer; min-height: 44px; }
+details.xrow > summary::-webkit-details-marker { display: none; }
+details.xrow > summary .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details.xrow[open] > summary .t { white-space: normal; }
+details.xrow .xb { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0 0 12px; font-size: 13px; color: var(--muted); animation: rise .2s ease; }
+details.xrow .xb b { color: var(--text); font-weight: 600; }
+.searchbox { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; }
+.searchbox:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ringrow { display: flex; align-items: center; gap: 14px; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal .dh { font-size: 10.5px; color: var(--faint); text-align: center; text-transform: uppercase; letter-spacing: .05em; }
+.cal .dc { position: relative; aspect-ratio: 1; border-radius: 8px; background: var(--card-2); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); max-height: 46px; }
+.cal .dc.has { background: color-mix(in srgb, var(--s2) 22%, var(--card-2)); color: var(--text); font-weight: 650; cursor: pointer; }
+.cal .dc.today { outline: 1.5px solid var(--accent); }
+.cal .dc .amt { font-size: 9.5px; font-weight: 600; color: var(--s2); }
+.cal .dc.blank { background: none; }
 footer { margin-top: 28px; padding-bottom: 56px; color: var(--faint); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
 footer a { color: var(--muted); }
 </style>
@@ -457,7 +484,7 @@ footer a { color: var(--muted); }
   /* =========================================================
    * State, storage, formatting
    * ======================================================= */
-  var S = { data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
+  var S = { ui: { alerts: 'all', tasks: 'today', tx: 'all', txq: '', vcat: 'all', vowner: 'all' }, data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
   var LS = { data: 'dash:last', hidden: 'dash:hidden', theme: 'dash:theme', cfg: 'dash:cfg', hint: 'dash:hint' };
   var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
   var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* unavailable */ } };
@@ -792,6 +819,40 @@ footer a { color: var(--muted); }
       '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="3" fill="' + color + '"/></svg>';
   }
 
+  function addMonthsIso(iso, n) {
+    var dt = parseIso(iso), y = dt.getUTCFullYear(), m = dt.getUTCMonth() + n, day = dt.getUTCDate();
+    var last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    return new Date(Date.UTC(y, m, Math.min(day, last))).toISOString().slice(0, 10);
+  }
+  function daysBetweenIso(a, b) { return Math.round((parseIso(b) - parseIso(a)) / 864e5); }
+  function daysLeftInMonth(iso) {
+    var dt = parseIso(iso), last = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate();
+    return last - dt.getUTCDate() + 1;
+  }
+  /** Progress ring (0..1). Animates in via fillBars. */
+  function ring(pct, opts) {
+    opts = opts || {};
+    var size = opts.size || 44, sw = opts.stroke || 5, r = (size - sw) / 2, c = 2 * Math.PI * r, h = size / 2;
+    pct = Math.max(0, Math.min(1, pct || 0));
+    return '<svg class="ring" width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" aria-hidden="true">' +
+      '<circle cx="' + h + '" cy="' + h + '" r="' + r + '" fill="none" stroke="var(--card-3)" stroke-width="' + sw + '"/>' +
+      '<circle class="rv" cx="' + h + '" cy="' + h + '" r="' + r + '" fill="none" stroke="' + (opts.color || 'var(--s1)') + '" stroke-width="' + sw + '" stroke-linecap="round"' +
+      ' stroke-dasharray="' + c.toFixed(2) + '" stroke-dashoffset="' + c.toFixed(2) + '" data-ro="' + (c * (1 - pct)).toFixed(2) + '" transform="rotate(-90 ' + h + ' ' + h + ')"/>' +
+      (opts.label !== undefined ? '<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" class="rl" style="font-size:' + (opts.fs || Math.round(size / 4)) + 'px">' + esc(opts.label) + '</text>' : '') + '</svg>';
+  }
+  /** Row of filter chips. items: [{ key, label, count }] */
+  function chipBar(group, items, current) {
+    return '<div class="chips2" role="group" data-chipgroup="' + group + '">' + items.map(function (it) {
+      return '<button type="button" data-chip="' + esc(it.key) + '" aria-pressed="' + (it.key === current) + '">' + esc(it.label) +
+        (it.count !== undefined ? ' <span class="cn">' + it.count + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+  }
+  function bindChips(root, group, onPick) {
+    each(root, '[data-chipgroup="' + group + '"] [data-chip]', function (b) {
+      b.addEventListener('click', function () { onPick(b.getAttribute('data-chip')); });
+    });
+  }
+
   function countUp(root) {
     if (reduced || !S.animate) return;
     each(root, '[data-count]', function (e) {
@@ -808,6 +869,7 @@ footer a { color: var(--muted); }
   function fillBars(root) {
     requestAnimationFrame(function () { requestAnimationFrame(function () {
       each(root, '[data-w]', function (e) { e.style.width = e.getAttribute('data-w'); });
+      each(root, '[data-ro]', function (e) { e.style.strokeDashoffset = e.getAttribute('data-ro'); });
     }); });
   }
 
@@ -1153,7 +1215,7 @@ footer a { color: var(--muted); }
         : '<div class="empty">Flow not connected</div>') + '</div>';
     var hb = t.habits;
     html += '<div class="card" data-go="flow"><div class="k"><span class="eyebrow">Habits today</span></div>' +
-      (hb && hb.total ? '<div class="big num">' + hb.done + ' <span class="muted" style="font-size:14px;font-weight:500">of ' + hb.total + ' done</span></div>' +
+      (hb && hb.total ? '<div class="ringrow" style="gap:10px;margin:4px 0 2px">' + ring(hb.done / hb.total, { size: 40, stroke: 5, color: 'var(--good)' }) + '<div class="big num" style="margin:0">' + hb.done + ' <span class="muted" style="font-size:14px;font-weight:500">of ' + hb.total + ' done</span></div></div>' +
         '<div class="hchips">' + hb.items.map(function (h) { return '<span class="' + (h.done ? 'done' : h.due ? 'due' : '') + '" title="' + (h.done ? 'Done today' : h.due ? 'Due today' : 'Weekly target already met') + '">' + esc(h.icon) + ' ' + esc(h.habit) + '</span>'; }).join('') + '</div>'
         : '<div class="empty">No habits yet</div>') + '</div>';
     var gr = t.garage;
@@ -1171,12 +1233,17 @@ footer a { color: var(--muted); }
     // ---- Alerts feed + Money snapshot
     html += '<div class="grid g-21">';
     var ICON = { bad: '!', warn: '•', info: 'i' };
-    html += '<div class="card">' + cardHead('Alerts', alerts.length ? plural(alerts.length, 'thing') + ' that need action' : 'Nothing needs action') +
-      (alerts.length ? '<ul class="alerts">' + alerts.slice(0, 12).map(function (a) {
+    var srcs = {};
+    alerts.forEach(function (a) { srcs[a.src] = (srcs[a.src] || 0) + 1; });
+    var af = S.ui.alerts !== 'all' && !srcs[S.ui.alerts] ? 'all' : S.ui.alerts;
+    var shown = alerts.filter(function (a) { return af === 'all' || a.src === af; });
+    html += '<div class="card" id="alerts-card">' + cardHead('Alerts', alerts.length ? plural(alerts.length, 'thing') + ' that need action' : 'Nothing needs action') +
+      (Object.keys(srcs).length > 1 ? chipBar('alerts', [{ key: 'all', label: 'All', count: alerts.length }].concat(Object.keys(srcs).map(function (k) { return { key: k, label: SRC_LABEL[k] || k, count: srcs[k] }; })), af) : '') +
+      (shown.length ? '<ul class="alerts">' + shown.slice(0, 12).map(function (a) {
         var when = a.days === null ? '' : a.days < 0 ? '<span class="bad">' + (-a.days) + 'd ago</span>' : a.days === 0 ? '<span class="warnc">Today</span>' : a.days === 1 ? 'Tomorrow' : shortDate(a.date) + '<div class="dd">in ' + a.days + 'd</div>';
         return '<li class="' + esc(a.level) + '" data-go="' + esc(a.view) + '"><span class="ic">' + ICON[a.level] + '</span><div style="min-width:0"><div class="tt">' + esc(a.title) + '</div>' +
           '<div class="dd">' + esc(SRC_LABEL[a.src] || '') + (a.detail ? ' · ' + esc(a.detail) : '') + '</div></div><div class="when num">' + when + '</div></li>';
-      }).join('') + '</ul>' + (alerts.length > 12 ? '<div class="faint" style="font-size:13px;margin-top:6px">+ ' + (alerts.length - 12) + ' more in Health</div>' : '')
+      }).join('') + '</ul>' + (shown.length > 12 ? '<div class="faint" style="font-size:13px;margin-top:6px">+ ' + (shown.length - 12) + ' more in Health</div>' : '')
         : '<div class="good" style="font-size:14px">✓ All clear across your apps</div>') + '</div>';
 
     var fi = d.sources.finance;
@@ -1186,7 +1253,9 @@ footer a { color: var(--muted); }
       html += '<div class="eyebrow">Net worth</div><div class="hero num" style="font-size:30px;margin:4px 0 12px" data-count="' + fs.netWorth + '" data-fmt="rm0">' + rm(fs.netWorth, 0) + '</div>';
       if (bud && bud.total) {
         var over = bud.spent > bud.total;
-        html += '<div style="display:flex;justify-content:space-between;font-size:13.5px"><span>Spent <b class="num">' + rm(bud.spent, 0) + '</b> of ' + rm(bud.total, 0) + '</span><span class="num ' + (over ? 'bad' : 'muted') + '">' + (over ? rm(-bud.left, 0) + ' over' : rm(bud.left, 0) + ' left') + '</span></div>' +
+        html += '<div class="ringrow" style="margin-bottom:8px">' + ring(bud.spent / bud.total, { size: 56, stroke: 6, label: bud.pct + '%', fs: 12, color: over ? 'var(--bad)' : bud.pct > bud.pacePct ? 'var(--warn)' : 'var(--good)' }) +
+          '<div style="font-size:13.5px"><div>Budget: <b class="num">' + (over ? rm(-bud.left, 0) + ' over' : rm(bud.left, 0) + ' left') + '</b></div><div class="faint num" style="font-size:12px">' + (over ? '' : rm(bud.left / Math.max(1, daysLeftInMonth(d.today)), 0) + ' a day for the rest of the month') + '</div></div></div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:13.5px"><span>Spent <b class="num">' + rm(bud.spent, 0) + '</b> of ' + rm(bud.total, 0) + '</span><span class="num ' + (over ? 'bad' : 'muted') + '">' + (over ? rm(-bud.left, 0) + ' over' : rm(bud.left, 0) + ' left') + '</span></div>' +
           '<div class="bbar' + (over ? ' over' : '') + '" title="Line = where you should be by today"><i data-w="' + Math.min(100, bud.pct) + '%"></i><span class="pace" style="left:' + bud.pacePct + '%"></span></div>' +
           '<div class="faint" style="font-size:12px">' + bud.pct + '% used · ' + bud.pacePct + '% of the month gone</div>';
       } else if (m) {
@@ -1216,6 +1285,7 @@ footer a { color: var(--muted); }
 
     host.innerHTML = html;
     bindGo(host);
+    bindChips(host, 'alerts', function (k) { S.ui.alerts = k; S.animate = false; viewOverview(host, d); bindAppLinks(host); fillBars(host); });
   }
 
   /* =========================================================
@@ -1224,27 +1294,82 @@ footer a { color: var(--muted); }
   function viewVault(host, d) {
     var src = d.sources.vault;
     if (!src || src.off) {
-      host.innerHTML = viewHeader('Vault', null) + '<div class="card"><div class="note">Vault is not connected yet. In Apps Script → Project Settings → Script Properties, add <b>VAULT_SHEET_ID</b> (the ID of your "Vault Data" sheet), then press Refresh.</div></div>';
+      host.innerHTML = viewHeader('Vault', null) + '<div class="card"><div class="note">Vault is not connected yet. Run <b>setupDashboard</b> in the Apps Script editor (or add <b>VAULT_SHEET_ID</b> in Script Properties), then press Refresh.</div></div>';
       return;
     }
     if (!src.ok) { host.innerHTML = failedCard('Vault', src); return; }
-    var s = src.summary;
-    var row = function (x) {
-      var cls = x.daysLeft === null ? 'faint' : x.daysLeft < 0 ? 'bad' : x.daysLeft <= 30 ? 'warnc' : 'muted';
-      return '<li><span class="t">' + esc(x.icon) + ' ' + esc(x.title) + (x.owner && x.owner !== 'Me' ? '<span class="tag">' + esc(x.owner) + '</span>' : '') + '</span>' +
-        '<span class="r num ' + cls + '">' + (x.daysLeft === null ? '' : x.daysLeft < 0 ? 'expired ' + shortDate(x.expiry) : shortDate(x.expiry) + ' ' + x.expiry.slice(0, 4) + ' · ' + x.daysLeft + 'd') + '</span></li>';
-    };
+    var s = src.summary, all = s.timeline || s.expired.concat(s.upcoming);
     var html = viewHeader('Vault', src);
     html += '<div class="tiles" style="margin-bottom:14px">' + tile(s.total, 'Documents') + tile(s.expired.length, 'Expired', null, s.expired.length ? 'bad' : '') +
-      tile(s.expiring30.length, 'Expiring in 30 days', null, s.expiring30.length ? 'warnc' : '') + '</div>';
+      tile(s.expiring30.length, 'Expiring in 30 days', null, s.expiring30.length ? 'warnc' : '') +
+      tile(all.filter(function (x) { return x.daysLeft > 30 && x.daysLeft <= x.lead; }).length, 'Renewal window open', 'within each category\'s lead time') + '</div>';
+    html += '<div class="card" style="margin-bottom:14px">' + cardHead('Expiry timeline', 'Next 12 months · hover or tap a dot') + '<div id="vault-filters"></div><div id="vault-tl"></div></div>';
     html += '<div class="grid g-21">';
-    html += '<div class="card">' + cardHead('Expiry timeline', 'Soonest first') +
-      ((s.expired.length || s.upcoming.length) ? '<ul class="list">' + s.expired.concat(s.upcoming).map(row).join('') + '</ul>' : '<div class="empty">No documents with an expiry date.</div>') + '</div>';
+    html += '<div class="card">' + cardHead('Documents by expiry', 'Soonest first') + '<div id="vault-list"></div></div>';
     html += '<div class="card">' + cardHead('By category') + '<ul class="list">' + s.byCategory.map(function (c) {
       return '<li><span class="t">' + esc(c.icon) + ' ' + esc(c.category) + '</span><span class="r num">' + c.count + '</span></li>';
     }).join('') + '</ul></div>';
     html += '</div>';
     host.innerHTML = html;
+
+    var tone = function (x) { return x.daysLeft < 0 ? 'bad' : x.daysLeft <= 30 ? 'warn' : x.daysLeft <= x.lead ? 'info' : 'ok'; };
+    var COL = { bad: '--bad', warn: '--warn', info: '--info', ok: '--s1' };
+    function draw() {
+      var cats = {}, owners = s.owners || [];
+      all.forEach(function (x) { if (x.category) cats[x.category] = (cats[x.category] || 0) + 1; });
+      var list = all.filter(function (x) {
+        return (S.ui.vcat === 'all' || x.category === S.ui.vcat) && (S.ui.vowner === 'all' || x.owner === S.ui.vowner);
+      });
+      $('vault-filters').innerHTML = chipBar('vcat', [{ key: 'all', label: 'All', count: all.length }].concat(Object.keys(cats).map(function (k) { return { key: k, label: k, count: cats[k] }; })), S.ui.vcat) +
+        (owners.length > 1 ? chipBar('vowner', [{ key: 'all', label: 'Everyone' }].concat(owners.map(function (o) { return { key: o, label: o }; })), S.ui.vowner) : '');
+      bindChips($('vault-filters'), 'vcat', function (k) { S.ui.vcat = k; draw(); });
+      bindChips($('vault-filters'), 'vowner', function (k) { S.ui.vowner = k; draw(); });
+
+      // Timeline (plain SVG): expired on the far left, then the next 12 months
+      var host2 = $('vault-tl'); host2.textContent = '';
+      var W = Math.max(300, host2.clientWidth || 600), H = 150, L = 84, R = 12, top = 22, base = 112;
+      var X = function (days) { return days < 0 ? 28 : L + (W - L - R) * Math.min(days, 365) / 365; };
+      var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': 'Document expiry timeline' }, host2);
+      host2.classList.add('chart');
+      sv('line', { x1: L, x2: W - R, y1: base, y2: base, 'class': 'base' }, svg);
+      for (var m = 0; m <= 12; m += (W < 520 ? 3 : 2)) {
+        var iso = addMonthsIso(d.today, m), dx = X(daysBetweenIso(d.today, iso));
+        sv('line', { x1: dx, x2: dx, y1: top - 6, y2: base, 'class': 'gl' }, svg);
+        sv('text', { x: dx, y: base + 18, 'text-anchor': 'middle', 'class': 'tick' }, svg).textContent = m === 0 ? 'Today' : MONTHS[parseIso(iso).getUTCMonth()];
+      }
+      sv('rect', { x: 6, y: top - 6, width: 44, height: base - top + 6, rx: 6, fill: css('--bad'), opacity: .08 }, svg);
+      sv('text', { x: 28, y: base + 18, 'text-anchor': 'middle', 'class': 'tick' }, svg).textContent = 'Expired';
+      sv('line', { x1: X(30), x2: X(30), y1: top - 6, y2: base, stroke: css('--warn'), 'stroke-dasharray': '3 3', opacity: .7 }, svg);
+      sv('text', { x: X(30) + 4, y: top - 8, 'class': 'tick' }, svg).textContent = '30 days';
+      var lanes = [];
+      var later = 0;
+      list.slice().sort(function (a, b) { return a.daysLeft - b.daysLeft; }).forEach(function (x) {
+        if (x.daysLeft > 365) { later++; return; }
+        var cx = X(x.daysLeft), lane = 0;
+        while (lanes[lane] !== undefined && cx - lanes[lane] < 16) lane++;
+        lanes[lane] = cx;
+        var cy = base - 14 - (lane % 5) * 17;
+        sv('line', { x1: cx, x2: cx, y1: cy, y2: base, stroke: css(COL[tone(x)]), 'stroke-width': 1, opacity: .4 }, svg);
+        var dot = sv('circle', { cx: cx, cy: cy, r: 7, fill: css(COL[tone(x)]), stroke: css('--card'), 'stroke-width': 2, style: 'cursor:pointer' }, svg);
+        var hit = sv('circle', { cx: cx, cy: cy, r: 14, fill: 'transparent', style: 'cursor:pointer' }, svg);
+        var show = function (evt) {
+          showTip(evt.clientX, evt.clientY, (x.icon ? x.icon + ' ' : '') + x.title, [{ color: css(COL[tone(x)]), value: x.daysLeft < 0 ? 'Expired ' + (-x.daysLeft) + 'd ago' : 'In ' + x.daysLeft + ' days', label: shortDate(x.expiry) + ' ' + x.expiry.slice(0, 4) }],
+            [x.category + (x.owner ? ' · ' + x.owner : ''), x.daysLeft >= 0 && x.daysLeft <= x.lead ? 'Renewal window open (' + x.lead + '-day lead time)' : 'Renewal reminder starts ' + x.lead + ' days before'].filter(Boolean));
+        };
+        [dot, hit].forEach(function (el) { el.addEventListener('pointermove', show); el.addEventListener('pointerdown', show); el.addEventListener('pointerleave', mouseLeave); });
+      });
+      if (later) sv('text', { x: W - R, y: top - 8, 'text-anchor': 'end', 'class': 'tick' }, svg).textContent = '+' + later + ' later';
+      if (!list.length) host2.innerHTML = '<div class="empty">No documents with an expiry date' + (S.ui.vcat !== 'all' || S.ui.vowner !== 'all' ? ' in this filter' : '') + '.</div>';
+
+      $('vault-list').innerHTML = list.length ? list.map(function (x) {
+        var cls = { bad: 'bad', warn: 'warnc', info: 'muted', ok: 'faint' }[tone(x)];
+        return '<details class="xrow"><summary><span class="t">' + esc(x.icon) + ' ' + esc(x.title) + (x.owner && x.owner !== 'Me' ? '<span class="tag">' + esc(x.owner) + '</span>' : '') + '</span>' +
+          '<span class="r num ' + cls + '">' + (x.daysLeft < 0 ? 'expired' : x.daysLeft + 'd') + '</span></summary>' +
+          '<div class="xb"><span>Expires <b>' + shortDate(x.expiry) + ' ' + x.expiry.slice(0, 4) + '</b></span><span>Category <b>' + esc(x.category || '—') + '</b></span>' +
+          '<span>Reminder <b>' + x.lead + ' days before</b></span>' + (x.owner ? '<span>For <b>' + esc(x.owner) + '</b></span>' : '') + '</div></details>';
+      }).join('') : '<div class="empty">Nothing here.</div>';
+    }
+    draw();
   }
 
   /* =========================================================
@@ -1285,12 +1410,14 @@ footer a { color: var(--muted); }
     if (bud && bud.rows.length) {
       if (bud.total) {
         var tover = bud.spent > bud.total;
-        html += '<div style="display:flex;justify-content:space-between;font-size:14px"><b>Total</b><span class="num"><b>' + rm(bud.spent, 0) + '</b> / ' + rm(bud.total, 0) + '</span></div>' +
-          '<div class="bbar' + (tover ? ' over' : '') + '"><i data-w="' + Math.min(100, bud.pct) + '%"></i><span class="pace" style="left:' + bud.pacePct + '%"></span></div>';
+        html += '<div class="ringrow" style="margin-bottom:6px">' + ring(bud.total ? bud.spent / bud.total : 0, { size: 84, stroke: 9, label: bud.pct + '%', color: tover ? 'var(--bad)' : bud.pct > bud.pacePct ? 'var(--warn)' : 'var(--good)' }) +
+          '<div><div class="num" style="font-size:22px;font-weight:700">' + (tover ? rm(-bud.left, 0) + ' over' : rm(bud.left, 0) + ' left') + '</div>' +
+          '<div class="muted num" style="font-size:13px">' + rm(bud.spent, 0) + ' of ' + rm(bud.total, 0) + ' · ' + bud.pacePct + '% of the month gone</div>' +
+          (!tover ? '<div class="faint num" style="font-size:12.5px">' + rm(bud.left / Math.max(1, daysLeftInMonth(d.today)), 0) + ' a day for the rest of the month</div>' : '') + '</div></div>';
       }
       html += bud.rows.map(function (r) {
         var over = r.budget > 0 && r.spent > r.budget;
-        return '<div style="margin-top:12px"><div style="display:flex;justify-content:space-between;gap:10px;font-size:13.5px"><span class="hb-name">' + esc(r.category) + '</span>' +
+        return '<div class="brow" data-bi="' + bud.rows.indexOf(r) + '" style="margin-top:12px;cursor:pointer"><div style="display:flex;justify-content:space-between;gap:10px;font-size:13.5px"><span class="hb-name">' + esc(r.category) + '</span>' +
           '<span class="num ' + (over ? 'bad' : 'muted') + '">' + rm(r.spent, 0) + ' / ' + rm(r.budget, 0) + '</span></div>' +
           '<div class="bbar' + (over ? ' over' : '') + '"><i data-w="' + Math.min(100, r.pct || 0) + '%"></i><span class="pace" style="left:' + bud.pacePct + '%"></span></div></div>';
       }).join('') + (bud.unbudgeted ? '<div class="faint" style="font-size:12.5px;margin-top:10px">' + rm(bud.unbudgeted, 0) + ' spent in categories without a budget</div>' : '');
@@ -1298,8 +1425,8 @@ footer a { color: var(--muted); }
       html += '<div class="note">Run <b>createBudgetTab</b> once in the Apps Script editor. It adds a <b>Budget</b> tab to your Dashboard sheet with your usual spending per category as a starting point; edit the amounts there.</div>';
     }
     html += '</div>';
-    html += '<div class="card">' + cardHead('Recurring payments', rec.length ? 'Detected from your transactions' : '') +
-      (rec.length ? '<ul class="list">' + rec.map(function (r) {
+    html += '<div class="card">' + cardHead('Recurring payments', rec.length ? 'Next 30 days · tap a day' : '') +
+      (rec.length ? '<div id="bills-cal" style="margin-bottom:14px"></div><ul class="list">' + rec.map(function (r) {
         var dueTxt = r.daysUntil < 0 ? 'was due ' + shortDate(r.next) : r.daysUntil === 0 ? 'due today' : shortDate(r.next) + ' · in ' + r.daysUntil + 'd';
         return '<li><span class="t">' + esc(r.name) + '<div class="faint" style="font-size:12px">' + esc(r.account) + ' · ' + dueTxt + '</div></span><span class="r num" style="color:var(--text)">' + rm(r.amount) + '</span></li>';
       }).join('') + '</ul><div class="faint" style="font-size:12.5px;margin-top:8px">' + rm(rec.reduce(function (t, r) { return t + r.amount; }, 0), 0) + ' a month in total</div>'
@@ -1332,17 +1459,73 @@ footer a { color: var(--muted); }
         }).join('');
       }).join('') + '</tbody></table></div>';
 
-    html += '<div class="card">' + cardHead('Recent transactions', 'Latest ' + (s.recent || []).length) + '<ul class="list">' +
-      (s.recent || []).map(function (t) {
-        var inflow = t.amount > 0 && !t.transfer;
-        return '<li><span class="t"><span class="when">' + shortDate(t.date) + '</span>' + esc(t.desc || t.cat || '—') +
-          '<div class="faint" style="font-size:12px;margin-left:62px;overflow:hidden;text-overflow:ellipsis">' + esc(t.cat || (t.transfer ? 'Transfer' : 'No category')) + ' · ' + esc(t.account) + '</div></span>' +
-          '<span class="num ' + (inflow ? 'good' : '') + '" style="font-size:14px;white-space:nowrap">' + (t.amount > 0 ? '+' : '') + rm(t.amount) + '</span></li>';
-      }).join('') + '</ul></div>';
+    html += '<div class="card">' + cardHead('Recent transactions', 'Latest ' + (s.recent || []).length) +
+      '<input class="searchbox" id="tx-q" type="search" placeholder="Search description, category or account" autocomplete="off">' +
+      '<div id="tx-list"></div></div>';
     html += '</div>';
 
     host.innerHTML = html;
     var firstPaint = S.animate;
+
+    // Budget rows: tap or hover for what is left per day
+    if (bud) each(host, '.brow', function (e) {
+      var r = bud.rows[+e.getAttribute('data-bi')], left = daysLeftInMonth(d.today);
+      var show = function (evt) {
+        var over = r.spent > r.budget;
+        showTip(evt.clientX, evt.clientY, r.category, [{ color: css(over ? '--bad' : '--s1'), value: rm(r.spent), label: 'of ' + rm(r.budget) }],
+          [over ? rm(r.spent - r.budget) + ' over budget' : rm(r.budget - r.spent) + ' left · ' + rm((r.budget - r.spent) / Math.max(1, left)) + ' a day for ' + plural(left, 'day'),
+           'Expected by today: ' + rm(r.budget * bud.pacePct / 100)]);
+      };
+      e.addEventListener('pointermove', show); e.addEventListener('pointerdown', show); e.addEventListener('pointerleave', mouseLeave);
+    });
+
+    // Bills calendar: the next 30 days, aligned to weeks
+    if ($('bills-cal')) {
+      var due = {};
+      rec.forEach(function (r) { if (r.daysUntil >= 0 && r.daysUntil <= 30) (due[r.next] = due[r.next] || []).push(r); });
+      var start = d.today, dow = (parseIso(start).getUTCDay() + 6) % 7, cells = '';
+      ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(function (h) { cells += '<div class="dh">' + h + '</div>'; });
+      for (var b = 0; b < dow; b++) cells += '<div class="dc blank"></div>';
+      for (var k = 0; k <= 30; k++) {
+        var iso = addDaysIso(start, k), items = due[iso] || [];
+        var amt = items.reduce(function (t, r) { return t + r.amount; }, 0);
+        cells += '<div class="dc' + (items.length ? ' has' : '') + (k === 0 ? ' today' : '') + '" data-day="' + iso + '">' + parseIso(iso).getUTCDate() + (items.length ? '<span class="amt">' + rmK(amt) + '</span>' : '') + '</div>';
+      }
+      $('bills-cal').innerHTML = '<div class="cal">' + cells + '</div>';
+      each($('bills-cal'), '.dc.has', function (c) {
+        var iso = c.getAttribute('data-day'), items = due[iso];
+        var show = function (evt) {
+          showTip(evt.clientX, evt.clientY, dayName(iso) + ', ' + shortDate(iso), items.map(function (r) { return { color: css('--s2'), value: rm(r.amount), label: r.name }; }),
+            items.length > 1 ? ['Total ' + rm(items.reduce(function (t, r) { return t + r.amount; }, 0))] : null);
+        };
+        c.addEventListener('pointermove', show); c.addEventListener('pointerdown', show); c.addEventListener('pointerleave', mouseLeave);
+      });
+    }
+
+    // Transactions: filter chips + search
+    function drawTx() {
+      var all = s.recent || [], f = S.ui.tx, q = S.ui.txq.toLowerCase();
+      var kind = function (t) { return t.transfer ? 'transfer' : t.amount < 0 ? 'out' : 'in'; };
+      var cnt = { all: all.length, out: 0, in: 0, transfer: 0 };
+      all.forEach(function (t) { cnt[kind(t)]++; });
+      var list = all.filter(function (t) {
+        if (f !== 'all' && kind(t) !== f) return false;
+        return !q || [t.desc, t.cat, t.account].join(' ').toLowerCase().indexOf(q) >= 0;
+      });
+      $('tx-list').innerHTML = chipBar('tx', [{ key: 'all', label: 'All', count: cnt.all }, { key: 'out', label: 'Spending', count: cnt.out },
+        { key: 'in', label: 'Income', count: cnt.in }, { key: 'transfer', label: 'Transfers', count: cnt.transfer }], f) +
+        (list.length ? '<ul class="list">' + list.map(function (t) {
+          var inflow = t.amount > 0 && !t.transfer;
+          return '<li><span class="t"><span class="when">' + shortDate(t.date) + '</span>' + esc(t.desc || t.cat || '—') +
+            '<div class="faint" style="font-size:12px;margin-left:62px;overflow:hidden;text-overflow:ellipsis">' + esc(t.cat || (t.transfer ? 'Transfer' : 'No category')) + ' · ' + esc(t.account) + '</div></span>' +
+            '<span class="num ' + (inflow ? 'good' : '') + '" style="font-size:14px;white-space:nowrap">' + (t.amount > 0 ? '+' : '') + rm(t.amount) + '</span></li>';
+        }).join('') + '</ul>' + (q || f !== 'all' ? '<div class="faint num" style="font-size:12.5px;margin-top:8px">' + plural(list.length, 'transaction') + ' · net ' + rm(list.reduce(function (t, x) { return t + x.amount; }, 0)) + '</div>' : '')
+          : '<div class="empty">No matching transactions.</div>');
+      bindChips($('tx-list'), 'tx', function (k) { S.ui.tx = k; drawTx(); });
+    }
+    $('tx-q').value = S.ui.txq;
+    $('tx-q').addEventListener('input', function (e) { S.ui.txq = e.target.value; drawTx(); });
+    drawTx();
 
     // Running total, this month vs last month
     if (m && s.daily) {
@@ -1438,18 +1621,19 @@ footer a { color: var(--muted); }
       (s.close ? tile(s.close.done + ' / ' + s.close.total, 'Close · ' + esc(s.close.period), 'Today is WD' + s.close.wd, s.close.behind ? 'warnc' : '') : '') +
       '</div>';
 
-    html += '<div class="grid g3">';
-    html += '<div class="card">' + cardHead('Top 3', 'Your focus today') +
-      (tk.top3.length ? '<ul class="list">' + tk.top3.slice(0, 3).map(function (t) { return taskLi(t); }).join('') + '</ul>' : '<div class="empty">No Top 3 picked yet.</div>') +
-      '<h3 class="sec">Due today</h3>' + (tk.today.length ? '<ul class="list">' + tk.today.map(function (t) { return taskLi(t); }).join('') + '</ul>' : '<div class="empty">Nothing scheduled for today.</div>') + '</div>';
-    html += '<div class="card">' + cardHead('Overdue', tk.overdueCount ? plural(tk.overdueCount, 'task') : 'All clear') +
-      (tk.overdue.length ? '<ul class="list">' + tk.overdue.map(function (t) { return taskLi(t, 'late'); }).join('') + '</ul>' : '<div class="empty">Nothing overdue.</div>') +
+    html += '<div class="grid g-21">';
+    html += '<div class="card">' + cardHead('Tasks', 'Tap a task for details') + '<div id="flow-tasks"></div>' +
       (tk.inbox ? '<div class="faint" style="font-size:13px;margin-top:8px">' + plural(tk.inbox, 'task') + ' without a date</div>' : '') + '</div>';
-    html += '<div class="card">' + cardHead('Next 7 days') +
-      (tk.upcoming.length ? '<ul class="list">' + tk.upcoming.map(function (t) { return taskLi(t, 'date'); }).join('') + '</ul>' : '<div class="empty">Nothing planned yet.</div>') +
-      (s.close ? '<h3 class="sec">Month-end close · ' + esc(s.close.period) + '</h3><div class="prog"><i data-w="' + Math.round(s.close.done / s.close.total * 100) + '%"></i></div>' +
-        '<div class="faint num" style="font-size:12.5px;margin-top:6px">' + s.close.done + ' of ' + s.close.total + ' done' + (s.close.behind ? ' · <span class="bad">' + s.close.behind + ' behind</span>' : '') + '</div>' +
-        '<ul class="list" style="margin-top:6px">' + s.close.nextItems.map(function (it) { return '<li><span class="t">' + esc(it.task) + '</span><span class="r">' + (it.wd !== null ? 'WD' + it.wd : '') + '</span></li>'; }).join('') + '</ul>' : '') + '</div>';
+    if (s.close) {
+      var cpct = s.close.total ? s.close.done / s.close.total : 0;
+      html += '<div class="card">' + cardHead('Month-end close', esc(s.close.period) + ' · today is WD' + s.close.wd) +
+        '<div class="ringrow">' + ring(cpct, { size: 76, stroke: 8, label: Math.round(cpct * 100) + '%', color: s.close.behind ? 'var(--warn)' : 'var(--good)' }) +
+        '<div><div class="num" style="font-size:20px;font-weight:700">' + s.close.done + ' of ' + s.close.total + '</div><div class="muted" style="font-size:13px">' +
+        (s.close.behind ? '<span class="bad">' + s.close.behind + ' behind schedule</span>' : 'on schedule') + '</div></div></div>' +
+        '<h3 class="sec">Next up</h3><ul class="list">' + s.close.nextItems.map(function (it) { return '<li><span class="t">' + esc(it.task) + '</span><span class="r">' + (it.wd !== null ? 'WD' + it.wd : '') + '</span></li>'; }).join('') + '</ul></div>';
+    } else {
+      html += '<div class="card">' + cardHead('Top 3', 'Your focus today') + (tk.top3.length ? '<ul class="list">' + tk.top3.slice(0, 3).map(function (t) { return taskLi(t); }).join('') + '</ul>' : '<div class="empty">No Top 3 picked yet.</div>') + '</div>';
+    }
     html += '</div>';
 
     html += '<div class="grid g-21" style="margin-top:14px">';
@@ -1458,10 +1642,11 @@ footer a { color: var(--muted); }
       ((st.papers || []).length ? st.papers.map(function (p, i) {
         var pct = p.targetHours ? Math.min(100, Math.round(p.hours / p.targetHours * 100)) : 0;
         var soon = p.daysLeft !== null && p.daysLeft >= 0 && p.daysLeft <= 30;
-        return '<div style="padding:9px 0;' + (i ? 'border-top:1px solid var(--line)' : '') + '"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><div style="min-width:0"><b>' + esc(p.code) + '</b> <span class="muted" style="font-size:13.5px">' + esc(p.paper) + '</span></div>' +
+        return '<div style="padding:10px 0;display:flex;gap:12px;align-items:center;' + (i ? 'border-top:1px solid var(--line)' : '') + '">' +
+          (p.targetHours ? ring(p.hours / p.targetHours, { size: 46, stroke: 5, label: pct + '%', fs: 11 }) : '') + '<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><div style="min-width:0"><b>' + esc(p.code) + '</b> <span class="muted" style="font-size:13.5px">' + esc(p.paper) + '</span></div>' +
           '<span class="num ' + (soon ? 'warnc' : 'faint') + '" style="font-size:13px;white-space:nowrap">' + (p.daysLeft === null ? '' : p.daysLeft < 0 ? 'sat ' + shortDate(p.exam) : p.daysLeft + ' days') + '</span></div>' +
-          (p.targetHours ? '<div class="prog blue" style="margin-top:8px"><i data-w="' + pct + '%"></i></div>' : '') +
-          '<div class="faint num" style="font-size:12px;margin-top:5px">' + p.hours + (p.targetHours ? ' of ' + p.targetHours : '') + ' h' + (p.confidence !== null ? ' · confidence ' + p.confidence + '/3' : '') + (p.status ? ' · ' + esc(p.status) : '') + '</div></div>';
+
+          '<div class="faint num" style="font-size:12px;margin-top:5px">' + p.hours + (p.targetHours ? ' of ' + p.targetHours : '') + ' h' + (p.confidence !== null ? ' · confidence ' + p.confidence + '/3' : '') + (p.status ? ' · ' + esc(p.status) : '') + '</div></div></div>';
       }).join('') : '<div class="empty">No papers yet.</div>') + '</div>';
     html += '</div>';
 
@@ -1472,10 +1657,34 @@ footer a { color: var(--muted); }
           return '<i class="' + (on ? 'on' : '') + (i === h.days.length - 1 ? ' today' : '') + '" data-h="' + hi + '" data-d="' + iso + '" data-on="' + on + '"></i>';
         }).join('');
         return '<div class="hab"><div class="hab-name">' + esc(h.icon) + ' ' + esc(h.habit) + '</div><div class="cells">' + cells + '</div>' +
-          '<div class="hab-meta num">' + h.week + '/' + h.target + ' this week' + (h.streak ? ' · ' + h.streak + '-day streak' : '') + '</div></div>';
+          '<div class="hab-meta num" style="display:flex;align-items:center;gap:8px;justify-content:flex-end">' + ring(h.week / h.target, { size: 30, stroke: 4, color: h.week >= h.target ? 'var(--good)' : 'var(--s1)' }) +
+          '<span>' + h.week + '/' + h.target + ' this week' + (h.streak ? '<br><span class="faint">' + h.streak + '-day streak</span>' : '') + '</span></div></div>';
       }).join('') : '<div class="empty">No habits yet.</div>') + '</div>';
 
     host.innerHTML = html;
+    function drawTasks() {
+      var groups = { today: tk.today, overdue: tk.overdue, week: tk.upcoming, top3: tk.top3 };
+      var f = S.ui.tasks, list = groups[f] || [];
+      var row = function (t) {
+        var late = t.date && t.date < d.today;
+        var right = late ? '<span class="tag late">' + shortDate(t.date) + '</span>' : f === 'week' && t.date ? '<span class="r">' + dayName(t.date) + ' ' + shortDate(t.date) + '</span>' : (t.time ? '<span class="r num">' + esc(t.time) + '</span>' : '');
+        var facts = [];
+        if (t.date) facts.push('<span>📅 <b>' + dayName(t.date) + ' ' + shortDate(t.date) + '</b></span>');
+        if (t.time) facts.push('<span>🕘 <b>' + esc(t.time) + '</b></span>');
+        if (t.duration) facts.push('<span>⏱ <b>' + mins(t.duration) + '</b></span>');
+        if (t.priority) facts.push('<span>Priority <b>' + esc(t.priority) + '</b></span>');
+        if (t.area) facts.push('<span>Area <b>' + esc(t.area) + '</b></span>');
+        if (t.top3) facts.push('<span class="tag t3" style="margin:0">Top 3</span>');
+        return '<details class="xrow"><summary><span class="t">' + esc(t.task) + (t.top3 ? ' <span class="tag t3">★</span>' : '') + '</span>' + right + '</summary><div class="xb">' + (facts.join('') || 'No details') + '</div></details>';
+      };
+      var EMPTY = { today: 'Nothing due today.', overdue: 'Nothing overdue. Nice.', week: 'Nothing planned for the next 7 days.', top3: 'No Top 3 picked yet.' };
+      $('flow-tasks').innerHTML = chipBar('tasks', [
+        { key: 'today', label: 'Today', count: tk.today.length }, { key: 'overdue', label: 'Overdue', count: tk.overdueCount || 0 },
+        { key: 'week', label: 'Next 7 days', count: tk.upcoming.length }, { key: 'top3', label: 'Top 3', count: tk.top3.length }], f) +
+        (list.length ? list.map(row).join('') : '<div class="empty">' + EMPTY[f] + '</div>');
+      bindChips($('flow-tasks'), 'tasks', function (k) { S.ui.tasks = k; drawTasks(); });
+    }
+    drawTasks();
     each(host, '.cells i', function (c) {
       c.addEventListener('pointerdown', function (evt) { c.dispatchEvent(new PointerEvent('pointermove', evt)); });
       c.addEventListener('pointermove', function (evt) {
@@ -1487,9 +1696,10 @@ footer a { color: var(--muted); }
     var daily = st.daily || [];
     barChart($('ch-study'), {
       labels: daily.map(function (x) { return String(parseIso(x.date).getUTCDate()); }),
-      series: [{ name: 'Study', values: daily.map(function (x) { return x.minutes; }), color: css('--s1') }],
-      yFmt: function (v) { return v >= 60 ? Math.round(v / 6) / 10 + 'h' : Math.round(v) + 'm'; },
-      tipFmt: mins, height: 220, aria: 'Study time per day for the last 30 days',
+      // Plotted in hours so the axis lands on round numbers (0.5h, 1h, 1.5h…)
+      series: [{ name: 'Study', values: daily.map(function (x) { return x.minutes / 60; }), color: css('--s1') }],
+      yFmt: function (v) { return v === 0 ? '0' : (Math.round(v * 10) / 10) + 'h'; },
+      tipFmt: function (v) { return mins(v * 60); }, height: 220, aria: 'Study time per day for the last 30 days',
       xTitle: function (i) { return dayName(daily[i].date) + ', ' + shortDate(daily[i].date); }
     });
   }
@@ -1506,11 +1716,13 @@ footer a { color: var(--muted); }
       var t = c.totals || {};
       html += '<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">' +
         '<div><div class="eyebrow">' + esc(c.year) + ' · ' + esc(c.plate) + '</div><div class="hero" style="font-size:32px;margin-top:4px">' + esc(c.name) + '</div></div>' +
-        '<div class="num" style="font-size:22px;font-weight:650;color:var(--muted)"><span data-count="' + (c.odo || 0) + '" data-fmt="int">' + fmtNum(c.odo) + '</span> km</div></div>' +
-        '<div class="tiles" style="margin-top:16px">' +
-        c.renewals.map(function (r) {
-          return tile(r.daysLeft < 0 ? 'Expired' : r.daysLeft + ' days', esc(r.label), shortDate(r.date) + ' ' + r.date.slice(0, 4), r.daysLeft < 0 ? 'bad' : r.daysLeft <= 30 ? 'warnc' : '');
+        '<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">' + c.renewals.map(function (r) {
+          var col = r.daysLeft < 0 ? 'var(--bad)' : r.daysLeft <= 30 ? 'var(--warn)' : 'var(--good)';
+          return '<div class="ringrow" style="gap:10px">' + ring(r.daysLeft < 0 ? 1 : Math.max(0.02, r.daysLeft / 365), { size: 58, stroke: 6, color: col, label: r.daysLeft < 0 ? '!' : r.daysLeft + 'd', fs: 13 }) +
+            '<div><div style="font-weight:650;font-size:14px">' + esc(r.label) + '</div><div class="faint num" style="font-size:12.5px">' + shortDate(r.date) + ' ' + r.date.slice(0, 4) + '</div></div></div>';
         }).join('') +
+        '<div class="num" style="font-size:22px;font-weight:650;color:var(--muted)"><span data-count="' + (c.odo || 0) + '" data-fmt="int">' + fmtNum(c.odo) + '</span> km</div></div></div>' +
+        '<div class="tiles" style="margin-top:16px">' +
         tile(c.fuel.economy ? c.fuel.economy.kmPerL + ' km/L' : '—', 'Fuel economy', c.fuel.economy ? 'last ' + c.fuel.economy.fills + ' fills' : '') +
         tile(c.fuel.economy ? 'RM ' + c.fuel.economy.rmPerKm.toFixed(2) : '—', 'Fuel cost per km') +
         tile(rm(c.fuel.monthCost, 0), 'Fuel this month', rm(c.fuel.last30Cost, 0) + ' in the last 30 days') +
@@ -1526,6 +1738,7 @@ footer a { color: var(--muted); }
         (c.fuel.lastFill ? '<div class="note" style="margin-top:12px">Last fill ' + shortDate(c.fuel.lastFill.date) + ' · ' + rm(c.fuel.lastFill.cost) + (c.fuel.lastFill.litres ? ' · ' + c.fuel.lastFill.litres + ' L' : '') + (c.fuel.lastFill.place ? ' at ' + esc(c.fuel.lastFill.place) : '') + '</div>' : '') + '</div>';
       html += '</div>';
 
+      html += '<div class="card" style="margin-bottom:14px">' + cardHead('Fuel economy', 'km per litre for each fill-up · hover or tap') + '<div id="ch-eco-' + ci + '"></div></div>';
       html += '<div class="card" style="margin-bottom:14px">' + cardHead('Service history', (c.history || []).length ? 'Most recent first' : '') +
         ((c.history || []).length ? '<ul class="tl">' + c.history.map(function (h) {
           return '<li><div class="d num">' + shortDate(h.date) + ' ' + h.date.slice(0, 4) + (h.odo ? ' · ' + fmtNum(h.odo) + ' km' : '') + (h.cost !== null ? ' · ' + rm(h.cost) : '') + '</div><div class="i">' + esc(h.items.join(', ')) + '</div></li>';
@@ -1556,6 +1769,19 @@ footer a { color: var(--muted); }
       }
       S.animate = firstPaint;
       drawRun();
+      var eco = (c.fills || []).filter(function (f) { return f.kmPerL !== null; });
+      if (eco.length >= 2) {
+        var avg = eco.reduce(function (t, f) { return t + f.kmPerL; }, 0) / eco.length;
+        lineChart($('ch-eco-' + ci), {
+          labels: eco.map(function (f) { return shortDate(f.date); }),
+          series: [{ name: 'km/L', values: eco.map(function (f) { return f.kmPerL; }), color: css('--s1'), area: true },
+                   { name: 'Average', values: eco.map(function () { return Math.round(avg * 100) / 100; }), color: css('--s-prev'), dash: true }],
+          yFmt: function (v) { return (Math.round(v * 10) / 10) + ''; }, tipFmt: function (v) { return v.toFixed(2) + ' km/L'; },
+          height: 220, aria: 'Fuel economy per fill-up',
+          xTitle: function (i) { return dayName(eco[i].date) + ', ' + shortDate(eco[i].date) + ' ' + eco[i].date.slice(0, 4); },
+          extra: function (i) { var f = eco[i]; return [rm(f.cost) + ' · ' + f.litres + ' L' + (f.place ? ' at ' + f.place : ''), fmtNum(f.km) + ' km since the previous fill · ' + fmtNum(f.odo) + ' km'] ; }
+        });
+      } else $('ch-eco-' + ci).innerHTML = '<div class="empty">Log a few fill-ups with the odometer reading to see this.</div>';
     });
   }
 

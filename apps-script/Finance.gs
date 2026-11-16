@@ -269,7 +269,7 @@ function readTransactions_(table, accounts, ctx, issues) {
 
   out.recent = list.filter(function (t) { return !t.adjust && t.date <= ctx.today; })
     .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : a.__row - b.__row; })
-    .slice(0, 12)
+    .slice(0, 40)
     .map(function (t) { return { date: t.date, desc: t.desc || t.catName, cat: t.cat, account: t.account, amount: t.amount, transfer: t.transfer }; });
 
   return out;
