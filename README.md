@@ -54,21 +54,26 @@ The same dashboard is also published as a home-screen app on GitHub Pages (`docs
 `apps-script/Index.html` by `npm run build:pages`). It runs full screen with no browser bars and fetches its data
 from the web app with a private **access key**.
 
+**The key never goes in a link.** It is typed in once per device and kept in that device's storage. The app sends it
+in the body of a POST request, so it does not appear in addresses, history, bookmarks or request logs. The web app
+refuses any key passed in a link (`?key=…`), and the page wipes one from the address bar if it finds it.
+
 One-time setup:
 
-1. In the Apps Script editor, run **`createAccessKey`**. Copy the key from the execution log and keep it private.
+1. In the Apps Script editor, run **`createAccessKey`**. Copy the key from the execution log and keep it private
+   (a password manager is a good place). Running it again makes a new key and the old one stops working at once.
 2. Deploy so the web app is reachable without a Google sign-in: run `npm run deploy` (the manifest sets
    *Who has access: Anyone*), or set it by hand under **Deploy → Manage deployments → ✏️ → Who has access: Anyone**.
    Without the key the web app shows nothing; it never writes to your Sheets.
 3. In GitHub: **Settings → Pages → Deploy from a branch**, branch `claude/quirky-albattani-2xi1ko`, folder **/docs**.
-4. On the phone, open <https://syahman312.github.io/Dashboard/> in **Safari** (iPhone) or **Chrome** (Android), paste
-   the web app URL and the key, then tap **Connect**.
-5. iPhone: **Share → Add to Home Screen**. Android: **⋮ → Add to Home screen**.
+4. **iPhone / iPad:** open <https://syahman312.github.io/Dashboard/> in Safari, **Share → Add to Home Screen** first,
+   then open it **from the new icon** and enter the web app URL and the key there. (The home-screen app keeps its own
+   storage, separate from Safari.)
+   **Android:** open the same link in Chrome, enter the URL and key, then **⋮ → Add to Home screen**.
+5. **Browser version** (`…/exec`, no key in the address): it asks for the key once and remembers it.
 
-To lock out an old link or device, run `createAccessKey` again and reconnect your own devices with the new key
-(footer → *Connection settings*).
-
-The browser version still works: open `…/exec?key=YOUR-KEY`.
+To lock out a lost device or a leaked key, run `createAccessKey` again and enter the new key on your own devices
+(footer → **Connection settings**).
 
 The icon lives in `docs/icons/` (`icon.svg` is the source).
 

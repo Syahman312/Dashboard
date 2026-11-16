@@ -403,11 +403,14 @@ footer a { color: var(--muted); }
     <h2>Connect your dashboard</h2>
     <div class="muted">Done once. Both values stay on this device.</div>
     <form class="card" id="setup-form" autocomplete="off">
+      <div id="cfg-app-row">
       <label for="cfg-app">Web app URL (ends in /exec)</label>
       <input id="cfg-app" type="url" inputmode="url" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec">
+      </div>
       <label for="cfg-key">Access key</label>
       <input id="cfg-key" type="password" spellcheck="false" placeholder="The key from createAccessKey">
       <div class="err" id="cfg-err"></div>
+      <div class="faint" id="cfg-note" style="font-size:12.5px;margin-top:6px">The key is saved only on this device. Never put it in a link or bookmark.</div>
       <button class="btn" type="submit">Connect</button>
     </form>
   </section>
@@ -790,7 +793,7 @@ footer a { color: var(--muted); }
    * ======================================================= */
   function setLoading(on) { $('refresh').classList.toggle('spin', on); $('refresh').disabled = on; }
   function load(force) {
-    if (MODE === 'setup') return;
+    if (MODE === 'setup' || MODE === 'setup-gas') return;
     setLoading(true);
     var done = function (json) {
       setLoading(false);
@@ -813,22 +816,24 @@ footer a { color: var(--muted); }
         '<br><span class="muted">' + esc(e && e.message || e) + '</span></div>';
     };
     if (MODE === 'gas') {
-      // Inside Apps Script: pass on the key from the page address (?key=…).
-      google.script.url.getLocation(function (loc) {
-        var key = (loc && loc.parameter && loc.parameter.key) || '';
-        google.script.run.withSuccessHandler(done).withFailureHandler(function (e) {
-          if (/locked|access key/i.test(e && e.message || '')) e = new Error('This dashboard needs its key. Open it as …/exec?key=YOUR-KEY');
-          fail(e);
-        }).getDashboard(!!force, key);
-      });
+      // Inside Apps Script: the key saved on this device goes in the call itself.
+      google.script.run.withSuccessHandler(done).withFailureHandler(function (e) {
+        if (/locked|access key/i.test(e && e.message || '')) { setLoading(false); showSetup('That key was not accepted. Enter the current key.'); return; }
+        fail(e);
+      }).getDashboard(!!force, CFG.key);
     } else if (MODE === 'remote') {
       // Home-screen app: fetch the data from the Apps Script web app.
-      var url = CFG.app + '?format=json&key=' + encodeURIComponent(CFG.key) + (force ? '&force=1' : '');
-      fetch(url, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' })
+      // The key travels in the request body, so it never appears in an address or a log of addresses.
+      // text/plain keeps this a "simple" request (no CORS preflight, which Apps Script cannot answer).
+      fetch(CFG.app, {
+        method: 'POST', body: JSON.stringify({ key: CFG.key, force: !!force }),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'follow'
+      })
         .then(function (r) { if (!r.ok) throw new Error('The web app answered ' + r.status); return r.json(); })
         .then(function (res) {
           if (res && res.ok) return done(res.data);
-          if (res && /locked|access key/i.test(res.error || '')) { showSetup('That key was not accepted. Check it, or make a new one with createAccessKey.'); setLoading(false); return; }
+          if (res && /locked|access key/i.test(res.error || '')) { showSetup('That key was not accepted. Enter the current key (run createAccessKey for a new one).'); setLoading(false); return; }
           throw new Error(res && res.error || 'Unexpected answer from the web app');
         })
         .catch(function (e) {
@@ -851,19 +856,28 @@ footer a { color: var(--muted); }
    * ======================================================= */
   var APP_RE = /^https:\/\/script\.google\.com\/(a\/[^\/]+\/)?macros\/s\/[\w-]+\/(exec|dev)$/;
   var CFG = readConfig();
-  var MODE = (window.google && google.script && google.script.run) ? 'gas'
-    : CFG ? 'remote'
+  var MODE = (window.google && google.script && google.script.run) ? (CFG ? 'gas' : 'setup-gas')
+    : CFG && CFG.app ? 'remote'
     : /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !/[?&]setup/.test(location.search) ? 'sample' : 'setup';
 
+  /**
+   * Connection settings live only in this device's storage. A key in the
+   * address (old links: ?key=…) is ignored and wiped from the address bar.
+   */
   function readConfig() {
-    var q = new URLSearchParams(location.search);
-    var app = q.get('app'), key = q.get('key');
-    if (app && key && APP_RE.test(app)) { lsSet(LS.cfg, JSON.stringify({ app: app, key: key })); return { app: app, key: key }; }
+    scrubAddress();
     try {
       var c = JSON.parse(lsGet(LS.cfg) || 'null');
-      if (c && APP_RE.test(c.app) && c.key) return c;
+      if (c && c.key) return { app: APP_RE.test(c.app || '') ? c.app : null, key: c.key };
     } catch (e) { /* ignore */ }
     return null;
+  }
+  function scrubAddress() {
+    if (!/[?&](key|app)=/.test(location.search)) return;
+    var q = new URLSearchParams(location.search);
+    q.delete('key'); q.delete('app');
+    var rest = q.toString();
+    try { history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash); } catch (e) { /* sandboxed frame */ }
   }
 
   function showSetup(msg) {
@@ -871,19 +885,26 @@ footer a { color: var(--muted); }
     $('setup').hidden = false;
     document.body.classList.add('setup-mode');
     $('cfg-err').textContent = msg || '';
-    if (CFG) { $('cfg-app').value = CFG.app; }
+    var keyOnly = MODE === 'gas' || MODE === 'setup-gas';
+    $('cfg-app-row').hidden = keyOnly;
+    if (CFG && CFG.app) { $('cfg-app').value = CFG.app; }
+    $('cfg-key').value = '';
+    var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    $('cfg-note').innerHTML = 'The key is saved only on this device. Never put it in a link or bookmark.' +
+      (!keyOnly && ios && !standalone ? '<br><b>iPhone/iPad:</b> add this page to your Home Screen first (Share → Add to Home Screen), then open it from the icon and connect there. The home-screen app keeps its own storage.' : '');
   }
 
   $('setup-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    var app = $('cfg-app').value.trim().replace(/\?.*$/, ''), key = $('cfg-key').value.trim();
-    if (!APP_RE.test(app)) { $('cfg-err').textContent = 'That is not an Apps Script web app URL ending in /exec.'; return; }
+    var keyOnly = MODE === 'gas' || MODE === 'setup-gas';
+    var app = keyOnly ? null : $('cfg-app').value.trim().replace(/\?.*$/, ''), key = $('cfg-key').value.trim();
+    if (!keyOnly && !APP_RE.test(app)) { $('cfg-err').textContent = 'That is not an Apps Script web app URL ending in /exec.'; return; }
     if (key.length < 20) { $('cfg-err').textContent = 'The key looks too short. Copy it again from the execution log.'; return; }
-    CFG = { app: app, key: key }; MODE = 'remote';
-    lsSet(LS.cfg, JSON.stringify(CFG));
+    CFG = { app: app, key: key }; MODE = keyOnly ? 'gas' : 'remote';
+    lsSet(LS.cfg, JSON.stringify(CFG));   // this device only; never the address
     lsRemove(LS.data);
-    // iPhone home-screen apps keep separate storage, so the address carries the settings too.
-    try { history.replaceState(null, '', '?app=' + encodeURIComponent(app) + '&key=' + encodeURIComponent(key) + location.hash); } catch (err) { /* sandboxed */ }
+    scrubAddress();
     $('setup').hidden = true;
     $('setup-scroll').hidden = true;
     document.body.classList.remove('setup-mode');
@@ -1504,7 +1525,7 @@ footer a { color: var(--muted); }
     });
     parts.push('<span>Read-only · v' + esc(d.version) + '</span>');
     if (window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) parts.push('<span>Keys: <span class="kbd">1</span>–<span class="kbd">5</span> tabs · <span class="kbd">R</span> refresh</span>');
-    if (MODE === 'remote') parts.push('<button type="button" class="linkbtn faint" data-reconnect>Connection settings</button>');
+    if (MODE === 'remote' || MODE === 'gas') parts.push('<button type="button" class="linkbtn faint" data-reconnect>Connection settings</button>');
     each(document, '.foot', function (f) { f.innerHTML = parts.join(''); });
     each(document, '[data-reconnect]', function (b) { b.addEventListener('click', function () { showSetup(''); }); });
   }
@@ -1553,7 +1574,7 @@ footer a { color: var(--muted); }
   // PC: keyboard shortcuts
   document.addEventListener('keydown', function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey || /input|textarea|select/i.test((e.target.tagName || ''))) return;
-    if (MODE === 'setup') return;
+    if (MODE === 'setup' || MODE === 'setup-gas') return;
     var n = parseInt(e.key, 10);
     if (n >= 1 && n <= VIEWS.length) { go(VIEWS[n - 1].key); e.preventDefault(); }
     else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !(e.target.closest && e.target.closest('.chart'))) {
@@ -1597,7 +1618,7 @@ footer a { color: var(--muted); }
   renderNav();
   setActive(S.view, { fromHistory: true });
   pager.scrollLeft = viewIndex(S.view) * pageWidth();
-  if (MODE === 'setup') { showSetup(''); return; }
+  if (MODE === 'setup' || MODE === 'setup-gas') { showSetup(''); return; }
   try {
     var saved = lsGet(LS.data);
     if (saved) { S.data = JSON.parse(saved); S.stale = true; render(); }

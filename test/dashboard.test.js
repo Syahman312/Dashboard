@@ -205,15 +205,16 @@ test('chart data series', () => {
   assert.ok(JSON.stringify(d).length < 200000, 'payload stays small');
 });
 
-test('access key protects the data', () => {
+test('access key protects the data and never travels in a link', () => {
   const props = Object.assign({}, PROPS);
   const gs = load(props);
   gs.SpreadsheetApp = { openById: id => fakeSpreadsheet(BOOKS[id]) };
-  const json = params => JSON.parse(gs.doGet({ parameter: Object.assign({ format: 'json' }, params) }).body);
+  const post = body => JSON.parse(gs.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } }).body);
+  const getJson = params => JSON.parse(gs.doGet({ parameter: params }).body);
 
   // No key set yet: closed, not open
-  assert.equal(json({}).ok, false);
-  assert.match(json({}).error, /createAccessKey/);
+  assert.equal(post({}).ok, false);
+  assert.match(post({}).error, /createAccessKey/);
 
   // createAccessKey only works from the editor (signed-in user), not from a page visitor
   assert.throws(() => gs.createAccessKey(), /editor/);
@@ -221,18 +222,48 @@ test('access key protects the data', () => {
   props.__user = 'owner@example.com';
   gs.createAccessKey();
   const key = props.DASH_KEY;
-  assert.equal(key.length, 40);
+  assert.equal(key.length, 64);
+  assert.match(key, /^[0-9a-f]{64}$/);
   delete props.__user;
 
-  assert.deepEqual(json({ key: 'wrong' }), { ok: false, error: 'locked' });
-  assert.equal(json({ key: key.slice(0, 39) }).ok, false, 'prefix is not enough');
-  assert.equal(json({ key: key + 'x' }).ok, false, 'extra characters rejected');
-  const good = json({ key, force: '1' });
+  // Wrong, partial, padded or malformed keys are refused
+  assert.deepEqual(post({ key: 'wrong' }), { ok: false, error: 'locked' });
+  assert.equal(post({ key: key.slice(0, 63) }).ok, false, 'prefix is not enough');
+  assert.equal(post({ key: key + 'x' }).ok, false, 'extra characters rejected');
+  assert.equal(post('not json').ok, false, 'garbage body refused');
+
+  // The right key in the request body works
+  const good = post({ key, force: true });
   assert.equal(good.ok, true);
   assert.ok(good.data.sources.finance.ok);
 
+  // A key in a link is refused outright, even the correct one
+  for (const params of [{ format: 'json', key }, { key }, { format: 'json' }]) {
+    const r = getJson(params);
+    assert.equal(r.ok, false);
+    assert.match(r.error, /not accepted/);
+    assert.equal(r.data, undefined, 'no data returned for keys in links');
+  }
+
+  // Rotating the key locks out the old one at once
+  props.__user = 'owner@example.com';
+  gs.createAccessKey();
+  delete props.__user;
+  assert.notEqual(props.DASH_KEY, key);
+  assert.equal(post({ key }).ok, false, 'old key stops working');
+  assert.equal(post({ key: props.DASH_KEY }).ok, true);
+
   assert.throws(() => gs.getDashboard(true, 'nope'), /locked/);
-  assert.ok(JSON.parse(gs.getDashboard(true, key)).sources);
+  assert.ok(JSON.parse(gs.getDashboard(true, props.DASH_KEY)).sources);
+});
+
+test('no page puts the key into an address', () => {
+  const fs = require('fs');
+  const html = fs.readFileSync(require('path').join(__dirname, '..', 'apps-script', 'Index.html'), 'utf8');
+  const code = html.slice(html.indexOf('<script>'));
+  assert.doesNotMatch(code, /['"&?]key=['"]?\s*\+/, 'no "key=" + value concatenation');
+  assert.doesNotMatch(code, /loc\.parameter\.key/, 'no reading the key from the address');
+  assert.match(code, /method: 'POST'/);
 });
 
 test('phone app page is in step with Index.html', () => {

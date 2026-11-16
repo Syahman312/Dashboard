@@ -9,7 +9,7 @@
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
  */
 
-var DASH_VERSION = '1.8.0';
+var DASH_VERSION = '1.9.0';
 var CACHE_KEY = 'dashboard:v2';
 var CACHE_SECONDS = 1800;     // 30 min; the warm-up trigger refreshes it every 15
 var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
@@ -24,14 +24,17 @@ var SOURCES = [
 var ICON_URL = 'https://raw.githubusercontent.com/Syahman312/Dashboard/claude/quirky-albattani-2xi1ko/docs/icons/icon-192.png';
 
 /**
- * Two ways in:
- *   /exec?key=…               the dashboard page (works in any browser)
- *   /exec?format=json&key=…   the data, for the home-screen app on GitHub Pages
- * When an access key is set (run createAccessKey once), every request must carry it.
+ * Two ways in, and the access key is never part of an address:
+ *   GET  /exec          the dashboard page; it asks for the key once and keeps it on the device
+ *   POST /exec          the data, for the home-screen app; body is {"key": "...", "force": true}
+ * Addresses end up in browser history, bookmarks, chats and logs, so a key in a
+ * link (…?key=) is refused rather than checked.
  */
 function doGet(e) {
   var p = (e && e.parameter) || {};
-  if (p.format === 'json') return jsonResponse_(p);
+  if (p.format === 'json' || p.key) {
+    return jsonOut_({ ok: false, error: 'locked: keys in links are not accepted. Update the dashboard app and enter the key in it.' });
+  }
   var page = HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Dashboard')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
@@ -39,6 +42,17 @@ function doGet(e) {
   try { page.setFaviconUrl(ICON_URL); } catch (err) { /* icon unavailable */ }
   try { page.addMetaTag('mobile-web-app-capable', 'yes'); } catch (err) { /* tag not allowed */ }
   return page;
+}
+
+/** Data for the home-screen app. Sent as text/plain so browsers need no preflight. */
+function doPost(e) {
+  var body = {};
+  try { body = JSON.parse((e && e.postData && e.postData.contents) || '{}') || {}; } catch (err) { body = {}; }
+  return jsonResponse_({ key: body.key, force: body.force === true ? '1' : '' });
+}
+
+function jsonOut_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function jsonResponse_(p) {
@@ -84,10 +98,12 @@ function checkKey_(given) {
  */
 function createAccessKey() {
   editorOnly_();
-  var key = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 40);
+  // 64 hex characters from two random UUIDs (about 244 bits of randomness)
+  var key = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 64);
   PropertiesService.getScriptProperties().setProperty('DASH_KEY', key);
   Logger.log('Your access key (keep it private): ' + key);
-  Logger.log('Any old home-screen shortcut stops working until you enter this key in it.');
+  Logger.log('The previous key stops working now. On each device, open the dashboard → Connection settings and enter this key.');
+  Logger.log('Never put the key in a link or bookmark.');
 }
 
 /**
