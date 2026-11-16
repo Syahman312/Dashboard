@@ -100,24 +100,33 @@ a { color: var(--accent); }
   .bnav button[aria-current="page"] { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
   .bnav .badge { position: absolute; top: 2px; left: calc(50% + 6px); transform: scale(.85); }
   .wrap { padding-bottom: 96px; }
-  html { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom)); scroll-padding-top: 90px; }
+  .view { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .bnav { position: fixed; }
   .hdr h1 { font-size: 20px; }
   .stamp, .icon-btn .lbl { display: none; }
 }
 
-/* ---------- Views ---------- */
-.view { display: none; padding-top: 18px; }
-.view.on { display: block; animation: rise .35s cubic-bezier(.2,.7,.2,1); }
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-/* Moving between tabs slides in from the side you are heading towards */
-.view.on.from-r { animation: fromR .3s cubic-bezier(.2,.7,.2,1); }
-.view.on.from-l { animation: fromL .3s cubic-bezier(.2,.7,.2,1); }
-@keyframes fromR { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
-@keyframes fromL { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
-/* Swiping: vertical scrolling and pinch-zoom stay with the browser; sideways drags switch tabs */
-.wrap { overflow-x: clip; touch-action: pan-y pinch-zoom; }
-.view { will-change: auto; }
+/* ---------- Views: a native-feeling pager ----------
+ * All tabs sit side by side in one horizontal scroller with snap points, so the
+ * phone itself tracks the finger, carries momentum and snaps to the next tab,
+ * with the neighbouring tab sliding in alongside. Each tab scrolls vertically
+ * on its own and keeps its position. */
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+.top, #banner, .bnav { flex: none; }
+#banner:empty { display: none; }
+#banner { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
+.pager { flex: 1 1 auto; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.pager::-webkit-scrollbar { display: none; }
+.view { flex: 0 0 100%; width: 100%; min-width: 0; height: 100%; overflow-x: hidden; overflow-y: auto;
+  scroll-snap-align: start; scroll-snap-stop: always; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+.view > .wrap:first-child { padding-top: 18px; padding-bottom: 0; }
+.view > .foot { padding-top: 0; }
+.setup-mode .pager { display: none; }
+.setup-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 16px 40px; }
 .bnav button.peek, .tab.peek { color: var(--accent); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 .grid { display: grid; gap: 14px; }
@@ -259,7 +268,7 @@ h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 
 .hab { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
 .hab:first-of-type { border-top: 0; }
 .hab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
-.cells { display: grid; grid-template-columns: repeat(35, minmax(0, 1fr)); gap: 3px; }
+.cells { touch-action: pan-y; display: grid; grid-template-columns: repeat(35, minmax(0, 1fr)); gap: 3px; }
 .cells i { aspect-ratio: 1; border-radius: 3px; background: var(--card-3); transition: transform .1s; max-height: 22px; }
 .cells i.on { background: var(--good); }
 .cells i.today { outline: 1.5px solid var(--text); outline-offset: 1px; }
@@ -365,7 +374,7 @@ input, select, textarea { font-size: 16px !important; }
 #ptr svg { width: 18px; height: 18px; }
 #ptr.spin svg { animation: spin .9s linear infinite; }
 .kbd { font: 11px ui-monospace, monospace; padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
-footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+footer { margin-top: 28px; padding-bottom: 56px; color: var(--faint); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
 footer a { color: var(--muted); }
 </style>
 </head>
@@ -387,8 +396,8 @@ footer a { color: var(--muted); }
   </div>
 </header>
 
-<div class="wrap">
-  <div id="banner"></div>
+<div id="banner"></div>
+<div class="setup-scroll" id="setup-scroll" hidden>
   <section class="setup" id="setup" hidden>
     <img class="logo" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Crect width='1024' height='1024' fill='%230f1218'/%3E%3Crect x='282' y='572' width='120' height='200' rx='60' fill='%234f8cff' opacity='.45'/%3E%3Crect x='452' y='442' width='120' height='330' rx='60' fill='%234f8cff' opacity='.72'/%3E%3Crect x='622' y='312' width='120' height='460' rx='60' fill='%234f8cff'/%3E%3Ccircle cx='342' cy='384' r='60' fill='%23f5b74e'/%3E%3C/svg%3E">
     <h2>Connect your dashboard</h2>
@@ -402,13 +411,14 @@ footer a { color: var(--muted); }
       <button class="btn" type="submit">Connect</button>
     </form>
   </section>
-  <section class="view on" data-view="overview" id="v-overview"><div class="grid g-21"><div class="skel"></div><div class="skel"></div></div></section>
-  <section class="view" data-view="flow" id="v-flow"></section>
-  <section class="view" data-view="money" id="v-money"></section>
-  <section class="view" data-view="garage" id="v-garage"></section>
-  <section class="view" data-view="health" id="v-health"></section>
-  <footer id="footer"></footer>
 </div>
+<main class="pager" id="pager">
+  <section class="view on" data-view="overview"><div class="wrap" id="v-overview"><div class="grid g-21"><div class="skel"></div><div class="skel"></div></div></div><footer class="foot wrap"></footer></section>
+  <section class="view" data-view="flow"><div class="wrap" id="v-flow"></div><footer class="foot wrap"></footer></section>
+  <section class="view" data-view="money"><div class="wrap" id="v-money"></div><footer class="foot wrap"></footer></section>
+  <section class="view" data-view="garage"><div class="wrap" id="v-garage"></div><footer class="foot wrap"></footer></section>
+  <section class="view" data-view="health"><div class="wrap" id="v-health"></div><footer class="foot wrap"></footer></section>
+</main>
 
 <nav class="bnav" id="bnav" aria-label="Sections"></nav>
 <div id="tip" role="status" aria-live="polite"></div>
@@ -520,14 +530,21 @@ footer a { color: var(--muted); }
     if (top < 8) top = y + 16;
     if (top + h > vh - 8) top = vh - h - 8;
     tipEl.style.left = left + 'px'; tipEl.style.top = top + 'px';
-    tipScrollY = window.scrollY;
+    tipScrollY = activeScrollTop();
   }
-  function hideTip() { tipEl.classList.remove('on'); }
+  function hideTip() {
+    tipEl.classList.remove('on');
+    each(document, '.xhg', function (g) { g.style.display = 'none'; }); // crosshair guide lines too
+  }
   // Fingers "leave" as soon as they lift; only a mouse moving away should close a tooltip.
   function mouseLeave(e) { if (e.pointerType === 'mouse') hideTip(); }
   // Close on a real scroll only; small adjustments right after a tap should not hide it.
   var tipScrollY = 0;
-  window.addEventListener('scroll', function () { if (Math.abs(window.scrollY - tipScrollY) > 24) hideTip(); }, { passive: true });
+  function activeScrollTop() { var v = document.querySelector('.view.on'); return v ? v.scrollTop : window.scrollY; }
+  document.addEventListener('scroll', function (e) {
+    if (e.target && e.target.id === 'pager') return; // sideways swipes are handled by the pager
+    if (Math.abs(activeScrollTop() - tipScrollY) > 24) hideTip();
+  }, { passive: true, capture: true });
   // Touch: tapping anywhere outside a chart closes its tooltip.
   document.addEventListener('pointerdown', function (e) {
     if (!e.target.closest || !e.target.closest('.chart, .hb, .cells')) hideTip();
@@ -629,7 +646,7 @@ footer a { color: var(--muted); }
     });
 
     // Crosshair layer
-    var g = sv('g', { style: 'display:none' }, svg);
+    var g = sv('g', { style: 'display:none', 'class': 'xhg' }, svg);
     var xl = sv('line', { y1: P.t, y2: H - P.b, 'class': 'xh' }, g);
     var dots = opts.series.map(function (s) { return sv('circle', { r: 5, fill: s.color, stroke: css('--card'), 'stroke-width': 2 }, g); });
     var cur = -1;
@@ -850,10 +867,9 @@ footer a { color: var(--muted); }
   }
 
   function showSetup(msg) {
-    each(document, '.view', function (v) { v.classList.remove('on'); });
+    $('setup-scroll').hidden = false;
     $('setup').hidden = false;
     document.body.classList.add('setup-mode');
-    $('footer').innerHTML = '';
     $('cfg-err').textContent = msg || '';
     if (CFG) { $('cfg-app').value = CFG.app; }
   }
@@ -869,10 +885,10 @@ footer a { color: var(--muted); }
     // iPhone home-screen apps keep separate storage, so the address carries the settings too.
     try { history.replaceState(null, '', '?app=' + encodeURIComponent(app) + '&key=' + encodeURIComponent(key) + location.hash); } catch (err) { /* sandboxed */ }
     $('setup').hidden = true;
+    $('setup-scroll').hidden = true;
     document.body.classList.remove('setup-mode');
     S.data = null;
     renderNav();
-    each(document, '.view', function (v) { v.classList.toggle('on', v.getAttribute('data-view') === S.view); });
     $('v-' + S.view).innerHTML = '<div class="grid g-21"><div class="skel"></div><div class="skel"></div></div>';
     load(true);
   });
@@ -913,21 +929,65 @@ footer a { color: var(--muted); }
 
   function viewIndex(k) { for (var i = 0; i < VIEWS.length; i++) if (VIEWS[i].key === k) return i; return 0; }
 
+  var pager = $('pager');
+  function pageWidth() { return pager.clientWidth || window.innerWidth; }
+
+  /** Switch tab: tapping a tab, keys, Back, links. Swipes arrive here via the pager. */
   function go(view, opts) {
+    opts = opts || {};
     if (!VIEWS.some(function (v) { return v.key === view; })) view = 'overview';
+    if (opts.filter) S.filter = opts.filter;
+    setActive(view, opts);
+    if (opts.filter && view === 'health' && S.data) { viewHealth($('v-health'), S.data); bindAppLinks($('v-health')); }
+    if (!opts.fromSwipe) {
+      var left = viewIndex(view) * pageWidth();
+      if (Math.abs(pager.scrollLeft - left) > 2) pager.scrollTo({ left: left, behavior: reduced || opts.instant ? 'auto' : 'smooth' });
+    }
+  }
+
+  function setActive(view, opts) {
+    opts = opts || {};
     var changed = S.view !== view;
-    S.dir = changed ? (viewIndex(view) > viewIndex(S.view) ? 1 : -1) : 0;
     S.view = view;
-    if (!(opts && opts.fromHistory) && location.hash !== '#' + view) {
+    if (!opts.fromHistory && location.hash !== '#' + view) {
       try { history.pushState(null, '', '#' + view); } catch (e) { /* sandboxed frame */ }
     }
-    if (opts && opts.filter) S.filter = opts.filter;
-    S.animate = true;
-    hideTip();
-    renderNav();
-    renderView();
-    if (changed) window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    each(document, '.view', function (v) {
+      var on = v.getAttribute('data-view') === view;
+      v.classList.toggle('on', on);
+      // Off-screen tabs are skipped by keyboard and screen readers
+      if (on) v.removeAttribute('inert'); else v.setAttribute('inert', '');
+    });
+    highlightNav(view);
+    if (changed) hideTip();
   }
+
+  /** Light up a tab in the top tabs and bottom bar without rebuilding them. */
+  function highlightNav(view) {
+    each(document, '[data-v]', function (b) {
+      if (b.getAttribute('data-v') === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+  }
+
+  // Swiping: the browser moves the pages; we follow along and settle on the tab it snaps to.
+  (function () {
+    var live = -1, settleTimer;
+    pager.addEventListener('scroll', function () {
+      var i = Math.round(pager.scrollLeft / pageWidth());
+      if (i !== live) { live = i; if (VIEWS[i]) highlightNav(VIEWS[i].key); hideTip(); }
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(settle, 80);
+    }, { passive: true });
+    if ('onscrollend' in window) pager.addEventListener('scrollend', settle);
+    function settle() {
+      clearTimeout(settleTimer);
+      var i = Math.max(0, Math.min(VIEWS.length - 1, Math.round(pager.scrollLeft / pageWidth())));
+      if (VIEWS[i].key !== S.view) {
+        setActive(VIEWS[i].key, { fromSwipe: true });
+        if (navigator.vibrate) { try { navigator.vibrate(6); } catch (e) { /* not allowed */ } }
+      } else highlightNav(S.view);
+    }
+  })();
 
   function render() {
     var d = S.data, today = parseIso(d.today);
@@ -944,18 +1004,22 @@ footer a { color: var(--muted); }
     renderFooter(d);
   }
 
+  /** Draws every tab (they sit side by side, so the next one is ready while you swipe). */
   function renderView() {
     if (!S.data) return;
-    each(document, '.view', function (v) {
-      v.classList.remove('from-r', 'from-l');
-      v.classList.toggle('on', v.getAttribute('data-view') === S.view);
+    var animate = S.animate;
+    var views = { overview: viewOverview, flow: viewFlow, money: viewMoney, garage: viewGarage, health: viewHealth };
+    // The tab on screen first, then the rest
+    var order = [S.view].concat(VIEWS.map(function (v) { return v.key; }).filter(function (k) { return k !== S.view; }));
+    order.forEach(function (k) {
+      var host = $('v-' + k);
+      S.animate = animate && k === S.view;
+      views[k](host, S.data);
+      bindAppLinks(host); countUp(host); fillBars(host);
     });
-    var host = $('v-' + S.view);
-    if (S.dir) host.classList.add(S.dir > 0 ? 'from-r' : 'from-l');
-    S.dir = 0;
-    ({ overview: viewOverview, flow: viewFlow, money: viewMoney, garage: viewGarage, health: viewHealth })[S.view](host, S.data);
-    bindAppLinks(host); countUp(host); fillBars(host);
     S.animate = false;
+    setActive(S.view, { fromHistory: true });
+    pager.scrollLeft = viewIndex(S.view) * pageWidth();
   }
 
   /* =========================================================
@@ -1440,9 +1504,9 @@ footer a { color: var(--muted); }
     });
     parts.push('<span>Read-only · v' + esc(d.version) + '</span>');
     if (window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) parts.push('<span>Keys: <span class="kbd">1</span>–<span class="kbd">5</span> tabs · <span class="kbd">R</span> refresh</span>');
-    if (MODE === 'remote') parts.push('<button type="button" class="linkbtn faint" id="reconnect">Connection settings</button>');
-    $('footer').innerHTML = parts.join('');
-    if ($('reconnect')) $('reconnect').addEventListener('click', function () { showSetup(''); window.scrollTo(0, 0); });
+    if (MODE === 'remote') parts.push('<button type="button" class="linkbtn faint" data-reconnect>Connection settings</button>');
+    each(document, '.foot', function (f) { f.innerHTML = parts.join(''); });
+    each(document, '[data-reconnect]', function (b) { b.addEventListener('click', function () { showSetup(''); }); });
   }
 
   /* =========================================================
@@ -1471,7 +1535,7 @@ footer a { color: var(--muted); }
     if (window.innerWidth === lastW) return; // ignore mobile toolbar height changes
     lastW = window.innerWidth;
     clearTimeout(rz);
-    rz = setTimeout(function () { if (S.data) { S.animate = false; renderView(); } }, 150);
+    rz = setTimeout(function () { if (S.data) { S.animate = false; renderView(); } else pager.scrollLeft = viewIndex(S.view) * pageWidth(); }, 150);
   });
   window.addEventListener('online', function () { if (S.data && MODE !== 'setup') load(false); });
   document.addEventListener('visibilitychange', function () {
@@ -1499,71 +1563,12 @@ footer a { color: var(--muted); }
     else if (e.key === 'r' || e.key === 'R') { load(true); e.preventDefault(); }
   });
 
-  // Phones and tablets: swipe sideways to move to the next / previous tab
-  (function () {
-    if (!('ontouchstart' in window)) return;
-    var EDGE = 24;             // leave the screen edges to the phone's own back gesture
-    var sx = null, sy = 0, st = 0, dx = 0, axis = null, view = null;
-    function peek(k) {
-      each(document, '.peek', function (b) { b.classList.remove('peek'); });
-      if (k) each(document, '[data-v="' + k + '"]', function (b) { b.classList.add('peek'); });
-    }
-    function reset(animated) {
-      if (!view) return;
-      var v = view;
-      v.style.transition = animated ? 'transform .22s ease, opacity .22s ease' : '';
-      v.style.transform = ''; v.style.opacity = '';
-      setTimeout(function () { v.style.transition = ''; }, 240);
-    }
-    document.addEventListener('touchstart', function (e) {
-      sx = null;
-      if (MODE === 'setup' || e.touches.length !== 1 || !S.data) return;
-      var t = e.touches[0];
-      if (t.clientX < EDGE || t.clientX > window.innerWidth - EDGE) return;
-      // Charts and the habit grid use sideways drags for reading values
-      if (e.target.closest && e.target.closest('.chart, .cells, input, textarea, select, .tabs, .seg-ctl, .bnav, .top')) return;
-      sx = t.clientX; sy = t.clientY; st = Date.now(); dx = 0; axis = null; view = $('v-' + S.view);
-    }, { passive: true });
-    document.addEventListener('touchmove', function (e) {
-      if (sx === null) return;
-      var t = e.touches[0], mx = t.clientX - sx, my = t.clientY - sy;
-      if (axis === null && (Math.abs(mx) > 10 || Math.abs(my) > 10)) axis = Math.abs(mx) > Math.abs(my) * 1.3 ? 'x' : 'y';
-      if (axis !== 'x') return;
-      dx = mx;
-      var i = viewIndex(S.view), atEnd = (dx < 0 && i === VIEWS.length - 1) || (dx > 0 && i === 0);
-      var move = atEnd ? dx * 0.15 : dx * 0.55;   // stiff at the first and last tab
-      view.style.transition = 'none';
-      view.style.transform = 'translateX(' + move + 'px)';
-      view.style.opacity = String(1 - Math.min(Math.abs(move) / 700, 0.3));
-      peek(atEnd ? null : VIEWS[i + (dx < 0 ? 1 : -1)].key);
-      hideTip();
-    }, { passive: true });
-    function end() {
-      if (sx === null) return;
-      sx = null; peek(null);
-      if (axis !== 'x') return;
-      var i = viewIndex(S.view);
-      var fast = Math.abs(dx) / Math.max(1, Date.now() - st) > 0.5;
-      var to = (Math.abs(dx) > window.innerWidth * 0.22 || (fast && Math.abs(dx) > 40)) ? i + (dx < 0 ? 1 : -1) : i;
-      if (to !== i && to >= 0 && to < VIEWS.length) {
-        var v = view;
-        v.style.transition = 'transform .14s ease-in, opacity .14s ease-in';
-        v.style.transform = 'translateX(' + (dx < 0 ? -1 : 1) * window.innerWidth * 0.3 + 'px)';
-        v.style.opacity = '0';
-        setTimeout(function () { v.style.transition = ''; v.style.transform = ''; v.style.opacity = ''; go(VIEWS[to].key); }, 140);
-        if (navigator.vibrate) { try { navigator.vibrate(8); } catch (err) { /* not allowed */ } }
-      } else reset(true);
-    }
-    document.addEventListener('touchend', end);
-    document.addEventListener('touchcancel', function () { sx = null; peek(null); reset(true); });
-  })();
-
   // Home-screen app: pull down to refresh (iOS has no built-in one there)
   (function () {
     var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
     if (!standalone || !('ontouchstart' in window)) return;
     var startY = null, dy = 0, ptr = $('ptr');
-    document.addEventListener('touchstart', function (e) { startY = window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null; dy = 0; }, { passive: true });
+    document.addEventListener('touchstart', function (e) { startY = activeScrollTop() <= 0 && e.touches.length === 1 && !(e.target.closest && e.target.closest('.chart')) ? e.touches[0].clientY : null; dy = 0; }, { passive: true });
     document.addEventListener('touchmove', function (e) {
       if (startY === null) return;
       dy = Math.max(0, e.touches[0].clientY - startY);
@@ -1590,6 +1595,8 @@ footer a { color: var(--muted); }
   var startView = (location.hash || '').replace('#', '');
   S.view = VIEWS.some(function (v) { return v.key === startView; }) ? startView : 'overview';
   renderNav();
+  setActive(S.view, { fromHistory: true });
+  pager.scrollLeft = viewIndex(S.view) * pageWidth();
   if (MODE === 'setup') { showSetup(''); return; }
   try {
     var saved = lsGet(LS.data);

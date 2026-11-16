@@ -107,8 +107,9 @@ project in the Apps Script editor.
 
 ## Works on every device
 
-- **iPhone / Android / iPad:** swipe left or right to move between tabs (charts and the habit grid keep their own
-  drag-to-read; the screen edges stay free for the phone's back gesture).
+- **iPhone / Android / iPad:** swipe left or right between tabs. It is a native pager (CSS scroll snap): the next tab
+  slides in beside the current one under your finger, with the phone's own momentum and snapping, and each tab
+  keeps its own scroll position. Charts and the habit grid keep sideways drags for reading values.
 - **iPhone / Android:** tabs at the bottom, 44px tap targets, tap a chart or category to see its numbers,
   pull down to refresh in the home-screen app, works offline with your last data, no zoom when typing.
 - **iPad:** two-column layout in portrait and three in landscape; touch-sized controls.
