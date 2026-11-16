@@ -384,3 +384,27 @@ test('today strip, sync health and alerts', () => {
   assert.match(titles, /Over budget: 🍜 Food/);
   assert.match(titles, /Driving licence expires/);
 });
+
+test('setup finds each app sheet by its contents, newest copy first', () => {
+  const props = { FLOW_SHEET_ID: 'old-flow', FINANCE_SHEET_ID: 'f' };
+  const gs = load(props);
+  const books = {
+    'new-flow': fx.flow(), 'old-flow': fx.flow(), f: fx.finance(), g: fx.garage(), v: fx.vault(), dash: fx.dashboard()
+  };
+  const files = [ // already sorted newest first, as listMySpreadsheets_ returns them
+    { id: 'g', name: 'Car Tracker', updated: 9 }, { id: 'dash', name: 'Dashboard', updated: 8 },
+    { id: 'f', name: 'Finance tracker', updated: 7 }, { id: 'v', name: 'Vault Data', updated: 6 },
+    { id: 'new-flow', name: 'Flow Data', updated: 5 }, { id: 'old-flow', name: 'Flow Data Source Script', updated: 1 }
+  ];
+  const report = gs.findAppSheets_(files, id => fakeSpreadsheet(books[id]), {
+    getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; }
+  });
+  assert.equal(props.FLOW_SHEET_ID, 'new-flow', 'moved to the newer Flow sheet');
+  assert.equal(props.FINANCE_SHEET_ID, 'f');
+  assert.equal(props.GARAGE_SHEET_ID, 'g');
+  assert.equal(props.VAULT_SHEET_ID, 'v');
+  const text = report.join(' | ');
+  assert.match(text, /Flow: now "Flow Data" \(was a different sheet\)/);
+  assert.match(text, /Finance: "Finance tracker" \(unchanged\)/);
+  assert.match(text, /Garage: now "Car Tracker"/);
+});

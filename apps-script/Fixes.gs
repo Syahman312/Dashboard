@@ -20,8 +20,8 @@ var FIX_RULES = [
     ];
   } },
   { area: 'connection', where: 'none', steps: [
-    'Check the Sheet ID in Apps Script → Project Settings → Script Properties.',
-    'Make sure the sheet still exists and belongs to the same Google account as the dashboard.'
+    'In the Apps Script editor, run setupDashboard: it finds each app\'s sheet again and saves the right IDs.',
+    'If it still fails, make sure the sheet exists and belongs to the same Google account as the dashboard.'
   ] },
   { area: 'structure', where: 'sheet', steps: [
     'A tab or column header was renamed or deleted. Open the tab and restore the exact header text shown above.',

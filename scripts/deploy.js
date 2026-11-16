@@ -38,3 +38,4 @@ if (!clasp(['redeploy', deploymentId, '-d', 'v' + version + ' ' + stamp]).ok) st
 
 console.log('\n✓ Deployed v' + version + '. Reload the dashboard and press Refresh.');
 if (pagesChanged) console.log('  The phone app page (docs/index.html) changed: commit and push it so GitHub Pages updates.');
+console.log('  First time on this version, or an app moved to a new sheet? Run setupDashboard once in the editor (npm run open).');

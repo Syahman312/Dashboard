@@ -28,7 +28,11 @@ The fix steps live in `apps-script/Fixes.gs`.
    `Code.gs`, `Shared.gs`, `Garage.gs`, `Finance.gs`, `Flow.gs`, and an HTML file named `Index`.
    In **Project Settings**, tick *Show "appsscript.json"* and paste in `appsscript.json`.
    (After this first time, use `npm run deploy` instead. See *Publishing changes with one command* below.)
-3. **Project Settings → Script Properties**, add:
+3. **Easiest:** in the editor run **`setupDashboard`**. It finds the Flow, Finance, Garage and Vault sheets in your Drive
+   by what is inside them (newest copy wins), saves their IDs, links the "Dashboard" sheet and creates the Budget tab.
+   Run it again whenever an app moves to a new sheet. It asks for read-only Drive access to look at your sheets.
+
+   Or set them by hand under **Project Settings → Script Properties**:
    - `FLOW_SHEET_ID`: the ID from the Flow Data sheet URL
    - `FINANCE_SHEET_ID`: the ID from the Finance tracker URL
    - `GARAGE_SHEET_ID`: the ID from the Car Tracker URL
