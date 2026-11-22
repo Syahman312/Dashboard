@@ -90,7 +90,6 @@ a { color: var(--accent); }
   .bnav .badge { position: absolute; top: 2px; left: calc(50% + 6px); transform: scale(.85); }
   .wrap { padding-bottom: 96px; }
   .view { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
-  .bnav { position: fixed; }
   .hdr h1 { font-size: 20px; }
   .stamp, .icon-btn .lbl { display: none; }
 }
@@ -370,6 +369,7 @@ input, select, textarea { font-size: 16px !important; }
 .strip .card { padding: 14px 16px; cursor: pointer; }
 .strip .k { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .strip .big { font-size: 24px; font-weight: 700; letter-spacing: -.02em; margin: 4px 0 2px; }
+.strip .unit { font-size: 14px; font-weight: 500; color: var(--muted); }
 .strip ul { list-style: none; margin: 6px 0 0; padding: 0; font-size: 13px; color: var(--muted); }
 .strip li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 0; }
 .hchips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
@@ -533,8 +533,16 @@ footer a { color: var(--muted); }
   };
   // Hidden issues are matched without their numbers, so "5× this week" stays hidden at "6×".
   var issueKey = function (i) { return [i.source, i.area, i.message.replace(/\d+(\.\d+)?/g, '#')].join('|'); };
-  var css = function (name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
-  var reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // Theme colours, read once per render (getComputedStyle is slow inside loops). Cleared by renderView.
+  var cssCache = {};
+  var css = function (name) {
+    if (!(name in cssCache)) cssCache[name] = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return cssCache[name];
+  };
+  var media = function (q) { return !!(window.matchMedia && matchMedia(q).matches); };
+  var reduced = media('(prefers-reduced-motion: reduce)');
+  var isStandalone = function () { return window.navigator.standalone === true || media('(display-mode: standalone)'); };
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var each = function (root, sel, fn) { Array.prototype.forEach.call(root.querySelectorAll(sel), fn); };
 
   var ICON = {
@@ -586,6 +594,7 @@ footer a { color: var(--muted); }
     tipScrollY = activeScrollTop();
   }
   function hideTip() {
+    if (!tipEl.classList.contains('on')) return; // nothing open: skip the DOM search on every tap and scroll
     tipEl.classList.remove('on');
     each(document, '.xhg', function (g) { g.style.display = 'none'; }); // crosshair guide lines too
   }
@@ -876,7 +885,11 @@ footer a { color: var(--muted); }
   /* =========================================================
    * Loading
    * ======================================================= */
-  function setLoading(on) { $('refresh').classList.toggle('spin', on); $('refresh').disabled = on; }
+  var onLoaded = null; // one-shot hook, used by pull to refresh
+  function setLoading(on) {
+    $('refresh').classList.toggle('spin', on); $('refresh').disabled = on;
+    if (!on && onLoaded) { var f = onLoaded; onLoaded = null; f(); }
+  }
   function load(force) {
     if (MODE === 'setup' || MODE === 'setup-gas') return;
     setLoading(true);
@@ -995,10 +1008,8 @@ footer a { color: var(--muted); }
     $('cfg-app-row').hidden = keyOnly;
     if (CFG && CFG.app) { $('cfg-app').value = CFG.app; }
     $('cfg-key').value = '';
-    var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     $('cfg-note').innerHTML = 'The key is saved only on this device. Never put it in a link or bookmark.' +
-      (!keyOnly && ios && !standalone ? '<br><b>iPhone/iPad:</b> add this page to your Home Screen first (Share → Add to Home Screen), then open it from the icon and connect there. The home-screen app keeps its own storage.' : '');
+      (!keyOnly && isIOS && !isStandalone() ? '<br><b>iPhone/iPad:</b> add this page to your Home Screen first (Share → Add to Home Screen), then open it from the icon and connect there. The home-screen app keeps its own storage.' : '');
   }
 
   $('setup-form').addEventListener('submit', function (e) {
@@ -1021,9 +1032,7 @@ footer a { color: var(--muted); }
   });
 
   function installHint() {
-    var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (MODE !== 'remote' || standalone || !ios || lsGet(LS.hint)) return '';
+    if (MODE !== 'remote' || isStandalone() || !isIOS || lsGet(LS.hint)) return '';
     return '<div class="banner hint"><span>For a full-screen app, tap <b>Share</b> then <b>Add to Home Screen</b>.</span><button type="button" class="linkbtn" id="hint-x">Got it</button></div>';
   }
 
@@ -1051,8 +1060,14 @@ footer a { color: var(--muted); }
     $('bnav').innerHTML = VIEWS.map(function (v) {
       return '<button type="button" data-v="' + v.key + '"' + (S.view === v.key ? ' aria-current="page"' : '') + '>' + svgIcon(v.key) + '<span>' + v.label + '</span>' + badge(v.key) + '</button>';
     }).join('');
-    each(document, '[data-v]', function (b) { b.addEventListener('click', function () { go(b.getAttribute('data-v')); }); });
   }
+  // One listener per bar (not one per button, re-added on every render)
+  ['tabs', 'bnav'].forEach(function (id) {
+    $(id).addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-v]');
+      if (b) go(b.getAttribute('data-v'));
+    });
+  });
 
   function viewIndex(k) { for (var i = 0; i < VIEWS.length; i++) if (VIEWS[i].key === k) return i; return 0; }
 
@@ -1076,6 +1091,7 @@ footer a { color: var(--muted); }
     opts = opts || {};
     var changed = S.view !== view;
     S.view = view;
+    drawPending(view);
     if (!opts.fromHistory && location.hash !== '#' + view) {
       try { history.pushState(null, '', '#' + view); } catch (e) { /* sandboxed frame */ }
     }
@@ -1101,7 +1117,7 @@ footer a { color: var(--muted); }
     var live = -1, settleTimer;
     pager.addEventListener('scroll', function () {
       var i = Math.round(pager.scrollLeft / pageWidth());
-      if (i !== live) { live = i; if (VIEWS[i]) highlightNav(VIEWS[i].key); hideTip(); }
+      if (i !== live) { live = i; if (VIEWS[i]) { highlightNav(VIEWS[i].key); drawPending(VIEWS[i].key); } hideTip(); }
       clearTimeout(settleTimer);
       settleTimer = setTimeout(settle, 80);
     }, { passive: true });
@@ -1131,22 +1147,42 @@ footer a { color: var(--muted); }
     renderFooter(d);
   }
 
-  /** Draws every tab (they sit side by side, so the next one is ready while you swipe). */
+  /**
+   * Draws every tab. The one on screen is drawn now; the others follow in idle
+   * time, so the page shows sooner. A tab still waiting is drawn at once if you
+   * swipe or tap to it first.
+   */
+  var VIEW_FN = { overview: viewOverview, flow: viewFlow, money: viewMoney, garage: viewGarage, vault: viewVault, health: viewHealth };
+  var pending = {}, idleJob = null;
+  var idle = window.requestIdleCallback ? function (fn) { return requestIdleCallback(fn, { timeout: 400 }); } : function (fn) { return setTimeout(fn, 16); };
+  var cancelIdle = window.cancelIdleCallback || clearTimeout;
+  function drawView(k, animate) {
+    var host = $('v-' + k), keep = S.animate;
+    delete pending[k];
+    S.animate = !!animate;
+    VIEW_FN[k](host, S.data);
+    bindAppLinks(host); countUp(host); fillBars(host);
+    S.animate = keep;
+  }
+  function drawPending(k) { if (pending[k] && S.data) drawView(k, false); }
+  function drawNextPending() {
+    idleJob = null;
+    var k = Object.keys(pending)[0];
+    if (!k) return;
+    drawView(k, false);
+    if (Object.keys(pending).length) idleJob = idle(drawNextPending);
+  }
   function renderView() {
     if (!S.data) return;
-    var animate = S.animate;
-    var views = { overview: viewOverview, flow: viewFlow, money: viewMoney, garage: viewGarage, vault: viewVault, health: viewHealth };
-    // The tab on screen first, then the rest
-    var order = [S.view].concat(VIEWS.map(function (v) { return v.key; }).filter(function (k) { return k !== S.view; }));
-    order.forEach(function (k) {
-      var host = $('v-' + k);
-      S.animate = animate && k === S.view;
-      views[k](host, S.data);
-      bindAppLinks(host); countUp(host); fillBars(host);
-    });
+    cssCache = {}; // theme may have changed
+    if (idleJob !== null) { cancelIdle(idleJob); idleJob = null; }
+    pending = {};
+    VIEWS.forEach(function (v) { if (v.key !== S.view) pending[v.key] = 1; });
+    drawView(S.view, S.animate);
     S.animate = false;
     setActive(S.view, { fromHistory: true });
     pager.scrollLeft = viewIndex(S.view) * pageWidth();
+    idleJob = idle(drawNextPending);
   }
 
   /* =========================================================
@@ -1210,12 +1246,12 @@ footer a { color: var(--muted); }
     html += '<div class="strip">';
     var tk = t.tasks;
     html += '<div class="card" data-go="flow"><div class="k"><span class="eyebrow">Tasks today</span>' + (tk && tk.overdue ? '<span class="tag late">' + tk.overdue + ' overdue</span>' : '') + '</div>' +
-      (tk ? '<div class="big num">' + tk.due + ' <span class="muted" style="font-size:14px;font-weight:500">due · ' + tk.done + ' done</span></div>' +
+      (tk ? '<div class="big num">' + tk.due + ' <span class="unit">due · ' + tk.done + ' done</span></div>' +
         (tk.items.length ? '<ul>' + tk.items.map(function (x) { return '<li>' + (x.time ? '<span class="num">' + esc(x.time) + '</span> · ' : '') + esc(x.task) + (x.top3 ? ' ★' : '') + '</li>'; }).join('') + '</ul>' : '<div class="empty">Nothing due today</div>')
         : '<div class="empty">Flow not connected</div>') + '</div>';
     var hb = t.habits;
     html += '<div class="card" data-go="flow"><div class="k"><span class="eyebrow">Habits today</span></div>' +
-      (hb && hb.total ? '<div class="ringrow" style="gap:10px;margin:4px 0 2px">' + ring(hb.done / hb.total, { size: 40, stroke: 5, color: 'var(--good)' }) + '<div class="big num" style="margin:0">' + hb.done + ' <span class="muted" style="font-size:14px;font-weight:500">of ' + hb.total + ' done</span></div></div>' +
+      (hb && hb.total ? '<div class="ringrow" style="gap:10px;margin:4px 0 2px">' + ring(hb.done / hb.total, { size: 40, stroke: 5, color: 'var(--good)' }) + '<div class="big num" style="margin:0">' + hb.done + ' <span class="unit">of ' + hb.total + ' done</span></div></div>' +
         '<div class="hchips">' + hb.items.map(function (h) { return '<span class="' + (h.done ? 'done' : h.due ? 'due' : '') + '" title="' + (h.done ? 'Done today' : h.due ? 'Due today' : 'Weekly target already met') + '">' + esc(h.icon) + ' ' + esc(h.habit) + '</span>'; }).join('') + '</div>'
         : '<div class="empty">No habits yet</div>') + '</div>';
     var gr = t.garage;
@@ -1225,7 +1261,7 @@ footer a { color: var(--muted); }
         : '<div class="empty">No reminders</div>') + '</div>';
     var vt = t.vault, vsrc = d.sources.vault;
     html += '<div class="card" data-go="vault"><div class="k"><span class="eyebrow">Vault · next 30 days</span>' + (vt && vt.expired ? '<span class="tag late">' + vt.expired + ' expired</span>' : '') + '</div>' +
-      (vt ? '<div class="big num ' + (vt.count ? 'warnc' : '') + '">' + vt.count + ' <span class="muted" style="font-size:14px;font-weight:500">' + (vt.count === 1 ? 'document' : 'documents') + '</span></div>' +
+      (vt ? '<div class="big num ' + (vt.count ? 'warnc' : '') + '">' + vt.count + ' <span class="unit">' + (vt.count === 1 ? 'document' : 'documents') + '</span></div>' +
         (vt.items.length ? '<ul>' + vt.items.map(function (x) { return '<li>' + esc(x.icon) + ' ' + esc(x.title) + ' · ' + (x.daysLeft < 0 ? 'expired' : x.daysLeft + 'd') + '</li>'; }).join('') + '</ul>' : '<div class="empty">Nothing expiring</div>')
         : '<div class="empty">' + (vsrc && vsrc.off ? 'Add VAULT_SHEET_ID to connect Vault' : 'Vault not connected') + '</div>') + '</div>';
     html += '</div>';
@@ -1834,7 +1870,7 @@ footer a { color: var(--muted); }
       });
     });
     $('recheck').addEventListener('click', recheck);
-    if ($('unhide')) $('unhide').addEventListener('click', function () { S.hidden = {}; lsSet(LS.hidden, '{}'); renderNav(); viewHealth(host, d); });
+    if ($('unhide')) $('unhide').addEventListener('click', function () { S.hidden = {}; lsSet(LS.hidden, '{}'); renderNav(); viewHealth(host, d); bindAppLinks(host); });
   }
 
   /* Recheck: re-read the Sheets now and say what cleared. */
@@ -1869,7 +1905,7 @@ footer a { color: var(--muted); }
         (s.appUrl ? ' · <a href="' + esc(s.appUrl) + '" target="_blank" rel="noopener">app</a>' : '') + ' <span class="num">' + s.ms + 'ms</span></span>';
     });
     parts.push('<span>Read-only · v' + esc(d.version) + '</span>');
-    if (window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) parts.push('<span>Keys: <span class="kbd">1</span>–<span class="kbd">5</span> tabs · <span class="kbd">R</span> refresh</span>');
+    if (window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) parts.push('<span>Keys: <span class="kbd">1</span>–<span class="kbd">' + VIEWS.length + '</span> tabs · <span class="kbd">R</span> refresh</span>');
     if (MODE === 'remote' || MODE === 'gas') parts.push('<button type="button" class="linkbtn faint" data-reconnect>Connection settings</button>');
     each(document, '.foot', function (f) { f.innerHTML = parts.join(''); });
     each(document, '[data-reconnect]', function (b) { b.addEventListener('click', function () { showSetup(''); }); });
@@ -1931,8 +1967,7 @@ footer a { color: var(--muted); }
 
   // Home-screen app: pull down to refresh (iOS has no built-in one there)
   (function () {
-    var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-    if (!standalone || !('ontouchstart' in window)) return;
+    if (!isStandalone() || !('ontouchstart' in window)) return;
     var startY = null, dy = 0, ptr = $('ptr');
     document.addEventListener('touchstart', function (e) { startY = activeScrollTop() <= 0 && e.touches.length === 1 && !(e.target.closest && e.target.closest('.chart')) ? e.touches[0].clientY : null; dy = 0; }, { passive: true });
     document.addEventListener('touchmove', function (e) {
@@ -1945,8 +1980,8 @@ footer a { color: var(--muted); }
       startY = null;
       if (dy > 80 && MODE !== 'setup') {
         ptr.classList.add('spin'); ptr.style.transform = 'translate(-50%, 24px)';
+        onLoaded = function () { ptr.classList.remove('spin'); ptr.style.transform = ''; };
         load(true);
-        var wait = setInterval(function () { if (!$('refresh').disabled) { clearInterval(wait); ptr.classList.remove('spin'); ptr.style.transform = ''; } }, 200);
       } else ptr.style.transform = '';
     });
   })();
