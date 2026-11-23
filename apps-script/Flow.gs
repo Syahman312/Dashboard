@@ -41,16 +41,16 @@ function readFlow_(ss, ctx) {
   });
 
   return {
-    summary: { tasks: tasks, habits: habits, study: papers.summary, close: close, log: log, lastChange: lastChange },
+    summary: { tasks: tasks, habits: habits, habitStats: habits.stats, study: papers.summary, close: close, log: log, lastChange: lastChange },
     issues: issues.list
   };
 }
 
 function readTasks_(table, paperIds, ctx, issues) {
-  var out = { today: [], overdue: [], top3: [], inbox: 0, doneToday: 0, openTotal: 0, upcoming: [] };
+  var out = { today: [], overdue: [], top3: [], inbox: 0, doneToday: 0, openTotal: 0, upcoming: [], doneDays: {}, doneByMonth: {} };
   if (!table.exists) return out;
   var noTitle = [], badTime = [], badDate = [], doneNoStamp = [], badPaper = [];
-  var weekAhead = addDays_(ctx.today, 7);
+  var weekAhead = addDays_(ctx.today, 7), since14 = addDays_(ctx.today, -13);
 
   table.rows.forEach(function (r) {
     var title = text_(r.Task);
@@ -64,7 +64,13 @@ function readTasks_(table, paperIds, ctx, issues) {
     if (text_(r['Paper ID']) && paperIds && !paperIds[text_(r['Paper ID'])]) badPaper.push(r);
 
     if (done) {
-      if (toISODate_(r['Done At']) === ctx.today) out.doneToday++;
+      var doneOn = toISODate_(r['Done At']);
+      if (doneOn === ctx.today) out.doneToday++;
+      if (doneOn && doneOn <= ctx.today) {
+        if (doneOn >= since14) out.doneDays[doneOn] = (out.doneDays[doneOn] || 0) + 1;
+        var dm = monthKey_(doneOn);
+        out.doneByMonth[dm] = (out.doneByMonth[dm] || 0) + 1;
+      }
       return;
     }
     out.openTotal++;
@@ -98,6 +104,7 @@ function readTasks_(table, paperIds, ctx, issues) {
 
 function readHabits_(habitsT, logT, ctx, issues) {
   var out = [];
+  out.stats = null;
   if (!habitsT.exists) return out;
   var week = weekStart_(ctx.today);
   var habits = {};
@@ -133,6 +140,35 @@ function readHabits_(habitsT, logT, ctx, issues) {
     out.push({ icon: h.icon, habit: h.habit, target: h.target, week: h.week, doneToday: h.doneToday, streak: h.streak, order: h.order, days: grid });
   });
   out.sort(function (a, b) { return a.order - b.order; });
+  out.stats = habitStats_(habits, ctx);
+  return out;
+}
+
+/**
+ * How often habits were done against their weekly targets: the last 7 days, the
+ * 7 days before, and each of the last 4 months. rate = done / expected (0–100).
+ */
+function habitStats_(habits, ctx) {
+  var live = Object.keys(habits).map(function (id) { return habits[id]; }).filter(function (h) { return !h.archived; });
+  var span = function (from, to) {
+    var hits = 0, expected = 0;
+    live.forEach(function (h) {
+      // A habit only counts from the first day it was ticked
+      var start = Object.keys(h.days).sort()[0];
+      if (!start || start > to) return;
+      var a = start > from ? start : from;
+      for (var d = a; d <= to; d = addDays_(d, 1)) if (h.days[d]) hits++;
+      expected += Math.min(h.target, 7) * (daysBetween_(a, to) + 1) / 7;
+    });
+    return { hits: hits, expected: Math.round(expected), rate: expected ? Math.min(100, Math.round(hits / expected * 100)) : null };
+  };
+  var out = { last7: span(addDays_(ctx.today, -6), ctx.today), prev7: span(addDays_(ctx.today, -13), addDays_(ctx.today, -7)), byMonth: {} };
+  var month = monthKey_(ctx.today);
+  for (var i = 1; i <= 4; i++) {
+    var mk = addMonths_(month, -i);
+    var end = addDays_(addMonths_(month, -i + 1) + '-01', -1);
+    out.byMonth[mk] = span(mk + '-01', end);
+  }
   return out;
 }
 
@@ -161,7 +197,7 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
     if (badConf.length) issues.rows('warn', 'fields', badConf.length + ' topic(s) have confidence outside 0–3', badConf);
   }
   var week = weekStart_(ctx.today), since7 = addDays_(ctx.today, -6), since30 = addDays_(ctx.today, -29);
-  var study = { today: 0, week: 0, last7: 0, days: {} };
+  var study = { today: 0, week: 0, last7: 0, days: {}, byMonth: {} };
   if (studyT.exists) {
     var orphan = [], badMin = [];
     studyT.rows.forEach(function (r) {
@@ -171,6 +207,7 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
       if (pid && !byId[pid]) orphan.push(r);
       if (byId[pid]) byId[pid].minutes += min;
       if (!d) return;
+      if (d <= ctx.today) study.byMonth[monthKey_(d)] = (study.byMonth[monthKey_(d)] || 0) + min;
       if (d === ctx.today) study.today += min;
       if (d >= week && d <= ctx.today) study.week += min;
       if (d >= since7 && d <= ctx.today) study.last7 += min;
@@ -196,7 +233,7 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
   return {
     byId: byId,
     summary: {
-      next: nextOut, today: study.today, week: study.week, last7: study.last7, daily: daily,
+      next: nextOut, today: study.today, week: study.week, last7: study.last7, daily: daily, byMonth: study.byMonth,
       papers: list.map(function (p) {
         return { code: p.code, paper: p.paper, exam: p.exam, daysLeft: p.exam ? daysBetween_(ctx.today, p.exam) : null,
           hours: round2_(p.minutes / 60), targetHours: p.targetHours, status: p.status,

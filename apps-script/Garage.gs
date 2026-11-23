@@ -264,6 +264,11 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
     return { date: l.date, items: l.items, cost: l.cost, odo: l.odo };
   });
 
+  // Running costs in the last 7 days and the 7 before (weekly trend)
+  var d6 = addDays_(ctx.today, -6), d13 = addDays_(ctx.today, -13);
+  var costIn = function (from, to) { return round2_(sum_(myFuel.concat(myLogs).filter(function (e) { return e.date >= from && e.date <= to; }), function (e) { return e.cost; })); };
+  var week = { cur: costIn(d6, ctx.today), prev: costIn(d13, addDays_(ctx.today, -7)) };
+
   var spendMonth = sum_(myFuel.concat(myLogs).filter(function (e) { return monthKey_(e.date) === month; }), function (e) { return e.cost; });
 
   return {
@@ -286,6 +291,7 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
       economy: economy
     },
     spendMonth: spendMonth,
+    week: week,
     monthly: monthly,
     history: history,
     fills: fills,

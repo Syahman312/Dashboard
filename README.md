@@ -25,7 +25,7 @@ The fix steps live in `apps-script/Fixes.gs`.
 
 1. Go to <https://script.google.com> → **New project**, and name it `Dashboard`.
 2. Create these files and paste in the contents from `apps-script/`:
-   `Code.gs`, `Shared.gs`, `Garage.gs`, `Finance.gs`, `Flow.gs`, and an HTML file named `Index`.
+   every `.gs` file (`Code`, `Shared`, `Garage`, `Finance`, `Flow`, `Vault`, `Budget`, `Trends`, `Fixes`, `Setup`) and an HTML file named `Index`.
    In **Project Settings**, tick *Show "appsscript.json"* and paste in `appsscript.json`.
    (After this first time, use `npm run deploy` instead. See *Publishing changes with one command* below.)
 3. **Easiest:** in the editor run **`setupDashboard`**. It finds the Flow, Finance, Garage and Vault sheets in your Drive
@@ -128,6 +128,31 @@ project in the Apps Script editor.
 - **Money snapshot:** net worth, this month's spend against budget (the line marks where you should be by today) and
   upcoming recurring payments, which are detected from your transactions (charged about monthly, similar amount).
 - **Sync health:** when each app last saved to its sheet, and whether its sync is failing.
+- **This week:** tasks done, habits kept, study hours, spending and car costs for the last 7 days against the 7 days
+  before. Small ▲ ▼ arrows on the cards and tab headers show the same thing: green is better, red is worse.
+- **Month review:** the last 3 full months: spent and saved, budget kept or broken per category, tasks done, habits kept,
+  study hours and car costs, with a short "went well" and "watch" list. It moves to the top in the first week of a month.
+
+## Budget tab
+
+Its own tab, between Money and Garage. It shows how much is left this month, a daily allowance for the days left,
+where the month is heading, and spending against the budget for the last 6 months. Each category can be filtered
+(over, ahead of pace, on track), sorted, and opened to see its last 6 months against its budget. Categories you spent
+on that have no budget are listed separately. **Edit budget** opens the Budget tab of your Dashboard sheet.
+
+## Quick add
+
+The **+** button (or the **N** key) adds a task, an expense or a fuel fill-up without hunting through the other app:
+
+- **Task:** type it the way Flow's quick add reads it (`Pay TNB bill tmr 9am #home !high`); Flow opens, asks you to confirm,
+  and adds it.
+- **Expense:** enter the amount and what it was for; Finance opens its new-expense form already filled in. Pick the
+  category and account, then Save.
+- **Fill-up:** Garage opens straight on its fill-up form.
+
+The dashboard itself still never writes to any app's data: the app does the saving, with its own checks and sync.
+It needs the app links (`FLOW_APP_URL`, `FINANCE_APP_URL`, `GARAGE_APP_URL`) in Script Properties, and the Flow and
+Finance versions that understand these links (see the `claude/dashboard-quick-add` branch in each app's repository).
 
 ## Works on every device
 
@@ -137,7 +162,7 @@ project in the Apps Script editor.
 - **iPhone / Android:** tabs at the bottom, 44px tap targets, tap a chart or category to see its numbers,
   pull down to refresh in the home-screen app, works offline with your last data, no zoom when typing.
 - **iPad:** two-column layout in portrait and three in landscape; touch-sized controls.
-- **PC:** wider layout on large screens; keys **1–6** or **← →** switch tabs and **R** refreshes.
+- **PC:** wider layout on large screens; keys **1–7** or **← →** switch tabs, **R** refreshes and **N** opens Quick add.
 - **Everywhere:** the Back button moves between tabs, and links like `#money` open that tab.
 
 ## Develop
@@ -160,6 +185,11 @@ apps-script/
   Flow.gs       Flow Data reader + checks
   Finance.gs    Finance tracker reader + checks
   Garage.gs     Car Tracker reader + checks
+  Vault.gs      Vault Data reader (documents and expiry dates)
+  Budget.gs     Budget tab: read it, compare with spending, create it
+  Trends.gs     weekly trend and month review
+  Fixes.gs      how to fix each Health check problem
+  Setup.gs      setupDashboard: finds each app's sheet
   Index.html    the page (no build step, no libraries)
 docs/CONVENTIONS.md   the rules every app should follow from now on
 test/                 Node tests with fake sheets

@@ -1,5 +1,5 @@
 {
-  "version": "2.1.0",
+  "version": "2.2.0",
   "generatedAt": 1794702600000,
   "today": "2026-11-15",
   "sources": {
@@ -112,6 +112,12 @@
               "top3": false
             }
           ],
+          "doneDays": {
+            "2026-11-15": 1
+          },
+          "doneByMonth": {
+            "2026-11": 1
+          },
           "overdueCount": 2
         },
         "habits": [
@@ -208,6 +214,40 @@
             ]
           }
         ],
+        "habitStats": {
+          "last7": {
+            "hits": 4,
+            "expected": 5,
+            "rate": 85
+          },
+          "prev7": {
+            "hits": 0,
+            "expected": 0,
+            "rate": null
+          },
+          "byMonth": {
+            "2026-10": {
+              "hits": 0,
+              "expected": 0,
+              "rate": null
+            },
+            "2026-09": {
+              "hits": 0,
+              "expected": 0,
+              "rate": null
+            },
+            "2026-08": {
+              "hits": 0,
+              "expected": 0,
+              "rate": null
+            },
+            "2026-07": {
+              "hits": 0,
+              "expected": 0,
+              "rate": null
+            }
+          }
+        },
         "study": {
           "next": {
             "code": "FR",
@@ -344,6 +384,10 @@
               "minutes": 120
             }
           ],
+          "byMonth": {
+            "2026-11": 750,
+            "2026-10": 1080
+          },
           "papers": [
             {
               "code": "FR",
@@ -396,7 +440,7 @@
         },
         "lastChange": 1794697200000
       },
-      "ms": 11
+      "ms": 9
     },
     "finance": {
       "name": "Finance",
@@ -1184,6 +1228,143 @@
             "months": 6
           }
         ],
+        "spendDays": {
+          "2026-11-02": 31.5,
+          "2026-11-04": 86,
+          "2026-11-05": 69,
+          "2026-11-06": 83.9,
+          "2026-11-08": 45.5,
+          "2026-11-15": 20.3,
+          "2026-11-07": 12
+        },
+        "catHistory": {
+          "🍽️ Food & Drinks": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            107,
+            217.5,
+            233,
+            217.5,
+            217.5,
+            236.5,
+            76
+          ],
+          "⛽ Fuel": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            100,
+            200,
+            200,
+            250,
+            200,
+            200,
+            50
+          ],
+          "📺 Netflix": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            54.9,
+            54.9,
+            54.9,
+            54.9,
+            54.9,
+            54.9
+          ],
+          "🍜 Food": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            72,
+            38.3
+          ],
+          "(no category)": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            42
+          ],
+          "🍔 Food & Drinks": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8
+          ],
+          "☕ Coffee": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            19
+          ],
+          "🍰 Belanja GF": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            20
+          ],
+          "🍣 Belanja Family": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            40
+          ]
+        },
         "latestDate": "2026-11-15",
         "payslip": {
           "date": "2026-10-23",
@@ -1248,10 +1429,11 @@
               "pct": 25
             }
           ],
-          "unbudgeted": 121
+          "unbudgeted": 121,
+          "url": "https://docs.google.com/spreadsheets/d/d/edit#gid=1000"
         }
       },
-      "ms": 14
+      "ms": 16
     },
     "garage": {
       "name": "Garage",
@@ -1340,6 +1522,10 @@
               }
             },
             "spendMonth": 100,
+            "week": {
+              "cur": 50,
+              "prev": 50
+            },
             "monthly": [
               {
                 "month": "2025-12",
@@ -1594,7 +1780,7 @@
         },
         "lastChange": 1794657600000
       },
-      "ms": 4
+      "ms": 5
     },
     "vault": {
       "name": "Vault",
@@ -2660,7 +2846,7 @@
       "detail": "RM 38.30 of RM 20.00",
       "date": null,
       "days": null,
-      "view": "money"
+      "view": "budget"
     },
     {
       "level": "info",
@@ -2670,6 +2856,256 @@
       "date": "2027-03-15",
       "days": 120,
       "view": "vault"
+    }
+  ],
+  "weekly": [
+    {
+      "key": "tasks",
+      "src": "flow",
+      "view": "flow",
+      "label": "Tasks done",
+      "unit": "n",
+      "cur": 1,
+      "prev": 0,
+      "delta": 1,
+      "pct": null,
+      "dir": "up",
+      "good": true
+    },
+    {
+      "key": "study",
+      "src": "flow",
+      "view": "flow",
+      "label": "Study",
+      "unit": "h",
+      "cur": 6.5,
+      "prev": 4.5,
+      "delta": 2,
+      "pct": 44,
+      "dir": "up",
+      "good": true
+    },
+    {
+      "key": "spend",
+      "src": "finance",
+      "view": "money",
+      "label": "Spending",
+      "unit": "rm",
+      "cur": 20.3,
+      "prev": 327.9,
+      "delta": -307.6,
+      "pct": -94,
+      "dir": "down",
+      "good": true
+    },
+    {
+      "key": "car",
+      "src": "garage",
+      "view": "garage",
+      "label": "Car costs",
+      "unit": "rm",
+      "cur": 50,
+      "prev": 50,
+      "delta": 0,
+      "pct": 0,
+      "dir": "flat",
+      "good": null
+    }
+  ],
+  "review": [
+    {
+      "month": "2026-10",
+      "name": "October 2026",
+      "money": {
+        "spent": 563.4,
+        "income": 3063,
+        "saved": 2499.6,
+        "rate": 82,
+        "prevSpent": 472.4,
+        "top": [
+          {
+            "category": "🍽️ Food & Drinks",
+            "spent": 236.5
+          },
+          {
+            "category": "⛽ Fuel",
+            "spent": 200
+          },
+          {
+            "category": "🍜 Food",
+            "spent": 72
+          }
+        ]
+      },
+      "budget": {
+        "total": 600,
+        "spent": 563.4,
+        "over": [
+          {
+            "category": "🍽️ Food & Drinks",
+            "budget": 150,
+            "spent": 236.5,
+            "over": 86.5
+          },
+          {
+            "category": "🍜 Food",
+            "budget": 20,
+            "spent": 72,
+            "over": 52
+          }
+        ],
+        "kept": 2
+      },
+      "flow": {
+        "tasksDone": 0,
+        "prevTasksDone": 0,
+        "habitRate": null,
+        "studyHours": 18,
+        "prevStudyHours": 0
+      },
+      "car": {
+        "fuel": 200,
+        "service": 0,
+        "cost": 200,
+        "km": 630,
+        "kmPerL": 6.45
+      },
+      "wins": [
+        "Saved 82% of income (RM 2,500)",
+        "Within the RM 600 budget",
+        "Studied 18 h, up from 0 h"
+      ],
+      "watch": [
+        "Spent 19% more than September",
+        "Food & Drinks over budget by RM 87",
+        "Food over budget by RM 52"
+      ]
+    },
+    {
+      "month": "2026-09",
+      "name": "September 2026",
+      "money": {
+        "spent": 472.4,
+        "income": 3063,
+        "saved": 2590.6,
+        "rate": 85,
+        "prevSpent": 522.4,
+        "top": [
+          {
+            "category": "🍽️ Food & Drinks",
+            "spent": 217.5
+          },
+          {
+            "category": "⛽ Fuel",
+            "spent": 200
+          },
+          {
+            "category": "📺 Netflix",
+            "spent": 54.9
+          }
+        ]
+      },
+      "budget": {
+        "total": 600,
+        "spent": 472.4,
+        "over": [
+          {
+            "category": "🍽️ Food & Drinks",
+            "budget": 150,
+            "spent": 217.5,
+            "over": 67.5
+          }
+        ],
+        "kept": 3
+      },
+      "flow": {
+        "tasksDone": 0,
+        "prevTasksDone": 0,
+        "habitRate": null,
+        "studyHours": 0,
+        "prevStudyHours": 0
+      },
+      "car": {
+        "fuel": 200,
+        "service": 0,
+        "cost": 200,
+        "km": 1040,
+        "kmPerL": 10.66
+      },
+      "wins": [
+        "Spent 10% less than August",
+        "Saved 85% of income (RM 2,591)",
+        "Within the RM 600 budget"
+      ],
+      "watch": [
+        "Food & Drinks over budget by RM 68"
+      ]
+    },
+    {
+      "month": "2026-08",
+      "name": "August 2026",
+      "money": {
+        "spent": 522.4,
+        "income": 3063,
+        "saved": 2540.6,
+        "rate": 83,
+        "prevSpent": 487.9,
+        "top": [
+          {
+            "category": "⛽ Fuel",
+            "spent": 250
+          },
+          {
+            "category": "🍽️ Food & Drinks",
+            "spent": 217.5
+          },
+          {
+            "category": "📺 Netflix",
+            "spent": 54.9
+          }
+        ]
+      },
+      "budget": {
+        "total": 600,
+        "spent": 522.4,
+        "over": [
+          {
+            "category": "🍽️ Food & Drinks",
+            "budget": 150,
+            "spent": 217.5,
+            "over": 67.5
+          },
+          {
+            "category": "⛽ Fuel",
+            "budget": 200,
+            "spent": 250,
+            "over": 50
+          }
+        ],
+        "kept": 2
+      },
+      "flow": {
+        "tasksDone": 0,
+        "prevTasksDone": 0,
+        "habitRate": null,
+        "studyHours": 0,
+        "prevStudyHours": 0
+      },
+      "car": {
+        "fuel": 200,
+        "service": 0,
+        "cost": 200,
+        "km": 2840,
+        "kmPerL": 29.1
+      },
+      "wins": [
+        "Saved 83% of income (RM 2,541)",
+        "Within the RM 600 budget"
+      ],
+      "watch": [
+        "Food & Drinks over budget by RM 68",
+        "Fuel over budget by RM 50"
+      ]
     }
   ]
 }

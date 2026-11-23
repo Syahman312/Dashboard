@@ -408,3 +408,47 @@ test('setup finds each app sheet by its contents, newest copy first', () => {
   assert.match(text, /Finance: "Finance tracker" \(unchanged\)/);
   assert.match(text, /Garage: now "Car Tracker"/);
 });
+
+test('weekly trend: last 7 days against the 7 before', () => {
+  const d = build();
+  const by = k => d.weekly.find(w => w.key === k);
+  const spend = by('spend');
+  assert.ok(spend, 'spending is measured');
+  assert.equal(spend.unit, 'rm');
+  // spending going down is good, going up is bad
+  if (spend.dir === 'down') assert.equal(spend.good, true);
+  if (spend.dir === 'up') assert.equal(spend.good, false);
+  const fin = d.sources.finance.summary;
+  const days = Object.keys(fin.spendDays);
+  assert.ok(days.every(x => x >= '2026-11-02' && x <= '2026-11-15'), 'only the last 14 days');
+  const study = by('study');
+  assert.ok(study && study.unit === 'h');
+  assert.equal(study.good, study.dir === 'flat' ? null : study.dir === 'up');
+  assert.ok(by('car'));
+});
+
+test('month review: last 3 full months with budget and plain highlights', () => {
+  const d = build();
+  assert.equal(d.review.length, 3);
+  assert.equal(d.review.map(r => r.month).join(), '2026-10,2026-09,2026-08');
+  const oct = d.review[0];
+  assert.equal(oct.name, 'October 2026');
+  const t = d.sources.finance.summary.trend.find(x => x.month === '2026-10');
+  assert.equal(oct.money.spent, t.spent);
+  assert.ok(oct.money.top.length <= 3);
+  assert.ok(oct.budget && Array.isArray(oct.budget.over));
+  oct.budget.over.forEach(o => assert.ok(o.spent > o.budget));
+  assert.ok(oct.wins.concat(oct.watch).every(s => !/RM \d{4}/.test(s)), 'amounts use thousands commas');
+  assert.ok(oct.car && oct.car.cost >= 0);
+  // habits only count from the day they were first ticked: no fake 0% for months before
+  d.review.forEach(r => { if (r.flow.habitRate !== null) assert.ok(r.flow.habitRate >= 0 && r.flow.habitRate <= 100); });
+});
+
+test('budget: category history and edit link', () => {
+  const d = build();
+  const fin = d.sources.finance.summary;
+  Object.values(fin.catHistory).forEach(h => assert.equal(h.length, fin.trend.length));
+  assert.match(fin.budget.url, /^https:\/\/docs\.google\.com\/spreadsheets\/d\/d\/edit#gid=\d+$/);
+  const over = d.alerts.filter(a => /^Over budget/.test(a.title));
+  over.forEach(a => assert.equal(a.view, 'budget'));
+});

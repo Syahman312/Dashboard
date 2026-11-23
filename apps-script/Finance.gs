@@ -57,6 +57,8 @@ function readFinance_(ss, ctx) {
       recent: tx.recent,
       monthCats: tx.monthCats,
       recurring: tx.recurring,
+      spendDays: tx.spendDays,
+      catHistory: tx.catHistory,
       latestDate: tx.latestDate,
       payslip: pay,
       goals: goals,
@@ -266,6 +268,26 @@ function readTransactions_(table, accounts, ctx, issues) {
   }
 
   out.recurring = detectRecurring_(real, ctx);
+
+  // Every category's spending in each of the 12 months (Budget tab history), same order as trend
+  var monthIdx = {};
+  out.trend.forEach(function (t, i) { monthIdx[t.month] = i; });
+  out.catHistory = {};
+  real.forEach(function (t) {
+    var i = monthIdx[monthKey_(t.date)];
+    if (t.amount >= 0 || i === undefined) return;
+    var k = t.cat || '(no category)';
+    var row = out.catHistory[k] || (out.catHistory[k] = out.trend.map(function () { return 0; }));
+    row[i] = round2_(row[i] - t.amount);
+  });
+
+  // Spending per day for the last 14 days (weekly trend)
+  var since14 = addDays_(ctx.today, -13);
+  out.spendDays = {};
+  real.forEach(function (t) {
+    if (t.amount >= 0 || t.date < since14 || t.date > ctx.today) return;
+    out.spendDays[t.date] = round2_((out.spendDays[t.date] || 0) - t.amount);
+  });
 
   out.recent = list.filter(function (t) { return !t.adjust && t.date <= ctx.today; })
     .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : a.__row - b.__row; })

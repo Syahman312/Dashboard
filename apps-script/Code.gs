@@ -9,7 +9,7 @@
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
  */
 
-var DASH_VERSION = '2.1.0';
+var DASH_VERSION = '2.2.0';
 var CACHE_KEY = 'dashboard:v2';
 var CACHE_SECONDS = 1800;     // 30 min; the warm-up trigger refreshes it every 15
 var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
@@ -196,6 +196,7 @@ function buildDashboard_(now, openById) {
     try {
       var b = applyBudget_(fin.summary, readBudget_(openById(dashId)), ctx);
       fin.summary.budget = b.budget;
+      if (b.budget) b.budget.url = 'https://docs.google.com/spreadsheets/d/' + dashId + '/edit' + (b.gid !== undefined && b.gid !== null ? '#gid=' + b.gid : '');
       out.issues = out.issues.concat(b.issues);
     } catch (e) {
       out.issues.push({ source: 'finance', level: 'info', area: 'budget', message: 'Could not read the Budget tab', detail: String(e && e.message || e) });
@@ -214,6 +215,8 @@ function buildDashboard_(now, openById) {
   out.todayStrip = today_(out.sources, ctx);
   out.sync = syncHealth_(out.sources, out.issues, ctx);
   out.alerts = alerts_(out.sources, out.sync, ctx);
+  out.weekly = weekly_(out.sources, ctx);
+  out.review = review_(out.sources, ctx);
   return out;
 }
 
@@ -300,7 +303,7 @@ function alerts_(sources, sync, ctx) {
       add('info', 'finance', r.name + ' · RM ' + r.amount.toFixed(2), 'Expected from ' + r.account, r.next, 'money');
     });
     if (fin.budget) fin.budget.rows.filter(function (b) { return b.budget > 0 && b.spent > b.budget; }).forEach(function (b) {
-      add('warn', 'finance', 'Over budget: ' + b.category, 'RM ' + b.spent.toFixed(2) + ' of RM ' + b.budget.toFixed(2), null, 'money');
+      add('warn', 'finance', 'Over budget: ' + b.category, 'RM ' + b.spent.toFixed(2) + ' of RM ' + b.budget.toFixed(2), null, 'budget');
     });
     if (fin.payslip && fin.payslip.daysAgo > 35) add('info', 'finance', 'Add your latest payslip', 'Last one ' + fin.payslip.date, null, 'money');
   }

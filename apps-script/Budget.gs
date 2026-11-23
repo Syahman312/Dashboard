@@ -55,6 +55,7 @@ function applyBudget_(fin, budget, ctx) {
     budget: { total: total, spent: spentTotal, left: total !== null ? round2_(total - spentTotal) : null,
       pct: total ? Math.round(spentTotal / total * 100) : null, pacePct: Math.round(pace * 100),
       rows: rows, unbudgeted: unbudgeted },
+    gid: budget.gid,
     issues: issues.list
   };
 }
