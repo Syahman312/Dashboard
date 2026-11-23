@@ -152,7 +152,7 @@ The **+** button (or the **N** key) adds a task, an expense or a fuel fill-up wi
 
 The dashboard itself still never writes to any app's data: the app does the saving, with its own checks and sync.
 It needs the app links (`FLOW_APP_URL`, `FINANCE_APP_URL`, `GARAGE_APP_URL`) in Script Properties, and the Flow and
-Finance versions that understand these links (see the `claude/dashboard-quick-add` branch in each app's repository).
+Finance versions that understand these links (the two small patches in `app-patches/`).
 
 ## Works on every device
 
@@ -192,6 +192,7 @@ apps-script/
   Setup.gs      setupDashboard: finds each app's sheet
   Index.html    the page (no build step, no libraries)
 docs/CONVENTIONS.md   the rules every app should follow from now on
+app-patches/          Quick add hooks for Flow and Finance
 test/                 Node tests with fake sheets
 dev/                  sample data for previewing the page
 ```

@@ -1,0 +1,17 @@
+diff --git a/index.html b/index.html
+index 477b746..7fe7624 100644
+--- a/index.html
++++ b/index.html
+@@ -2723,6 +2723,11 @@ addEventListener('popstate',()=>{const m=$('#p.show')||$('#m.show');if(m){MBACK=
+ let MBACK=0;try{const was={};new MutationObserver(()=>{['m','p'].forEach(id=>{const o=document.getElementById(id).classList.contains('show');if(o&&!was[id]){try{history.pushState({m:id},'',location.href)}catch(e){}}
+ else if(!o&&was[id]){if(MBACK)MBACK=0;else if(history.state&&history.state.m==id)try{history.back()}catch(e){}}was[id]=o})}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']})}catch(e){}
+ if(pinRec())lockNow();
+-function BOOT(){render();setTimeout(goldAuto,1500);setTimeout(rcNag,2500);if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}if(localStorage.getItem(SU))setTimeout(sync,800);else if(localStorage.getItem(ON)){setStatus('Tap Settings › Sync to reconnect');setTimeout(sync,1200)}}
++/* Quick add from the Dashboard: ?add=expense&amt=12.50&desc=Lunch opens a new expense, filled in; nothing is saved until you press Save */
++function quickFromLink(){const q=new URLSearchParams(location.search);if(q.get('add')!=='expense')return;
++['add','amt','desc'].forEach(k=>q.delete(k));const amt=Math.abs(parseFloat(new URLSearchParams(location.search).get('amt')))||0,desc=(new URLSearchParams(location.search).get('desc')||'').slice(0,120);
++try{history.replaceState(history.state,'',location.pathname+(q.toString()?'?'+q:'')+location.hash)}catch(e){}
++if(RO())return;setTimeout(()=>edit('',{amt:-Math.round(amt*100)/100,desc}),300)}
++function BOOT(){render();quickFromLink();setTimeout(goldAuto,1500);setTimeout(rcNag,2500);if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}if(localStorage.getItem(SU))setTimeout(sync,800);else if(localStorage.getItem(ON)){setStatus('Tap Settings › Sync to reconnect');setTimeout(sync,1200)}}
+ if(IDBW){$('#app').innerHTML='<div style="padding:38vh 16px 0;text-align:center;color:var(--mut)">Loading your ledger…</div>';storeGet().then(r=>{if(!r||!r.json)throw new Error('nothing saved');S=norm(JSON.parse(r.json));IDBW=false;txDirty();if(autoRec())persist();BOOT()}).catch(e=>{logErr('storage','Could not open the saved ledger: '+(e&&e.message));$('#app').innerHTML='<div style="padding:30vh 16px 0;text-align:center"><b>Could not open your saved ledger</b><br><small>Close Ledger completely and open it again. Your data is also in your Google Sheet.</small>'+(localStorage.getItem(SU)?'<br><button style="max-width:320px;margin-top:14px" onclick="IDBW=false;[\'ledger.big\',\'ledger.sent\',\'ledger.rev\'].forEach(k=>localStorage.removeItem(k));BOOT()">Load from my Google Sheet</button>':'')+'</div>'})}else BOOT();
+ </script></body></html>

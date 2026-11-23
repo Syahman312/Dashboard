@@ -1,0 +1,18 @@
+diff --git a/index.html b/index.html
+index 49e2c57..1ab31d1 100644
+--- a/index.html
++++ b/index.html
+@@ -1478,6 +1478,13 @@ $('#fileIn').addEventListener('change',async e=>{const f=e.target.files[0];e.tar
+ /* ================================================================ boot */
+ {const qt=new URLSearchParams(location.search).get('tab');if(VIEWS[qt])META.tab=qt}
+ render();
++/* Quick add from the Dashboard: ?add=<text> is read like the quick-add box, confirmed, then removed from the address */
++{const qs=new URLSearchParams(location.search),qa=qs.get('add');
++  if(qa!==null){qs.delete('add');try{history.replaceState(history.state,'',location.pathname+(qs.toString()?'?'+qs:'')+location.hash)}catch(e){}
++    setTimeout(()=>{const p=parseQuick(qa.trim().slice(0,300));if(!p.title){toast('Add a task name');return}
++      if(!confirm(`Add this task from Dashboard?\n\n${p.title}\n${relDay(p.date)}${p.time?' at '+fmtTime(p.time):''} · ${p.area} · ${p.prio}`))return;
++      put('tasks',{id:uid(),title:p.title,date:p.date,time:p.time,dur:p.time?60:30,area:p.area,prio:p.prio,repeat:'none',paper:'',done:false,top:false,cal:!!(p.time&&META.prefs.calDefault&&connected()),notes:''});
++      render();toast(`Added for ${relDay(p.date).toLowerCase()}${p.time?' at '+fmtTime(p.time):''}`)},300)}}
+ if(META.timer&&timerLeft()<=0&&META.timer.paused==null)finishTimer();
+ const idle=window.requestIdleCallback||(f=>setTimeout(f,200));
+ idle(()=>{
