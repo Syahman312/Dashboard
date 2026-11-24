@@ -7,6 +7,10 @@ One screen to check every morning. It **reads** (and never writes) the Sheets be
 | **Flow** | Flow Data | Top 3, today's and overdue tasks, habits, ACCA study, month-end close |
 | **Finance** | Finance tracker | Spending this month vs last, 6-month trend, top categories, net worth, debts, payslip, goals |
 | **Garage** | Car Tracker | Road tax countdown, last service, items longest since done, fuel economy and spend |
+| **Vault** | Vault Data | Documents and when they expire |
+| **NextRole** | NextRole's sheet | Career goals, job applications and next steps, ACCA papers, CPD hours, skill gaps |
+| **Voyage** | Voyage's sheet | Next trip countdown, trip budget, to-dos, packing, bookings, past trips |
+| **Nest** | Nest DB | Move-in countdown, home budget, must-haves still to get, home upkeep, bills |
 
 At the top, a **Morning brief** sums the day up in a few sentences (sync problems first), and **Coming up** lists every dated
 item in the next 45 days from all three apps: tasks, exams, road tax, goals and expected payday. Each card shows when its
@@ -25,10 +29,10 @@ The fix steps live in `apps-script/Fixes.gs`.
 
 1. Go to <https://script.google.com> → **New project**, and name it `Dashboard`.
 2. Create these files and paste in the contents from `apps-script/`:
-   every `.gs` file (`Code`, `Shared`, `Garage`, `Finance`, `Flow`, `Vault`, `Budget`, `Trends`, `Fixes`, `Setup`) and an HTML file named `Index`.
+   every `.gs` file (`Code`, `Shared`, `Garage`, `Finance`, `Flow`, `Vault`, `Life`, `Budget`, `Trends`, `Fixes`, `Setup`) and an HTML file named `Index`.
    In **Project Settings**, tick *Show "appsscript.json"* and paste in `appsscript.json`.
    (After this first time, use `npm run deploy` instead. See *Publishing changes with one command* below.)
-3. **Easiest:** in the editor run **`setupDashboard`**. It finds the Flow, Finance, Garage and Vault sheets in your Drive
+3. **Easiest:** in the editor run **`setupDashboard`**. It finds the Flow, Finance, Garage, Vault, NextRole, Voyage and Nest sheets in your Drive
    by what is inside them (newest copy wins), saves their IDs, links the "Dashboard" sheet and creates the Budget tab.
    Run it again whenever an app moves to a new sheet. It asks for read-only Drive access to look at your sheets.
 
@@ -41,12 +45,14 @@ The fix steps live in `apps-script/Fixes.gs`.
 
    Optional:
    - `VAULT_SHEET_ID`: the ID of your **Vault Data** sheet (adds the Vault tab, Vault expiry alerts and the Today strip card).
+   - `NEXTROLE_SHEET_ID`, `VOYAGE_SHEET_ID`, `NEST_SHEET_ID`: the sheets behind NextRole, Voyage and Nest (fill the Life tab).
    - `DASHBOARD_SHEET_ID`: the ID of your **Dashboard** sheet, for the budget. Then run **`createBudgetTab`** once from the
      editor: it adds a **Budget** tab (Category | Monthly budget) pre-filled with your usual spending; edit the amounts.
      This tab is the only thing the dashboard ever writes, and only when you run that function.
 
    Also optional, for the **Open app** buttons: add the address you open each app with as
-   `FLOW_APP_URL`, `FINANCE_APP_URL`, `GARAGE_APP_URL` and `VAULT_APP_URL` (https links only).
+   `FLOW_APP_URL`, `FINANCE_APP_URL`, `GARAGE_APP_URL`, `VAULT_APP_URL`, `NEXTROLE_APP_URL`, `VOYAGE_APP_URL` and
+   `NEST_APP_URL` (https links only).
 4. In the editor, run **`testDashboard`** once. Google asks you to allow access to your Sheets. (Apps Script needs full Sheets access to open a Sheet by its ID, but the dashboard code never writes.)
    The execution log lists each sheet as OK or FAILED, followed by every issue found.
 5. **Deploy → New deployment → Web app**. Set *Execute as: Me* and *Who has access: Only myself*.
@@ -133,6 +139,25 @@ project in the Apps Script editor.
 - **Month review:** the last 3 full months: spent and saved, budget kept or broken per category, tasks done, habits kept,
   study hours and car costs, with a short "went well" and "watch" list. It moves to the top in the first week of a month.
 
+## Life tab
+
+NextRole, Voyage and Nest side by side, between Vault and Health:
+
+- **NextRole:** your next role, ACCA papers passed, goals with progress bars (late ones in red), job applications
+  with interviews and next steps, follow-ups after a week with no reply, CPD hours this year and the biggest skill gaps.
+- **Voyage:** the next trip with a countdown, spending against its budget (foreign spending converted at the trip's
+  rate), to-dos left and overdue, packing progress, the next booking, other planned trips and recent ones.
+- **Nest:** days to move-in, must-haves in place, home budget used (bought + ordered), must-haves still to get,
+  upkeep tasks overdue or due in 30 days, and monthly bills.
+
+Interviews, late goals, overdue trip to-dos and overdue home tasks also appear in **Alerts**; interviews, trips,
+move-in day and upkeep in **Coming up**; and an interview this week, a trip within 30 days or move-in within 60 days
+in the **Morning brief**. These apps only save when something changes, so Sync health waits 45 days
+(Voyage: 120) before calling them quiet.
+
+Private details are never read: no salary, pay slips, contact details or CV text from NextRole; no hotel address,
+booking references or files from Voyage; no links or notes from Nest.
+
 ## Budget tab
 
 Its own tab, between Money and Garage. It shows how much is left this month, a daily allowance for the days left,
@@ -162,7 +187,7 @@ Finance versions that understand these links (the two small patches in `app-patc
 - **iPhone / Android:** tabs at the bottom, 44px tap targets, tap a chart or category to see its numbers,
   pull down to refresh in the home-screen app, works offline with your last data, no zoom when typing.
 - **iPad:** two-column layout in portrait and three in landscape; touch-sized controls.
-- **PC:** wider layout on large screens; keys **1–7** or **← →** switch tabs, **R** refreshes and **N** opens Quick add.
+- **PC:** wider layout on large screens; keys **1–8** or **← →** switch tabs, **R** refreshes and **N** opens Quick add.
 - **Everywhere:** the Back button moves between tabs, and links like `#money` open that tab.
 
 ## Develop
@@ -186,6 +211,7 @@ apps-script/
   Finance.gs    Finance tracker reader + checks
   Garage.gs     Car Tracker reader + checks
   Vault.gs      Vault Data reader (documents and expiry dates)
+  Life.gs       NextRole, Voyage and Nest readers (Life tab)
   Budget.gs     Budget tab: read it, compare with spending, create it
   Trends.gs     weekly trend and month review
   Fixes.gs      how to fix each Health check problem

@@ -398,6 +398,10 @@ input, select, textarea { font-size: 16px !important; }
 .alerts .tt { font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; }
 .alerts .dd { font-size: 12px; color: var(--faint); }
 .alerts .when { text-align: right; min-width: 0; font-size: 12.5px; }
+.tiles.mini4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tiles.mini3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tiles.mini4 .tile, .tiles.mini3 .tile { padding: 10px 12px; min-width: 0; }
+.tiles.mini4 .v, .tiles.mini3 .v { font-size: 20px; }
 .bbar { position: relative; height: 10px; border-radius: 5px; background: var(--card-3); overflow: visible; margin: 8px 0 4px; }
 .bbar i { display: block; height: 100%; border-radius: 5px; background: var(--s1); width: 0; transition: width .8s cubic-bezier(.2,.7,.2,1); max-width: 100%; }
 .bbar.over i { background: var(--bad); }
@@ -541,6 +545,7 @@ footer a { color: var(--muted); }
   <section class="view" data-view="budget"><div class="wrap" id="v-budget"></div><footer class="foot wrap"></footer></section>
   <section class="view" data-view="garage"><div class="wrap" id="v-garage"></div><footer class="foot wrap"></footer></section>
   <section class="view" data-view="vault"><div class="wrap" id="v-vault"></div><footer class="foot wrap"></footer></section>
+  <section class="view" data-view="life"><div class="wrap" id="v-life"></div><footer class="foot wrap"></footer></section>
   <section class="view" data-view="health"><div class="wrap" id="v-health"></div><footer class="foot wrap"></footer></section>
 </main>
 
@@ -626,6 +631,7 @@ footer a { color: var(--muted); }
     vault: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3.2"/><path d="M12 8.8V7M12 17v-1.8M15.2 12H17M7 12h1.8"/>',
     garage: '<path d="M5 17h14"/><path d="M3 17v-4l2-5a2 2 0 0 1 2-1.3h10A2 2 0 0 1 19 8l2 5v4"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/><path d="M4 12h16"/>',
     health: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    life: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
     budget: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
@@ -638,10 +644,10 @@ footer a { color: var(--muted); }
 
   var VIEWS = [
     { key: 'overview', label: 'Overview' }, { key: 'flow', label: 'Flow' }, { key: 'money', label: 'Money' },
-    { key: 'budget', label: 'Budget' }, { key: 'garage', label: 'Garage' }, { key: 'vault', label: 'Vault' }, { key: 'health', label: 'Health' }
+    { key: 'budget', label: 'Budget' }, { key: 'garage', label: 'Garage' }, { key: 'vault', label: 'Vault' }, { key: 'life', label: 'Life' }, { key: 'health', label: 'Health' }
   ];
-  var SRC_LABEL = { flow: 'Flow', finance: 'Money', garage: 'Garage', vault: 'Vault', cross: 'Across apps' };
-  var SRC_VIEW = { flow: 'flow', finance: 'money', garage: 'garage', vault: 'vault', cross: 'health' };
+  var SRC_LABEL = { flow: 'Flow', finance: 'Money', garage: 'Garage', vault: 'Vault', career: 'NextRole', voyage: 'Voyage', nest: 'Nest', cross: 'Across apps' };
+  var SRC_VIEW = { flow: 'flow', finance: 'money', garage: 'garage', vault: 'vault', career: 'life', voyage: 'life', nest: 'life', cross: 'health' };
 
   /* =========================================================
    * Tooltip (one for the page; all text goes in via textContent)
@@ -1235,7 +1241,7 @@ footer a { color: var(--muted); }
    * time, so the page shows sooner. A tab still waiting is drawn at once if you
    * swipe or tap to it first.
    */
-  var VIEW_FN = { overview: viewOverview, flow: viewFlow, money: viewMoney, budget: viewBudget, garage: viewGarage, vault: viewVault, health: viewHealth };
+  var VIEW_FN = { overview: viewOverview, flow: viewFlow, money: viewMoney, budget: viewBudget, garage: viewGarage, vault: viewVault, life: viewLife, health: viewHealth };
   var pending = {}, idleJob = null;
   var idle = window.requestIdleCallback ? function (fn) { return requestIdleCallback(fn, { timeout: 400 }); } : function (fn) { return setTimeout(fn, 16); };
   var cancelIdle = window.cancelIdleCallback || clearTimeout;
@@ -1275,7 +1281,7 @@ footer a { color: var(--muted); }
     if (!src || !src.ok || !src.summary || !('lastChange' in src.summary)) return '';
     var lc = src.summary.lastChange, now = S.data.generatedAt;
     var age = lc ? (now - lc) / 3600e3 : Infinity;
-    var tone = age < 24 ? 'ok' : age < 72 ? 'warn' : 'error';
+    var tone = src.staleDays ? (age < src.staleDays * 24 ? 'ok' : 'warn') : age < 24 ? 'ok' : age < 72 ? 'warn' : 'error';
     return '<span class="fresh" title="Last time the app saved to its sheet"><span class="dot ' + tone + '"></span>' + (lc ? 'Saved ' + rel(lc, now) : 'No saves seen') + '</span>';
   }
   function cardHead(title, sub, right) {
@@ -1409,7 +1415,7 @@ footer a { color: var(--muted); }
     // ---- Open apps
     html += '<div class="card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">' +
       '<div><h2 style="font-size:15px;margin:0">Open your apps</h2><div class="faint" style="font-size:12.5px">Jump straight into an app to add or fix something</div></div>' +
-      '<div class="chip-row">' + ['flow', 'finance', 'garage', 'vault'].filter(function (k) { return d.sources[k] && !d.sources[k].off; }).map(function (k) { return appButton(d.sources[k]); }).join('') + '</div></div>';
+      '<div class="chip-row">' + ['flow', 'finance', 'garage', 'vault', 'career', 'voyage', 'nest'].filter(function (k) { return d.sources[k] && !d.sources[k].off; }).map(function (k) { return appButton(d.sources[k]); }).join('') + '</div></div>';
 
     host.innerHTML = html;
     bindGo(host);
@@ -1499,6 +1505,112 @@ footer a { color: var(--muted); }
       }).join('') : '<div class="empty">Nothing here.</div>';
     }
     draw();
+  }
+
+  /* =========================================================
+   * Life: NextRole (career), Voyage (trips), Nest (home)
+   * ======================================================= */
+  var LIFE = [['career', 'NextRole', 'NEXTROLE_SHEET_ID', 'Career goals, job applications, ACCA and CPD'],
+    ['voyage', 'Voyage', 'VOYAGE_SHEET_ID', 'Trips: countdown, budget, to-dos and packing'],
+    ['nest', 'Nest', 'NEST_SHEET_ID', 'Home setup: move-in, budget, must-haves and upkeep']];
+  function inDays(n) { return n === 0 ? 'today' : n === 1 ? 'tomorrow' : n < 0 ? (-n) + 'd ago' : 'in ' + n + 'd'; }
+  function money(n, ccy) { return !ccy || ccy === 'MYR' || ccy === 'RM' ? rm(n, 0) : esc(ccy) + ' ' + Math.round(n).toLocaleString('en-MY'); }
+  function lifeHead(src, title, icon) {
+    return '<div class="card-h"><div><h2>' + icon + ' ' + esc(title) + '</h2><div class="sub">' + freshBadge(src) + '</div></div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' + (src.url ? '<a class="linkbtn" href="' + esc(src.url) + '" target="_blank" rel="noopener">Sheet ↗</a>' : '') + '</div></div>';
+  }
+  function lifeEmpty(src, name, prop, what) {
+    if (src && !src.off && !src.ok) return '<div class="card">' + cardHead(esc(name)) + '<div class="note bad">Could not read the ' + esc(name) + ' sheet.<br>' + esc(src.error) + '</div></div>';
+    return '<div class="card">' + cardHead(esc(name), esc(what)) + '<div class="note">Not connected yet. Run <b>setupDashboard</b> in the Apps Script editor (or add <b>' + prop + '</b> in Script Properties), then press Refresh.</div></div>';
+  }
+  function bar(pct, over, pace) {
+    return '<div class="bbar' + (over ? ' over' : '') + '"><i data-w="' + Math.max(0, Math.min(100, pct)).toFixed(1) + '%"></i>' + (pace !== undefined ? '<span class="pace" style="left:' + pace + '%"></span>' : '') + '</div>';
+  }
+  function lifeCareer(src) {
+    var s = src.summary, h = '<div class="card">' + lifeHead(src, 'NextRole', '💼');
+    if (s.target) h += '<div class="muted" style="font-size:13px;margin-bottom:10px">' + (s.role ? esc(s.role) + ' → ' : 'Next: ') + '<b style="color:var(--text)">' + esc(s.target) + '</b></div>';
+    h += '<div class="tiles mini4">' + tile(s.acca.count + (s.acca.total ? '<span class="faint" style="font-size:14px">/' + s.acca.total + '</span>' : ''), 'ACCA papers') +
+      tile(s.goals.avg === null ? '—' : s.goals.avg + '%', 'Goals done', s.goals.openCount + ' open') +
+      tile(s.jobs.active, 'Applications', s.jobs.byStatus.Interview ? s.jobs.byStatus.Interview + ' interview' : '') +
+      tile(Math.round(s.cpd.hours * 10) / 10, 'CPD hours', s.cpd.year) + '</div>';
+    var steps = s.jobs.steps.map(function (x) {
+      return '<li><span class="t"><span class="when' + (x.daysLeft <= 2 ? ' soon' : '') + '">' + shortDate(x.date) + '</span>' + esc(x.title) + (x.company ? ' <span class="faint">· ' + esc(x.company) + '</span>' : '') +
+        (x.interview ? '<span class="tag t3">Interview</span>' : '') + '</span><span class="r faint num">' + inDays(x.daysLeft) + '</span></li>';
+    }).concat(s.jobs.followUp.map(function (x) {
+      return '<li><span class="t"><span class="when">Follow up</span>' + esc(x.title) + (x.company ? ' <span class="faint">· ' + esc(x.company) + '</span>' : '') + '</span><span class="r faint num">' + x.daysAgo + 'd</span></li>';
+    }));
+    h += '<h3 class="sec">Job search</h3>' + (steps.length ? '<ul class="list">' + steps.join('') + '</ul>' : '<div class="empty">' + (s.jobs.total ? 'No next steps in the next 30 days' : 'No applications yet') + '</div>');
+    var b = s.acca.booked[0];
+    if (b) h += '<div class="note" style="margin-top:10px">📝 <b>' + esc(b.code) + '</b> exam booked for ' + shortDate(b.date) + ' (' + inDays(b.daysLeft) + ')</div>';
+    h += '<h3 class="sec">Goals</h3>' + (s.goals.open.length ? s.goals.open.slice(0, 5).map(function (g) {
+      var late = g.due && g.daysLeft < 0;
+      return '<div style="margin:8px 0 12px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:14px"><span>' + esc(g.title) + (g.area ? '<span class="tag">' + esc(g.area) + '</span>' : '') + '</span>' +
+        '<span class="num ' + (late ? 'bad' : 'faint') + '" style="font-size:12.5px;white-space:nowrap">' + g.pct + '%' + (g.due ? ' · ' + (late ? 'was due ' : '') + shortDate(g.due) : '') + '</span></div>' + bar(g.pct, late) +
+        (g.next ? '<div class="faint" style="font-size:12px">Next: ' + esc(g.next) + '</div>' : '') + '</div>';
+    }).join('') : '<div class="empty">No open goals</div>');
+    if (s.skills.gaps.length) h += '<h3 class="sec">Biggest skill gaps</h3><ul class="list">' + s.skills.gaps.map(function (g) {
+      return '<li><span class="t">' + esc(g.name) + '</span><span class="r num faint">' + g.lvl + ' → ' + g.tgt + '</span></li>';
+    }).join('') + '</ul>';
+    h += '<div class="faint" style="font-size:12.5px;margin-top:10px">' + plural(s.wins.year, 'win') + ' logged this year' + (s.wins.last ? ' · last on ' + shortDate(s.wins.last) : '') + ' · ' + s.skills.atTarget + ' of ' + s.skills.total + ' skills at target</div>';
+    return h + '</div>';
+  }
+  function lifeVoyage(src) {
+    var s = src.summary, h = '<div class="card">' + lifeHead(src, 'Voyage', '✈️'), t = s.next;
+    if (!t) return h + '<div class="empty">No trips planned.' + (s.count.past ? ' ' + plural(s.count.past, 'past trip') + ' saved.' : '') + '</div></div>';
+    var over = t.budget && t.spent > t.budget;
+    h += '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div style="font-size:18px;font-weight:650">' + esc(t.name) + '</div>' +
+      '<div class="muted" style="font-size:13px">' + (t.dest && t.dest !== t.name ? esc(t.dest) + ' · ' : '') + shortDate(t.start) + (t.end && t.end !== t.start ? ' – ' + shortDate(t.end) : '') + (t.nights ? ' · ' + plural(t.nights, 'night') : '') + '</div></div>' +
+      '<div style="text-align:right"><div class="num" style="font-size:28px;font-weight:700;line-height:1">' + (t.now ? 'Now' : t.daysToGo) + '</div><div class="faint" style="font-size:12px">' + (t.now ? 'on the trip' : t.daysToGo === 1 ? 'day to go' : 'days to go') + '</div></div></div>';
+    if (t.budget) h += '<div style="margin-top:12px;font-size:13px;display:flex;justify-content:space-between"><span class="muted">Spent so far</span><span class="num ' + (over ? 'bad' : '') + '">' + money(t.spent, t.ccy) + ' of ' + money(t.budget, t.ccy) + '</span></div>' + bar(t.spent / t.budget * 100, over);
+    h += '<div class="tiles mini3" style="margin-top:12px">' + tile(t.todoOpen, 'To-dos left', t.todoOverdue ? '<span class="bad">' + t.todoOverdue + ' overdue</span>' : '', t.todoOverdue ? 'warnc' : '') +
+      tile(t.packTotal ? Math.round(t.packed / t.packTotal * 100) + '%' : '—', 'Packed', t.packTotal ? t.packed + ' of ' + t.packTotal : '') +
+      tile(t.bookings, 'Bookings', t.nextBooking ? 'next ' + shortDate(t.nextBooking.date) : '') + '</div>';
+    if (t.todoNext.length) h += '<h3 class="sec">Trip to-dos</h3><ul class="list">' + t.todoNext.map(function (x) {
+      var late = x.due && x.due < S.data.today;
+      return '<li><span class="t"><span class="when' + (late ? ' soon' : '') + '">' + (x.due ? shortDate(x.due) : '') + '</span>' + esc(x.task) + '</span>' + (late ? '<span class="r tag late">late</span>' : '') + '</li>';
+    }).join('') + '</ul>';
+    var more = s.trips.slice(1);
+    if (more.length) h += '<h3 class="sec">Also planned</h3><ul class="list">' + more.map(function (x) {
+      return '<li><span class="t"><span class="when">' + shortDate(x.start) + '</span>' + esc(x.name) + '</span><span class="r faint num">' + inDays(x.daysToGo) + '</span></li>';
+    }).join('') + '</ul>';
+    if (s.past.length) h += '<h3 class="sec">Recent trips</h3><ul class="list">' + s.past.slice(0, 3).map(function (x) {
+      return '<li><span class="t">' + esc(x.name) + ' <span class="faint">· ' + shortDate(x.start) + ' ' + String(x.start || '').slice(0, 4) + '</span></span><span class="r num ' + (x.budget && x.spent > x.budget ? 'bad' : 'faint') + '">' + money(x.spent, x.ccy) + '</span></li>';
+    }).join('') + '</ul>';
+    return h + '</div>';
+  }
+  function lifeNest(src) {
+    var s = src.summary, h = '<div class="card">' + lifeHead(src, 'Nest', '🏠');
+    var used = s.spent + s.committed, over = s.budget && used > s.budget;
+    var STATUS = { ordered: 'Ordered', shortlist: 'Shortlisted', idea: 'Idea' };
+    h += '<div style="display:flex;gap:14px;align-items:center">' + ring(s.must.total ? s.must.done / s.must.total : 0, { size: 64, stroke: 7, label: s.must.done + '/' + s.must.total, fs: 14, color: 'var(--good)' }) +
+      '<div style="flex:1;min-width:0"><div class="muted" style="font-size:12.5px">Must-haves in place</div>' +
+      (s.moveIn ? '<div style="font-size:18px;font-weight:650">' + (s.daysToMoveIn > 1 ? 'Move-in in ' + s.daysToMoveIn + ' days' : s.daysToMoveIn === 1 ? 'Move-in tomorrow' : s.daysToMoveIn === 0 ? 'Moving in today' : 'Moved in ' + shortDate(s.moveIn)) + '</div><div class="faint" style="font-size:12.5px">' + shortDate(s.moveIn) + ' ' + s.moveIn.slice(0, 4) + '</div>' : '<div class="faint" style="font-size:13px">No move-in date set</div>') + '</div></div>';
+    if (s.budget) h += '<div style="margin-top:14px;font-size:13px;display:flex;justify-content:space-between"><span class="muted">Bought + ordered</span><span class="num ' + (over ? 'bad' : '') + '">' + rm(used, 0) + ' of ' + rm(s.budget, 0) + '</span></div>' +
+      bar(used / s.budget * 100, over) + '<div class="faint" style="font-size:12px">' + (over ? '<span class="bad">' + rm(-s.left, 0) + ' over</span>' : rm(s.left, 0) + ' left') + (s.planned ? ' · ' + rm(s.planned, 0) + ' more on the wish list' : '') + '</div>';
+    else h += '<div class="tiles mini3" style="margin-top:12px">' + tile(rm(s.spent, 0), 'Bought') + tile(rm(s.committed, 0), 'Ordered') + tile(rm(s.planned, 0), 'Planned') + '</div>';
+    if (s.must.next.length) h += '<h3 class="sec">Must-haves still to get</h3><ul class="list">' + s.must.next.map(function (i) {
+      return '<li><span class="t">' + esc(i.name) + (i.room ? ' <span class="faint">· ' + esc(i.room) + '</span>' : '') + '<span class="tag' + (i.status === 'ordered' ? ' t3' : '') + '">' + (STATUS[i.status] || esc(i.status)) + '</span></span><span class="r num faint">' + rm(i.cost, 0) + '</span></li>';
+    }).join('') + '</ul>';
+    var tasks = s.tasks.overdue.concat(s.tasks.soon);
+    h += '<h3 class="sec">Home upkeep</h3>' + (tasks.length ? '<ul class="list">' + tasks.map(function (t) {
+      return '<li><span class="t"><span class="when' + (t.daysLeft < 0 ? ' soon' : '') + '">' + shortDate(t.due) + '</span>' + esc(t.name) + (t.room ? ' <span class="faint">· ' + esc(t.room) + '</span>' : '') + '</span>' +
+        (t.daysLeft < 0 ? '<span class="r tag late">' + (-t.daysLeft) + 'd late</span>' : '<span class="r faint num">' + inDays(t.daysLeft) + '</span>') + '</li>';
+    }).join('') + '</ul>' : '<div class="empty">' + (s.tasks.total ? 'Nothing due in the next 30 days' : 'No upkeep tasks yet') + '</div>');
+    h += '<div class="faint" style="font-size:12.5px;margin-top:10px">' + s.status.delivered + ' delivered · ' + s.status.ordered + ' ordered · ' + (s.status.shortlist + s.status.idea) + ' still to decide' +
+      (s.bills.count ? ' · bills ' + rm(s.bills.monthly, 0) + '/month' : '') + '</div>';
+    return h + '</div>';
+  }
+  function viewLife(host, d) {
+    var srcs = LIFE.map(function (x) { return d.sources[x[0]]; });
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">' +
+      '<h2 style="margin:0;font-size:22px;letter-spacing:-.02em">Life</h2><div class="chip-row">' + srcs.map(function (s) { return s && !s.off ? appButton(s) : ''; }).join('') + '</div></div>';
+    html += '<div class="grid g3" style="align-items:start">' + LIFE.map(function (x, i) {
+      var s = srcs[i];
+      if (!s || s.off || !s.ok || !s.summary) return lifeEmpty(s, x[1], x[2], x[3]);
+      return x[0] === 'career' ? lifeCareer(s) : x[0] === 'voyage' ? lifeVoyage(s) : lifeNest(s);
+    }).join('') + '</div>';
+    host.innerHTML = html;
+    bindGo(host);
   }
 
   /* =========================================================
@@ -2167,7 +2279,7 @@ footer a { color: var(--muted); }
     var keep = function (i) { return S.filter === 'all' || (S.filter === 'problems' ? i.level !== 'info' : i.level === S.filter); };
     var visible = visibleIssues(d), hiddenCount = d.issues.length - visible.length, c = counts(d);
     var bySrc = { flow: [], finance: [], garage: [] };
-    if (d.sources.vault && !d.sources.vault.off) bySrc.vault = [];
+    ['vault', 'career', 'voyage', 'nest'].forEach(function (k) { if (d.sources[k] && !d.sources[k].off) bySrc[k] = []; });
     visible.filter(keep).forEach(function (i) { (bySrc[i.source] = bySrc[i.source] || []).push(i); });
     var WHERE = { app: function (i) { return 'Fix in ' + (SRC_LABEL[i.source] === 'Money' ? 'Finance' : SRC_LABEL[i.source] || 'the app'); }, sheet: function () { return 'Fix in the sheet'; }, none: function () { return 'Nothing to edit'; } };
     var html = '<div class="health-head"><div><h2 style="margin:0;font-size:22px;letter-spacing:-.02em">Health check</h2>' +

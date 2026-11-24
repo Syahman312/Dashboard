@@ -132,6 +132,16 @@ var FIX_RULES = [
   ] },
   { source: 'vault', area: 'dates', where: 'app', steps: ['Open the document in Vault and pick its expiry date again with the date picker.'] },
 
+  /* ---------- NextRole, Voyage, Nest ---------- */
+  { source: 'career', area: 'json', where: 'app', steps: [
+    'A row in the Data tab was edited by hand and can no longer be read.',
+    'Open NextRole and tap Sync: it rewrites the tab from the app. If the row is still there, restore it from Settings → Backups.'
+  ] },
+  { source: 'voyage', area: 'json', where: 'app', steps: [
+    'Do not edit the hidden _voyage tab by hand.',
+    'Open Voyage on the device with your latest trips and let it sync: it rewrites the tab.'
+  ] },
+
   /* ---------- Budget ---------- */
   { source: 'finance', area: 'budget', where: 'sheet', steps: [
     'If the spending is right, raise that category\'s amount in the Budget tab of your Dashboard sheet.',
@@ -145,7 +155,7 @@ var FIX_RULES = [
   ] }
 ];
 
-var APP_NAMES = { flow: 'Flow', finance: 'Finance', garage: 'Garage', vault: 'Vault', cross: 'the apps' };
+var APP_NAMES = { flow: 'Flow', finance: 'Finance', garage: 'Garage', vault: 'Vault', career: 'NextRole', voyage: 'Voyage', nest: 'Nest', cross: 'the apps' };
 
 /** Adds `fix: { where, steps }` to each issue that has a matching rule. */
 function addFixes_(issues) {

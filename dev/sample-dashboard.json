@@ -1,5 +1,5 @@
 {
-  "version": "2.2.0",
+  "version": "2.3.0",
   "generatedAt": 1794702600000,
   "today": "2026-11-15",
   "sources": {
@@ -440,7 +440,7 @@
         },
         "lastChange": 1794697200000
       },
-      "ms": 9
+      "ms": 8
     },
     "finance": {
       "name": "Finance",
@@ -1433,7 +1433,7 @@
           "url": "https://docs.google.com/spreadsheets/d/d/edit#gid=1000"
         }
       },
-      "ms": 16
+      "ms": 12
     },
     "garage": {
       "name": "Garage",
@@ -1780,7 +1780,7 @@
         },
         "lastChange": 1794657600000
       },
-      "ms": 5
+      "ms": 3
     },
     "vault": {
       "name": "Vault",
@@ -1940,7 +1940,273 @@
         ],
         "lastChange": 1794787200000
       },
-      "ms": 2
+      "ms": 1
+    },
+    "career": {
+      "name": "NextRole",
+      "ok": true,
+      "url": "https://docs.google.com/spreadsheets/d/sample-career/edit",
+      "appUrl": null,
+      "appProp": "NEXTROLE_APP_URL",
+      "staleDays": 45,
+      "summary": {
+        "role": "Executive, Group Consolidation",
+        "target": "Assistant Manager, Group Reporting",
+        "acca": {
+          "passed": [
+            "FR",
+            "BT"
+          ],
+          "count": 2,
+          "total": 3,
+          "booked": [
+            {
+              "code": "SBR",
+              "name": "Strategic Business Reporting",
+              "date": "2026-12-25",
+              "daysLeft": 40
+            }
+          ]
+        },
+        "goals": {
+          "open": [
+            {
+              "title": "Finish Power BI course",
+              "area": "Skills",
+              "due": "2026-11-10",
+              "daysLeft": -5,
+              "pct": 70,
+              "next": ""
+            },
+            {
+              "title": "Cut close to 5 days",
+              "area": "Work",
+              "due": "2026-12-05",
+              "daysLeft": 20,
+              "pct": 40,
+              "next": "Map recon steps"
+            }
+          ],
+          "openCount": 2,
+          "done": 1,
+          "avg": 70,
+          "overdue": 1
+        },
+        "jobs": {
+          "active": 2,
+          "byStatus": {
+            "Interview": 1,
+            "Applied": 1,
+            "Rejected": 1
+          },
+          "steps": [
+            {
+              "title": "Assistant Manager",
+              "company": "Acme",
+              "status": "Interview",
+              "date": "2026-11-17",
+              "daysLeft": 2,
+              "interview": true
+            }
+          ],
+          "followUp": [
+            {
+              "title": "Reporting Lead",
+              "company": "Beta",
+              "daysAgo": 12
+            }
+          ],
+          "total": 3
+        },
+        "cpd": {
+          "hours": 2.5,
+          "count": 1,
+          "year": "2026"
+        },
+        "wins": {
+          "year": 1,
+          "last": "2026-11-12"
+        },
+        "skills": {
+          "total": 2,
+          "atTarget": 1,
+          "gaps": [
+            {
+              "name": "Power BI",
+              "lvl": 1,
+              "tgt": 4
+            }
+          ]
+        },
+        "lastChange": 1794272400000
+      },
+      "ms": 1
+    },
+    "voyage": {
+      "name": "Voyage",
+      "ok": true,
+      "url": "https://docs.google.com/spreadsheets/d/sample-voyage/edit",
+      "appUrl": null,
+      "appProp": "VOYAGE_APP_URL",
+      "staleDays": 120,
+      "summary": {
+        "trips": [
+          {
+            "name": "Japan autumn",
+            "dest": "Osaka",
+            "start": "2026-11-25",
+            "end": "2026-12-02",
+            "daysToGo": 10,
+            "nights": 7,
+            "now": false,
+            "ccy": "MYR",
+            "budget": 6000,
+            "spent": 2800,
+            "todoOpen": 2,
+            "todoTotal": 3,
+            "todoOverdue": 1,
+            "todoNext": [
+              {
+                "task": "Buy JR pass",
+                "due": "2026-11-14"
+              },
+              {
+                "task": "Travel insurance",
+                "due": "2026-11-20"
+              }
+            ],
+            "packed": 1,
+            "packTotal": 2,
+            "bookings": 1,
+            "nextBooking": {
+              "type": "Flight",
+              "date": "2026-11-25",
+              "time": "08:30"
+            }
+          }
+        ],
+        "next": {
+          "name": "Japan autumn",
+          "dest": "Osaka",
+          "start": "2026-11-25",
+          "end": "2026-12-02",
+          "daysToGo": 10,
+          "nights": 7,
+          "now": false,
+          "ccy": "MYR",
+          "budget": 6000,
+          "spent": 2800,
+          "todoOpen": 2,
+          "todoTotal": 3,
+          "todoOverdue": 1,
+          "todoNext": [
+            {
+              "task": "Buy JR pass",
+              "due": "2026-11-14"
+            },
+            {
+              "task": "Travel insurance",
+              "due": "2026-11-20"
+            }
+          ],
+          "packed": 1,
+          "packTotal": 2,
+          "bookings": 1,
+          "nextBooking": {
+            "type": "Flight",
+            "date": "2026-11-25",
+            "time": "08:30"
+          }
+        },
+        "past": [
+          {
+            "name": "Penang",
+            "dest": "Penang",
+            "start": "2026-09-16",
+            "end": "2026-09-19",
+            "spent": 650,
+            "budget": 800,
+            "ccy": "MYR"
+          }
+        ],
+        "count": {
+          "ahead": 1,
+          "past": 1,
+          "thisYear": 2
+        },
+        "lastChange": null
+      },
+      "ms": 1
+    },
+    "nest": {
+      "name": "Nest",
+      "ok": true,
+      "url": "https://docs.google.com/spreadsheets/d/sample-nest/edit",
+      "appUrl": "https://example.com/nest",
+      "appProp": "NEST_APP_URL",
+      "staleDays": 45,
+      "summary": {
+        "moveIn": "2026-12-15",
+        "daysToMoveIn": 30,
+        "budget": 4000,
+        "spent": 2300,
+        "committed": 400,
+        "planned": 1350,
+        "left": 1300,
+        "status": {
+          "idea": 1,
+          "shortlist": 1,
+          "ordered": 1,
+          "delivered": 1
+        },
+        "must": {
+          "done": 1,
+          "total": 3,
+          "next": [
+            {
+              "name": "Microwave",
+              "room": "🍳 Kitchen",
+              "status": "ordered",
+              "cost": 400
+            },
+            {
+              "name": "Bed frame",
+              "room": "🛏️ Bedroom",
+              "status": "shortlist",
+              "cost": 1200
+            }
+          ]
+        },
+        "tasks": {
+          "overdue": [
+            {
+              "name": "Clean aircon filter",
+              "room": "🛏️ Bedroom",
+              "every": 3,
+              "lastDone": "2026-07-01",
+              "due": "2026-10-01",
+              "daysLeft": -45
+            }
+          ],
+          "soon": [
+            {
+              "name": "Descale kettle",
+              "room": "🍳 Kitchen",
+              "every": 1,
+              "lastDone": "2026-10-26",
+              "due": "2026-11-26",
+              "daysLeft": 11
+            }
+          ],
+          "total": 2
+        },
+        "bills": {
+          "monthly": 149,
+          "count": 2
+        },
+        "lastChange": 1794484800000
+      },
+      "ms": 0
     }
   },
   "issues": [
@@ -2336,6 +2602,24 @@
       }
     },
     {
+      "source": "career",
+      "level": "warn",
+      "area": "json",
+      "message": "1 row(s) in the Data tab cannot be read",
+      "detail": "row 18",
+      "ref": {
+        "gid": 1000,
+        "row": 18
+      },
+      "fix": {
+        "where": "app",
+        "steps": [
+          "A row in the Data tab was edited by hand and can no longer be read.",
+          "Open NextRole and tap Sync: it rewrites the tab from the app. If the row is still there, restore it from Settings → Backups."
+        ]
+      }
+    },
+    {
       "source": "finance",
       "level": "warn",
       "area": "budget",
@@ -2581,7 +2865,7 @@
   ],
   "counts": {
     "error": 3,
-    "warn": 20,
+    "warn": 21,
     "info": 13
   },
   "brief": [
@@ -2614,6 +2898,21 @@
       "tone": "warn",
       "src": "garage",
       "text": "Demo Car road tax due in 24 days"
+    },
+    {
+      "tone": "warn",
+      "src": "career",
+      "text": "Interview in 2 days: Assistant Manager at Acme"
+    },
+    {
+      "tone": "info",
+      "src": "voyage",
+      "text": "Japan autumn in 10 days · 2 to-dos left"
+    },
+    {
+      "tone": "warn",
+      "src": "nest",
+      "text": "Move-in in 30 days · 1 of 3 must-haves in"
     }
   ],
   "upcoming": [
@@ -2625,11 +2924,32 @@
       "tone": ""
     },
     {
+      "date": "2026-11-17",
+      "days": 2,
+      "label": "Interview: Assistant Manager",
+      "src": "career",
+      "tone": "warn"
+    },
+    {
       "date": "2026-11-23",
       "days": 8,
       "label": "Payday (expected)",
       "src": "finance",
       "tone": "good"
+    },
+    {
+      "date": "2026-11-25",
+      "days": 10,
+      "label": "Trip: Japan autumn (Osaka)",
+      "src": "voyage",
+      "tone": "good"
+    },
+    {
+      "date": "2026-11-26",
+      "days": 11,
+      "label": "Home: Descale kettle",
+      "src": "nest",
+      "tone": ""
     },
     {
       "date": "2026-12-04",
@@ -2639,10 +2959,31 @@
       "tone": "warn"
     },
     {
+      "date": "2026-12-05",
+      "days": 20,
+      "label": "Goal: Cut close to 5 days",
+      "src": "career",
+      "tone": ""
+    },
+    {
       "date": "2026-12-09",
       "days": 24,
       "label": "Demo Car road tax",
       "src": "garage",
+      "tone": "warn"
+    },
+    {
+      "date": "2026-12-15",
+      "days": 30,
+      "label": "Move-in day",
+      "src": "nest",
+      "tone": "good"
+    },
+    {
+      "date": "2026-12-25",
+      "days": 40,
+      "label": "SBR exam",
+      "src": "career",
       "tone": "warn"
     }
   ],
@@ -2764,6 +3105,30 @@
       "lastFailure": null,
       "failures": 0,
       "status": "ok"
+    },
+    {
+      "key": "career",
+      "name": "NextRole",
+      "lastChange": 1794272400000,
+      "lastFailure": null,
+      "failures": 0,
+      "status": "ok"
+    },
+    {
+      "key": "voyage",
+      "name": "Voyage",
+      "lastChange": null,
+      "lastFailure": null,
+      "failures": 0,
+      "status": "stale"
+    },
+    {
+      "key": "nest",
+      "name": "Nest",
+      "lastChange": 1794484800000,
+      "lastFailure": null,
+      "failures": 0,
+      "status": "ok"
     }
   ],
   "alerts": [
@@ -2805,6 +3170,33 @@
     },
     {
       "level": "warn",
+      "src": "nest",
+      "title": "Home: Clean aircon filter",
+      "detail": "🛏️ Bedroom · every 3 months",
+      "date": "2026-10-01",
+      "days": -45,
+      "view": "life"
+    },
+    {
+      "level": "warn",
+      "src": "career",
+      "title": "Goal past its date: Finish Power BI course",
+      "detail": "70% done",
+      "date": "2026-11-10",
+      "days": -5,
+      "view": "life"
+    },
+    {
+      "level": "warn",
+      "src": "career",
+      "title": "Interview: Assistant Manager",
+      "detail": "Acme",
+      "date": "2026-11-17",
+      "days": 2,
+      "view": "life"
+    },
+    {
+      "level": "warn",
       "src": "vault",
       "title": "Medical (encrypted) expires",
       "detail": "🩺 Medical",
@@ -2841,6 +3233,15 @@
     },
     {
       "level": "warn",
+      "src": "voyage",
+      "title": "Japan autumn: 1 trip to-do overdue",
+      "detail": "Osaka",
+      "date": null,
+      "days": null,
+      "view": "life"
+    },
+    {
+      "level": "warn",
       "src": "finance",
       "title": "Over budget: 🍜 Food",
       "detail": "RM 38.30 of RM 20.00",
@@ -2856,6 +3257,15 @@
       "date": "2027-03-15",
       "days": 120,
       "view": "vault"
+    },
+    {
+      "level": "info",
+      "src": "career",
+      "title": "Follow up on 1 job application",
+      "detail": "No reply after a week: Beta",
+      "date": null,
+      "days": null,
+      "view": "life"
     }
   ],
   "weekly": [

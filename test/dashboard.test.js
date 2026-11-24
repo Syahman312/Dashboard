@@ -3,8 +3,9 @@ const assert = require('node:assert/strict');
 const { load, fakeSpreadsheet } = require('./harness');
 const fx = require('./fixtures');
 
-const PROPS = { GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w', VAULT_SHEET_ID: 'v', DASHBOARD_SHEET_ID: 'd' };
-const BOOKS = { g: fx.garage(), f: fx.finance(), w: fx.flow(), v: fx.vault(), d: fx.dashboard() };
+const PROPS = { GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w', VAULT_SHEET_ID: 'v', DASHBOARD_SHEET_ID: 'd',
+  NEXTROLE_SHEET_ID: 'c', VOYAGE_SHEET_ID: 'y', NEST_SHEET_ID: 'n' };
+const BOOKS = { g: fx.garage(), f: fx.finance(), w: fx.flow(), v: fx.vault(), d: fx.dashboard(), c: fx.career(), y: fx.voyage(), n: fx.nest() };
 
 function build() {
   const gs = load(PROPS);
@@ -151,7 +152,8 @@ test('brief, coming up, freshness and row links', () => {
   assert.ok(up.includes('2026-11-23 Payday (expected)'));
   assert.ok(up.includes('2026-12-04 FR exam'));
   assert.ok(up.includes('2026-12-09 Demo Car road tax'));
-  assert.deepEqual(JSON.parse(JSON.stringify(up)), JSON.parse(JSON.stringify(up)).slice().sort());
+  const dates = d.upcoming.map(u => u.date).join(',');
+  assert.equal(dates, d.upcoming.map(u => u.date).sort().join(','), 'sorted by date');
 
   assert.equal(d.sources.flow.summary.lastChange, Date.parse('2026-11-15T07:00:00+08:00'));
   assert.equal(d.sources.finance.summary.lastChange, 1794700000000, 'scans _data across cells');
@@ -451,4 +453,93 @@ test('budget: category history and edit link', () => {
   assert.match(fin.budget.url, /^https:\/\/docs\.google\.com\/spreadsheets\/d\/d\/edit#gid=\d+$/);
   const over = d.alerts.filter(a => /^Over budget/.test(a.title));
   over.forEach(a => assert.equal(a.view, 'budget'));
+});
+
+test('nextrole: goals, job steps, exams, and nothing private', () => {
+  const d = build();
+  const c = d.sources.career;
+  assert.ok(c.ok, c.error);
+  const s = c.summary;
+  assert.equal(s.target, 'Assistant Manager, Group Reporting');
+  assert.equal(s.acca.count, 2);
+  assert.equal(s.acca.booked[0].code, 'SBR');
+  assert.equal(s.goals.openCount, 2, 'done and deleted goals left out');
+  assert.equal(s.goals.overdue, 1);
+  assert.equal(s.jobs.active, 2);
+  assert.equal(s.jobs.steps[0].interview, true);
+  assert.equal(s.jobs.followUp.length, 1);
+  assert.equal(s.cpd.hours, 2.5);
+  assert.equal(s.skills.atTarget, 1);
+  assert.ok(s.lastChange > 0);
+  const json = JSON.stringify(c);
+  ['Private Name', 'secret@example.com', '9000', '7000', 'payslip'].forEach(x => assert.ok(!json.includes(x), 'leaked ' + x));
+  assert.ok(d.issues.some(i => i.source === 'career' && i.area === 'json' && i.fix), 'unreadable row reported with a fix');
+  const titles = d.alerts.map(a => a.title).join(' | ');
+  assert.match(titles, /Interview: Assistant Manager/);
+  assert.match(titles, /Follow up on 1 job application/);
+  assert.match(titles, /Goal past its date: Finish Power BI course/);
+  assert.ok(d.brief.some(b => b.src === 'career' && /Interview in 2 days/.test(b.text)));
+});
+
+test('voyage: next trip, budget in home currency, to-dos, nothing private', () => {
+  const d = build();
+  const v = d.sources.voyage;
+  assert.ok(v.ok, v.error);
+  const t = v.summary.next;
+  assert.equal(t.name, 'Japan autumn');
+  assert.equal(t.daysToGo, 10);
+  assert.equal(t.nights, 7);
+  assert.equal(t.spent, 2800, '33000 JPY at 33 = RM 1000');
+  assert.equal(t.todoOpen, 2);
+  assert.equal(t.todoOverdue, 1);
+  assert.equal(t.packed, 1);
+  assert.equal(t.nextBooking.type, 'Flight');
+  assert.equal(v.summary.count.past, 1);
+  const json = JSON.stringify(v);
+  ['SECRETREF', 'Private address', 'MH52'].forEach(x => assert.ok(!json.includes(x), 'leaked ' + x));
+  assert.ok(d.alerts.some(a => a.src === 'voyage' && /overdue/.test(a.title)));
+  assert.ok(d.upcoming.some(u => u.src === 'voyage' && /Japan autumn/.test(u.label)));
+  assert.equal(d.sync.find(r => r.key === 'voyage').status, 'stale', 'no file date in tests');
+});
+
+test('nest: move-in, budget, must-haves, home tasks', () => {
+  const d = build();
+  const n = d.sources.nest;
+  assert.ok(n.ok, n.error);
+  const s = n.summary;
+  assert.equal(s.daysToMoveIn, 30);
+  assert.equal(s.spent, 2300, 'actual price wins over the estimate');
+  assert.equal(s.committed, 400);
+  assert.equal(s.planned, 1350);
+  assert.equal(s.left, 1300);
+  assert.equal(s.must.done, 1);
+  assert.equal(s.must.total, 3);
+  assert.equal(s.must.next[0].name, 'Microwave', 'ordered comes before shortlisted');
+  assert.equal(s.tasks.overdue.length, 1);
+  assert.equal(s.tasks.overdue[0].name, 'Clean aircon filter');
+  assert.equal(s.tasks.overdue[0].due, '2026-10-01');
+  assert.equal(s.bills.monthly, 149);
+  assert.ok(!JSON.stringify(n).includes('https://private'));
+  assert.ok(d.alerts.some(a => a.src === 'nest' && /Home: Clean aircon filter/.test(a.title)));
+  assert.ok(d.upcoming.some(u => u.src === 'nest' && u.label === 'Move-in day'));
+  assert.equal(d.sync.find(r => r.key === 'nest').status, 'ok');
+});
+
+test('life apps are optional', () => {
+  const gs = load({ GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w' });
+  const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(BOOKS[id]));
+  ['career', 'voyage', 'nest'].forEach(k => assert.equal(d.sources[k].off, true));
+  assert.ok(!d.issues.some(i => ['career', 'voyage', 'nest'].includes(i.source)));
+});
+
+test('setup tells Garage and NextRole apart (both have a json column)', () => {
+  const props = {};
+  const gs = load(props);
+  const books = { g: fx.garage(), c: fx.career(), y: fx.voyage(), n: fx.nest() };
+  const files = [{ id: 'c', name: 'NextRole', updated: 9 }, { id: 'g', name: 'Car Tracker', updated: 8 }, { id: 'y', name: 'Voyage', updated: 7 }, { id: 'n', name: 'Nest DB', updated: 6 }];
+  gs.findAppSheets_(files, id => fakeSpreadsheet(books[id]), { getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; } });
+  assert.equal(props.GARAGE_SHEET_ID, 'g');
+  assert.equal(props.NEXTROLE_SHEET_ID, 'c');
+  assert.equal(props.VOYAGE_SHEET_ID, 'y');
+  assert.equal(props.NEST_SHEET_ID, 'n');
 });

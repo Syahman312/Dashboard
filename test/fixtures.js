@@ -172,4 +172,65 @@ function dashboard() {
     ['🍽️ Food & Drinks', 150, ''], ['🍜 Food', 20, 'deliberately low: over budget'], ['⛽ Fuel', 200, ''], ['📺 Netflix', 60, ''], ['Total', 600, '']] };
 }
 
-module.exports = { TODAY, NOW, garage, finance, flow, vault, dashboard };
+
+/* ---------------- NextRole (career) ---------------- */
+function career() {
+  const U = Date.parse('2026-11-10T09:00:00+08:00');
+  const rows = [['id', 'json (do not edit)', 'type', 'date', 'title', 'detail', 'progress / score', 'deleted']];
+  const rec = (o, extra) => rows.push([o.id, JSON.stringify(Object.assign({ updated: U }, o)), o.kind, '', '', '', '', o.deleted ? 'yes' : '']);
+  rec({ id: 'me', kind: 'me', name: 'Private Name', email: 'secret@example.com', phone: '012', role: 'Executive, Group Consolidation', target: 'Assistant Manager, Group Reporting' });
+  rec({ id: 'acca-SBR', kind: 'acca', c: 'SBR', n: 'Strategic Business Reporting', l: 'Strategic Professional', st: 'Booked', date: addDays(TODAY, 40) });
+  rec({ id: 'acca-FR', kind: 'acca', c: 'FR', n: 'Financial Reporting', l: 'Applied Skills', st: 'Passed' });
+  rec({ id: 'acca-BT', kind: 'acca', c: 'BT', n: 'Business & Technology', l: 'Applied Knowledge', st: 'Exempt' });
+  rec({ id: 'g1', kind: 'goal', title: 'Cut close to 5 days', area: 'Work', due: addDays(TODAY, 20), pct: 40, next: 'Map recon steps' });
+  rec({ id: 'g2', kind: 'goal', title: 'Finish Power BI course', area: 'Skills', due: addDays(TODAY, -5), pct: 70 });
+  rec({ id: 'g3', kind: 'goal', title: 'Done goal', due: addDays(TODAY, -30), pct: 100 });
+  rec({ id: 'a1', kind: 'app', title: 'Assistant Manager', co: 'Acme', st: 'Interview', date: addDays(TODAY, -10), due: addDays(TODAY, 2), sal: 9000 });
+  rec({ id: 'a2', kind: 'app', title: 'Reporting Lead', co: 'Beta', st: 'Applied', date: addDays(TODAY, -12) });
+  rec({ id: 'a3', kind: 'app', title: 'Old role', co: 'Gamma', st: 'Rejected', date: addDays(TODAY, -60) });
+  rec({ id: 'c1', kind: 'cpd', title: 'IFRS 18 webinar', date: '2026-03-02', hrs: 2.5 });
+  rec({ id: 'w1', kind: 'win', title: 'Closed in 6 days', date: addDays(TODAY, -3) });
+  rec({ id: 's1', kind: 'skill', name: 'Power BI', lvl: 1, tgt: 4 });
+  rec({ id: 's2', kind: 'skill', name: 'Excel', lvl: 4, tgt: 4 });
+  rec({ id: 'p1', kind: 'pay', title: 'Nov payslip', sal: 7000, date: addDays(TODAY, -5) });
+  rec({ id: 'gx', kind: 'goal', title: 'Deleted goal', due: addDays(TODAY, 3), pct: 0, deleted: 1 });
+  rows.push(['bad', '{not json', 'goal', '', '', '', '', '']);
+  return { Data: rows };
+}
+
+/* ---------------- Voyage (trips) ---------------- */
+function voyage() {
+  const data = { trips: [
+    { name: 'Japan autumn', dest: 'Osaka', start: addDays(TODAY, 10), end: addDays(TODAY, 17), budget: 6000, ccy: 'MYR', lcy: 'JPY', fx: 33,
+      exp: [{ amt: 1800, cur: 'MYR', cat: 'Flights' }, { amt: 33000, cur: 'JPY', cat: 'Hotel' }],
+      todo: [{ t: 'Buy JR pass', due: addDays(TODAY, -1), ok: false }, { t: 'Book hotel', ok: true }, { t: 'Travel insurance', due: addDays(TODAY, 5), ok: false }],
+      pack: [{ t: 'Passport', ok: true }, { t: 'Adapter', ok: false }],
+      book: [{ type: 'Flight', date: addDays(TODAY, 10), time: '08:30', ref: 'SECRETREF', detail: 'MH52' }],
+      ess: { hotel: 'Hotel X', addr: 'Private address', phone: '123' } },
+    { name: 'Penang', dest: 'Penang', start: addDays(TODAY, -60), end: addDays(TODAY, -57), budget: 800, ccy: 'MYR', exp: [{ amt: 650 }] }
+  ] };
+  const str = JSON.stringify(data), rows = [];
+  for (let i = 0; i < str.length; i += 200) rows.push([str.slice(i, i + 200)]);
+  return { Trips: [['Trip', 'Destination']], Itinerary: [['Trip', 'Date']], _voyage: rows };
+}
+
+/* ---------------- Nest (home) ---------------- */
+function nest() {
+  const U = Date.parse('2026-11-12T20:00:00+08:00');
+  return {
+    rooms: [['id', 'name', 'icon', 'u'], ['r1', 'Kitchen', '🍳', U], ['r2', 'Bedroom', '🛏️', U]],
+    items: [['id', 'roomId', 'name', 'category', 'priority', 'status', 'est', 'actual', 'shop', 'link', 'date', 'warranty', 'notes', 'u'],
+      ['i1', 'r1', 'Fridge', 'Appliance', 'must', 'delivered', 2500, 2300, '', 'https://private', '', '', 'private', U],
+      ['i2', 'r1', 'Microwave', 'Appliance', 'must', 'ordered', 400, '', '', '', '', '', '', U],
+      ['i3', 'r2', 'Bed frame', 'Furniture', 'must', 'shortlist', 1200, '', '', '', '', '', '', U],
+      ['i4', 'r2', 'Lamp', 'Decor', 'nice', 'idea', 150, '', '', '', '', '', '', U]],
+    tasks: [['id', 'name', 'roomId', 'interval', 'lastDone', 'notes', 'u'],
+      ['t1', 'Clean aircon filter', 'r2', 3, '2026-07-01', '', U],
+      ['t2', 'Descale kettle', 'r1', 1, addDays(TODAY, -20), '', U]],
+    bills: [['id', 'name', 'amount', 'freq', 'notes', 'u'], ['b1', 'Internet', 129, 'monthly', '', U], ['b2', 'Assessment', 240, 'yearly', '', U]],
+    _deleted: [['id', 'at']],
+    _meta: [['key', 'value'], ['updatedAt', String(U)], ['settingsAt', '0'], ['settings', JSON.stringify({ moveIn: addDays(TODAY, 30), budget: 4000 })]]
+  };
+}
+
+module.exports = { TODAY, NOW, garage, finance, flow, vault, dashboard, career, voyage, nest };

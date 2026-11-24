@@ -5,8 +5,9 @@ const path = require('path');
 const { load, fakeSpreadsheet } = require('../test/harness');
 const fx = require('../test/fixtures');
 
-const books = { g: fx.garage(), f: fx.finance(), w: fx.flow(), v: fx.vault(), d: fx.dashboard() };
-const gs = load({ GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w', VAULT_SHEET_ID: 'v', DASHBOARD_SHEET_ID: 'd',
+const books = { g: fx.garage(), f: fx.finance(), w: fx.flow(), v: fx.vault(), d: fx.dashboard(), c: fx.career(), y: fx.voyage(), n: fx.nest() };
+const gs = load({ GARAGE_SHEET_ID: 'g', FINANCE_SHEET_ID: 'f', FLOW_SHEET_ID: 'w', VAULT_SHEET_ID: 'v', DASHBOARD_SHEET_ID: 'd', NEXTROLE_SHEET_ID: 'c', VOYAGE_SHEET_ID: 'y', NEST_SHEET_ID: 'n',
+  NEST_APP_URL: 'https://example.com/nest',
   FLOW_APP_URL: 'https://example.com/flow', GARAGE_APP_URL: 'https://example.com/garage' }); // Finance left unset to show the 'Link app' button
 const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(books[id]));
 Object.keys(d.sources).forEach(k => { d.sources[k].url = 'https://docs.google.com/spreadsheets/d/sample-' + k + '/edit'; });

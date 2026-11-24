@@ -9,7 +9,7 @@
  *   GARAGE_SHEET_ID, FINANCE_SHEET_ID, FLOW_SHEET_ID
  */
 
-var DASH_VERSION = '2.2.0';
+var DASH_VERSION = '2.3.0';
 var CACHE_KEY = 'dashboard:v2';
 var CACHE_SECONDS = 1800;     // 30 min; the warm-up trigger refreshes it every 15
 var CACHE_CHUNK = 90000;      // CacheService values max out at 100KB
@@ -18,7 +18,11 @@ var SOURCES = [
   { key: 'flow', name: 'Flow', prop: 'FLOW_SHEET_ID', appProp: 'FLOW_APP_URL', reader: function (ss, ctx) { return readFlow_(ss, ctx); } },
   { key: 'finance', name: 'Finance', prop: 'FINANCE_SHEET_ID', appProp: 'FINANCE_APP_URL', reader: function (ss, ctx) { return readFinance_(ss, ctx); } },
   { key: 'garage', name: 'Garage', prop: 'GARAGE_SHEET_ID', appProp: 'GARAGE_APP_URL', reader: function (ss, ctx) { return readGarage_(ss, ctx); } },
-  { key: 'vault', name: 'Vault', prop: 'VAULT_SHEET_ID', appProp: 'VAULT_APP_URL', optional: true, reader: function (ss, ctx) { return readVault_(ss, ctx); } }
+  { key: 'vault', name: 'Vault', prop: 'VAULT_SHEET_ID', appProp: 'VAULT_APP_URL', optional: true, reader: function (ss, ctx) { return readVault_(ss, ctx); } },
+  // Life tab. These apps save only when something changes, so a quiet month is normal (staleDays).
+  { key: 'career', name: 'NextRole', prop: 'NEXTROLE_SHEET_ID', appProp: 'NEXTROLE_APP_URL', optional: true, staleDays: 45, reader: function (ss, ctx) { return readCareer_(ss, ctx); } },
+  { key: 'voyage', name: 'Voyage', prop: 'VOYAGE_SHEET_ID', appProp: 'VOYAGE_APP_URL', optional: true, staleDays: 120, reader: function (ss, ctx) { return readVoyage_(ss, ctx); } },
+  { key: 'nest', name: 'Nest', prop: 'NEST_SHEET_ID', appProp: 'NEST_APP_URL', optional: true, staleDays: 45, reader: function (ss, ctx) { return readNest_(ss, ctx); } }
 ];
 
 // Home-screen / tab icon, served from the public repo (docs/icons). Apps Script needs a URL ending in .png.
@@ -174,6 +178,7 @@ function buildDashboard_(now, openById) {
     var id = props.getProperty(src.prop);
     var s = { name: src.name, ok: false, url: id ? 'https://docs.google.com/spreadsheets/d/' + id + '/edit' : null,
       appUrl: safeAppUrl_(props.getProperty(src.appProp)), appProp: src.appProp };
+    if (src.staleDays) s.staleDays = src.staleDays;
     if (!id && src.optional) { s.off = true; s.ms = 0; out.sources[src.key] = s; return; }
     try {
       if (!id) throw new Error('Script Property ' + src.prop + ' is not set');
@@ -259,7 +264,7 @@ function syncHealth_(sources, issues, ctx) {
     if (s.off) row.status = 'off';
     else if (!s.ok) row.status = 'error';
     else if (row.lastFailure && (!row.lastChange || row.lastFailure > row.lastChange + 60e3)) row.status = 'broken';
-    else if (!row.lastChange || ctx.now - row.lastChange > 3 * 864e5) row.status = 'stale';
+    else if (!row.lastChange || ctx.now - row.lastChange > (s.staleDays || 3) * 864e5) row.status = 'stale';
     else row.status = 'ok';
     return row;
   });
@@ -297,6 +302,7 @@ function alerts_(sources, sync, ctx) {
       add(d.daysLeft <= 30 ? 'warn' : 'info', 'vault', d.title + ' expires', (d.icon ? d.icon + ' ' : '') + d.category + (d.owner && d.owner !== 'Me' ? ' · ' + d.owner : ''), d.expiry, 'vault');
     });
   }
+  lifeAlerts_(sources, add);
   var fin = sources.finance && sources.finance.ok ? sources.finance.summary : null;
   if (fin) {
     (fin.recurring || []).filter(function (r) { return r.daysUntil >= -3 && r.daysUntil <= 7; }).forEach(function (r) {
@@ -367,6 +373,7 @@ function brief_(sources, issues, ctx) {
       if (r.daysLeft <= 45) push(r.daysLeft < 0 ? 'bad' : 'warn', 'garage', c.name + ' ' + r.label.toLowerCase() + (r.daysLeft < 0 ? ' expired' : ' due in ' + r.daysLeft + ' days'));
     });
   });
+  lifeBrief_(sources, push);
   return out;
 }
 
@@ -396,8 +403,9 @@ function upcoming_(sources, ctx) {
   }
   var g = sources.garage && sources.garage.ok ? sources.garage.summary.cars : [];
   g.forEach(function (c) { c.renewals.forEach(function (r) { add(r.date, c.name + ' ' + r.label.toLowerCase(), 'garage', 'warn'); }); });
+  lifeUpcoming_(sources, add);
   out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-  return out.slice(0, 8);
+  return out.slice(0, 12);
 }
 
 /**

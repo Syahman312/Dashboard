@@ -5,8 +5,11 @@
  * which can change) and saves the IDs in Script Properties:
  *   Flow     - tabs Tasks, Habits and Study Log
  *   Finance  - tabs Transactions and Accounts
- *   Garage   - a "json (do not edit)" column
+ *   Garage   - columns "json (do not edit)" and "odometer"
  *   Vault    - tabs Documents and Categories
+ *   NextRole - columns "json (do not edit)" and "progress / score"
+ *   Voyage   - tabs _voyage, Trips and Itinerary
+ *   Nest     - tabs rooms, items, tasks and bills
  * When several sheets match (e.g. an old copy), the most recently updated wins.
  * It also links the "Dashboard" sheet for the budget and creates the Budget tab.
  * Run it again any time an app moves to a new sheet. It never changes app sheets.
@@ -15,8 +18,11 @@
 var SHEET_FINDERS = [
   { prop: 'FLOW_SHEET_ID', name: 'Flow', tabs: ['Tasks', 'Habits', 'Study Log'] },
   { prop: 'FINANCE_SHEET_ID', name: 'Finance', tabs: ['Transactions', 'Accounts'] },
-  { prop: 'GARAGE_SHEET_ID', name: 'Garage', header: 'json (do not edit)' },
-  { prop: 'VAULT_SHEET_ID', name: 'Vault', tabs: ['Documents', 'Categories'] }
+  { prop: 'GARAGE_SHEET_ID', name: 'Garage', headers: ['json (do not edit)', 'odometer'] },
+  { prop: 'VAULT_SHEET_ID', name: 'Vault', tabs: ['Documents', 'Categories'] },
+  { prop: 'NEXTROLE_SHEET_ID', name: 'NextRole', headers: ['json (do not edit)', 'progress / score'] },
+  { prop: 'VOYAGE_SHEET_ID', name: 'Voyage', tabs: ['_voyage', 'Trips', 'Itinerary'] },
+  { prop: 'NEST_SHEET_ID', name: 'Nest', tabs: ['rooms', 'items', 'tasks', 'bills'] }
 ];
 
 function setupDashboard() {
@@ -65,7 +71,7 @@ function findAppSheets_(files, open, props) {
     var match = looks.filter(function (l) {
       if (taken[l.file.id]) return false;
       if (finder.tabs) return finder.tabs.every(function (t) { return l.tabs.indexOf(t) >= 0; });
-      return l.header.indexOf(finder.header) >= 0;
+      return finder.headers.every(function (h) { return l.header.indexOf(h) >= 0; });
     })[0];
     var old = props.getProperty(finder.prop);
     if (!match) { report.push(finder.name + ': no matching sheet found' + (old ? ' (kept the current one)' : '')); return; }
