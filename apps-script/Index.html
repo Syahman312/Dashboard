@@ -129,6 +129,17 @@ body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; ove
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; box-shadow: var(--shadow); }
 .card-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
 .card-h h2 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: -.01em; }
+.card-h .fold { flex: none; width: 30px; height: 30px; margin: -4px -6px -4px 0; border: 0; border-radius: 9px; background: transparent; color: var(--faint); cursor: pointer; display: grid; place-items: center; }
+.card-h .fold::before { content: ''; width: 8px; height: 8px; border: solid currentColor; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); transition: transform .2s ease; }
+.card-h .fold:hover { background: var(--card-2); color: var(--text); }
+.card.folded > .card-h { margin-bottom: 0; }
+.card.folded > .card-h .fold::before { transform: translateY(1px) rotate(-135deg); }
+.card.folded > :not(.card-h) { display: none !important; }
+.pick { cursor: pointer; border-radius: 8px; transition: background .15s ease; }
+.pick:hover, .pick:focus-visible { background: var(--card-2); outline: none; }
+li.pick { padding-left: 6px; padding-right: 6px; margin: 0 -6px; }
+li.pick.on { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+tr.pick:hover td { background: var(--card-2); }
 .card-h .sub { font-size: 12.5px; color: var(--faint); }
 .eyebrow { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); font-weight: 600; }
 h3.sec { font-size: 12px; color: var(--muted); font-weight: 650; margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .06em; }
@@ -556,12 +567,14 @@ footer a { color: var(--muted); }
   /* =========================================================
    * State, storage, formatting
    * ======================================================= */
-  var S = { ui: { alerts: 'all', tasks: 'today', tx: 'all', txq: '', vcat: 'all', vowner: 'all', review: 0, bud: 'all', budSort: 'used' }, data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
+  var S = { ui: { alerts: 'all', tasks: 'today', tx: 'all', txq: '', vcat: 'all', vowner: 'all', review: 0, bud: 'all', budSort: 'used', invRange: '3y', invAcc: '', txAcc: '', txCat: '', txN: 25 }, data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
   var LS = { data: 'dash:last', hidden: 'dash:hidden', theme: 'dash:theme', cfg: 'dash:cfg', hint: 'dash:hint' };
   var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
   var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* unavailable */ } };
   var lsRemove = function (k) { try { localStorage.removeItem(k); } catch (e) { /* unavailable */ } };
   try { S.hidden = JSON.parse(lsGet(LS.hidden) || '{}') || {}; } catch (e) { S.hidden = {}; }
+  var FOLD = {};
+  try { FOLD = JSON.parse(lsGet('dash:fold') || '{}') || {}; } catch (e) { FOLD = {}; }
 
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) {
@@ -1171,7 +1184,7 @@ footer a { color: var(--muted); }
     if (!VIEWS.some(function (v) { return v.key === view; })) view = 'overview';
     if (opts.filter) S.filter = opts.filter;
     setActive(view, opts);
-    if (opts.filter && view === 'health' && S.data) { viewHealth($('v-health'), S.data); bindAppLinks($('v-health')); }
+    if (opts.filter && view === 'health' && S.data) { viewHealth($('v-health'), S.data); foldCards($('v-health'), 'health'); bindAppLinks($('v-health')); }
     if (!opts.fromSwipe) {
       var left = viewIndex(view) * pageWidth();
       if (Math.abs(pager.scrollLeft - left) > 2) pager.scrollTo({ left: left, behavior: reduced || opts.instant ? 'auto' : 'smooth' });
@@ -1252,8 +1265,36 @@ footer a { color: var(--muted); }
     delete pending[k];
     S.animate = !!animate;
     VIEW_FN[k](host, S.data);
+    foldCards(host, k);
     bindAppLinks(host); countUp(host); fillBars(host);
     S.animate = keep;
+  }
+  /** Every card with a title can be folded away; the choice is kept on this device. */
+  function foldCards(host, k) {
+    each(host, '.card > .card-h', function (h) {
+      var card = h.parentNode, t = h.querySelector('h2');
+      if (!t || h.querySelector('.fold')) return;
+      var key = k + ':' + t.textContent.trim();
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'fold';
+      var set = function (folded) {
+        card.classList.toggle('folded', folded);
+        b.setAttribute('aria-expanded', String(!folded));
+        b.setAttribute('aria-label', (folded ? 'Show ' : 'Hide ') + t.textContent.trim());
+        b.title = folded ? 'Show' : 'Hide';
+      };
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var folded = !card.classList.contains('folded');
+        if (folded) FOLD[key] = 1; else delete FOLD[key];
+        lsSet('dash:fold', JSON.stringify(FOLD));
+        set(folded);
+        // Charts are drawn to their width, so redraw the tab when a card with one opens again
+        if (!folded && card.querySelector('.chart')) { hideTip(); drawView(k, false); }
+      });
+      h.appendChild(b);
+      set(!!FOLD[key]);
+    });
   }
   function drawPending(k) { if (pending[k] && S.data) drawView(k, false); }
   function drawNextPending() {
@@ -1422,7 +1463,7 @@ footer a { color: var(--muted); }
     host.innerHTML = html;
     bindGo(host);
     bindReview(host, d);
-    bindChips(host, 'alerts', function (k) { S.ui.alerts = k; S.animate = false; viewOverview(host, d); bindAppLinks(host); fillBars(host); });
+    bindChips(host, 'alerts', function (k) { S.ui.alerts = k; S.animate = false; viewOverview(host, d); foldCards(host, "overview"); bindAppLinks(host); fillBars(host); });
   }
 
   /* =========================================================
@@ -1930,6 +1971,21 @@ footer a { color: var(--muted); }
         : '<div class="empty">No recurring payments found yet. They appear after two months of similar charges.</div>') + '</div>';
     html += '</div>';
 
+    var inv = s.investments;
+    if (inv) {
+      html += '<div class="grid g-21" style="margin-top:14px" id="inv">';
+      html += '<div class="card">' + cardHead('Investments', 'Value at each month end · tap a holding to see it alone', '<span id="inv-range"></span>') +
+        '<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px"><div><div class="hero num" style="font-size:30px" id="inv-total"></div><div class="hero-sub" id="inv-sub"></div></div></div>' +
+        '<div id="lg-inv"></div><div id="ch-inv"></div>' +
+        '<h3 class="sec">Put in vs earned, by year</h3><div id="lg-invy"></div><div id="ch-invy"></div></div>';
+      html += '<div class="card">' + cardHead('Holdings', plural(inv.accounts.length, 'account') + ' · tap one') +
+        '<div class="seg" id="inv-seg" style="height:16px;margin:4px 0 12px"></div><div id="inv-list"></div>' +
+        (inv.loans.length ? '<div class="note" style="margin-top:12px;font-size:13px">' + inv.loans.map(function (l) { return esc(l.name) + ' still owes <b class="num">' + rm(l.owed, 0) + '</b>'; }).join(' · ') +
+          '. After the loan you own <b class="num">' + rm(inv.net, 0) + '</b>.</div>' : '') +
+        '<h3 class="sec">Latest moves</h3><div id="inv-moves"></div></div>';
+      html += '</div>';
+    }
+
     var gr = s.groups || { liquid: 0, savings: 0, debt: 0 };
     var assets = gr.liquid + gr.savings, scaleMax = Math.max(assets, gr.debt, 1);
     html += '<div class="grid g3" style="margin-top:14px">';
@@ -1941,7 +1997,7 @@ footer a { color: var(--muted); }
       '<h3 class="sec">Owed · ' + rm(gr.debt, 0) + '</h3>' +
       '<div class="seg" style="width:' + (gr.debt / scaleMax * 100).toFixed(1) + '%"><i style="flex-grow:1;background:var(--s-prev)"></i></div>' +
       '<ul class="list" style="margin-top:8px">' + (s.debts || []).slice(0, 5).map(function (a) {
-        return '<li><span class="t">' + esc(a.name) + '<span class="tag">' + esc(a.type) + '</span></span><span class="r num">' + rm(a.owed) + '</span></li>';
+        return '<li class="pick" data-txacc="' + esc(a.name) + '"><span class="t">' + esc(a.name) + '<span class="tag">' + esc(a.type) + '</span></span><span class="r num">' + rm(a.owed) + '</span></li>';
       }).join('') + '</ul></div>';
 
     var groupsOrder = [['liquid', 'Cash & bank'], ['savings', 'Savings & investments'], ['debt', 'Owed']];
@@ -1952,11 +2008,11 @@ footer a { color: var(--muted); }
         var val = function (a) { return g[0] === 'debt' ? (a.owed || 0) : (a.balance || 0); };
         rows.sort(function (a, b) { return val(b) - val(a); });
         return '<tr class="grp"><td>' + g[1] + '</td><td class="n">' + rm(rows.reduce(function (t, a) { return t + val(a); }, 0), 0) + '</td></tr>' + rows.map(function (a) {
-          return '<tr><td>' + esc(a.name) + '</td><td class="n">' + rm(val(a)) + '</td></tr>';
+          return '<tr class="pick" data-txacc="' + esc(a.name) + '" title="Show its transactions"><td>' + esc(a.name) + '</td><td class="n">' + rm(val(a)) + '</td></tr>';
         }).join('');
       }).join('') + '</tbody></table></div>';
 
-    html += '<div class="card">' + cardHead('Recent transactions', 'Latest ' + (s.recent || []).length) +
+    html += '<div class="card" id="tx-card">' + cardHead('Recent transactions', 'Last 60 days · tap an account or category to filter') +
       '<input class="searchbox" id="tx-q" type="search" placeholder="Search description, category or account" autocomplete="off">' +
       '<div id="tx-list"></div></div>';
     html += '</div>';
@@ -2006,24 +2062,43 @@ footer a { color: var(--muted); }
       var kind = function (t) { return t.transfer ? 'transfer' : t.amount < 0 ? 'out' : 'in'; };
       var cnt = { all: all.length, out: 0, in: 0, transfer: 0 };
       all.forEach(function (t) { cnt[kind(t)]++; });
+      var catOf = function (t) { return t.cat || '(no category)'; };
       var list = all.filter(function (t) {
+        if (S.ui.txAcc && t.account !== S.ui.txAcc) return false;
+        if (S.ui.txCat && (catOf(t) !== S.ui.txCat.cat || t.date.slice(0, 7) !== S.ui.txCat.month || t.amount >= 0)) return false;
         if (f !== 'all' && kind(t) !== f) return false;
         return !q || [t.desc, t.cat, t.account].join(' ').toLowerCase().indexOf(q) >= 0;
       });
       $('tx-list').innerHTML = chipBar('tx', [{ key: 'all', label: 'All', count: cnt.all }, { key: 'out', label: 'Spending', count: cnt.out },
         { key: 'in', label: 'Income', count: cnt.in }, { key: 'transfer', label: 'Transfers', count: cnt.transfer }], f) +
-        (list.length ? '<ul class="list">' + list.map(function (t) {
+        (S.ui.txAcc || S.ui.txCat ? '<div class="chips2" style="margin-top:-4px"><button type="button" id="tx-clear" aria-pressed="true">' +
+          esc(S.ui.txAcc ? S.ui.txAcc : S.ui.txCat.cat + ' · ' + monLabel(S.ui.txCat.month)) + ' ✕</button></div>' : '') +
+        (list.length ? '<ul class="list">' + list.slice(0, S.ui.txN).map(function (t) {
           var inflow = t.amount > 0 && !t.transfer;
           return '<li><span class="t"><span class="when">' + shortDate(t.date) + '</span>' + esc(t.desc || t.cat || '—') +
             '<div class="faint" style="font-size:12px;margin-left:62px;overflow:hidden;text-overflow:ellipsis">' + esc(t.cat || (t.transfer ? 'Transfer' : 'No category')) + ' · ' + esc(t.account) + '</div></span>' +
             '<span class="num ' + (inflow ? 'good' : '') + '" style="font-size:14px;white-space:nowrap">' + (t.amount > 0 ? '+' : '') + rm(t.amount) + '</span></li>';
-        }).join('') + '</ul>' + (q || f !== 'all' ? '<div class="faint num" style="font-size:12.5px;margin-top:8px">' + plural(list.length, 'transaction') + ' · net ' + rm(list.reduce(function (t, x) { return t + x.amount; }, 0)) + '</div>' : '')
-          : '<div class="empty">No matching transactions.</div>');
-      bindChips($('tx-list'), 'tx', function (k) { S.ui.tx = k; drawTx(); });
+        }).join('') + '</ul>' + (list.length > S.ui.txN ? '<button type="button" class="linkbtn" id="tx-more" style="margin-top:8px">Show ' + Math.min(25, list.length - S.ui.txN) + ' more of ' + (list.length - S.ui.txN) + '</button>' : '') +
+          (q || f !== 'all' || S.ui.txAcc || S.ui.txCat ? '<div class="faint num" style="font-size:12.5px;margin-top:8px">' + plural(list.length, 'transaction') + ' · net ' + rm(list.reduce(function (t, x) { return t + x.amount; }, 0)) + '</div>' : '')
+          : '<div class="empty">No matching transactions' + (S.ui.txCat ? ' in the last 60 days. Older ones are in the Finance app.' : '.') + '</div>');
+      bindChips($('tx-list'), 'tx', function (k) { S.ui.tx = k; S.ui.txN = 25; drawTx(); });
+      if ($('tx-clear')) $('tx-clear').addEventListener('click', function () { S.ui.txAcc = ''; S.ui.txCat = ''; S.ui.txN = 25; drawTx(); });
+      if ($('tx-more')) $('tx-more').addEventListener('click', function () { S.ui.txN += 25; drawTx(); });
+    }
+    function showTxFor(acc, cat) {
+      S.ui.txAcc = acc || ''; S.ui.txCat = cat || ''; S.ui.tx = 'all'; S.ui.txq = ''; S.ui.txN = 25;
+      $('tx-q').value = ''; drawTx();
+      $('tx-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function bindTxAcc(root) {
+      each(root, '[data-txacc]', function (e) {
+        e.addEventListener('click', function (evt) { evt.stopPropagation(); showTxFor(e.getAttribute('data-txacc')); });
+      });
     }
     $('tx-q').value = S.ui.txq;
-    $('tx-q').addEventListener('input', function (e) { S.ui.txq = e.target.value; drawTx(); });
+    $('tx-q').addEventListener('input', function (e) { S.ui.txq = e.target.value; S.ui.txN = 25; drawTx(); });
     drawTx();
+    bindTxAcc(host);
 
     // Running total, this month vs last month
     if (m && s.daily) {
@@ -2088,9 +2163,10 @@ footer a { color: var(--muted); }
         e.addEventListener('pointerdown', function (evt) { e.dispatchEvent(new PointerEvent('pointermove', evt)); });
         e.addEventListener('pointermove', function (evt) {
           showTip(evt.clientX, evt.clientY, r.category, [{ color: css(r.other ? '--s-prev' : '--s1'), value: rm(r.spent), label: monLabel(mk, true) }],
-            [plural(r.count, 'transaction') + ' · average ' + rm(r.spent / Math.max(1, r.count)), Math.round(r.spent / total * 100) + '% of the month']);
+            [plural(r.count, 'transaction') + ' · average ' + rm(r.spent / Math.max(1, r.count)), Math.round(r.spent / total * 100) + '% of the month'].concat(r.other ? [] : ['Tap to list them']));
         });
         e.addEventListener('pointerleave', mouseLeave);
+        if (!r.other) { e.style.cursor = 'pointer'; e.addEventListener('click', function () { hideTip(); showTxFor('', { cat: r.category, month: mk }); }); }
       });
       if (grow) fillBars($('cats'));
     }
@@ -2099,6 +2175,88 @@ footer a { color: var(--muted); }
     S.animate = firstPaint;
     draw12();
     drawCats(true);
+    if (inv) drawInv(firstPaint);
+
+    function drawInv(grow) {
+      var PAL = ['--s1', '--s2', '--s3', '--good', '--warn', '--info', '--s-prev'];
+      var colorOf = {};
+      inv.accounts.forEach(function (a, i) { colorOf[a.name] = css(PAL[i % PAL.length]); });
+      var acc = S.ui.invAcc && colorOf[S.ui.invAcc] ? S.ui.invAcc : '';
+      var one = acc ? inv.accounts.filter(function (a) { return a.name === acc; })[0] : null;
+      var RANGE = { '1y': 13, '3y': 37, all: 1e9 };
+      var hist = inv.history.slice(-RANGE[S.ui.invRange] || -37);
+      var val = function (h) { return one ? (h.by[acc] || 0) : h.value; };
+      var now = one ? one.value : inv.total, start = hist.length ? val(hist[0]) : now, ch = now - start;
+      $('inv-range').innerHTML = chipBar('invr', [{ key: '1y', label: '1Y' }, { key: '3y', label: '3Y' }, { key: 'all', label: 'All' }], S.ui.invRange);
+      bindChips($('inv-range'), 'invr', function (k) { S.ui.invRange = k; S.animate = false; drawInv(false); });
+      $('inv-total').textContent = rm(now, 0);
+      var sub = (one ? esc(one.name) + ' · ' : '') + '<span class="delta ' + (ch >= 0 ? 'good' : 'bad') + '">' + (ch >= 0 ? '▲ ' : '▼ ') + rm(Math.abs(ch), 0) + '</span> since ' + (hist.length ? monLabel(hist[0].month, true) : 'start');
+      var e12 = one ? one.earned12 : inv.earned12;
+      if (e12) sub += ' · ' + rm(e12, 0) + ' earned in 12 months' + (!one && inv.yield12 ? ' (' + inv.yield12 + '%)' : '');
+      $('inv-sub').innerHTML = sub;
+
+      // Value line
+      var series = one ? [{ name: one.name, values: hist.map(val), color: colorOf[acc], area: true }]
+        : [{ name: 'All investments', values: hist.map(val), color: css('--s1'), area: true }];
+      $('lg-inv').textContent = '';
+      lineChart($('ch-inv'), {
+        labels: hist.map(function (h) { return monLabel(h.month) + (h.month.slice(5) === '01' || hist.length <= 13 ? '' : ''); }),
+        series: series, yFmt: rmK, tipFmt: function (v) { return rm(v, 0); }, height: 230,
+        aria: 'Investment value at each month end',
+        xTitle: function (i) { return monLabel(hist[i].month, true); },
+        extra: one ? null : function (i) {
+          var h = hist[i];
+          return inv.accounts.filter(function (a) { return h.by[a.name]; }).map(function (a) { return a.name + ' ' + rm(h.by[a.name], 0); });
+        }
+      });
+
+      // Yearly flows
+      var yr = inv.yearly;
+      var ys = [
+        { name: 'Put in', values: yr.map(function (y) { return Math.max(0, y.putIn - y.takenOut); }), color: css('--s1'), off: S.legendOff['invy:Put in'] },
+        { name: 'Earned', values: yr.map(function (y) { return y.earned; }), color: css('--good'), off: S.legendOff['invy:Earned'] },
+        { name: 'Revalued', values: yr.map(function (y) { return Math.max(0, y.revalue); }), color: css('--s3'), off: S.legendOff['invy:Revalued'] }
+      ];
+      $('lg-invy').textContent = '';
+      $('lg-invy').appendChild(legend(ys.map(function (x) { return { name: x.name, color: x.color }; }), 'invy', function () { S.animate = false; drawInv(false); }));
+      if (yr.length) barChart($('ch-invy'), {
+        labels: yr.map(function (y) { return y.year; }), series: ys, yFmt: rmK, tipFmt: function (v) { return rm(v, 0); }, height: 190,
+        aria: 'Money put into investments and earned each year',
+        xTitle: function (i) { return yr[i].year; },
+        extra: function (i) { var y = yr[i]; return (y.takenOut ? ['Taken out ' + rm(y.takenOut, 0)] : []).concat(y.revalue < 0 ? ['Revalued down ' + rm(-y.revalue, 0)] : []); }
+      });
+      else $('ch-invy').innerHTML = '<div class="empty">No transactions on these accounts yet.</div>';
+
+      // Allocation bar + holdings list
+      $('inv-seg').innerHTML = inv.accounts.filter(function (a) { return a.value > 0; }).map(function (a) {
+        return '<i data-acc="' + esc(a.name) + '" style="flex-grow:' + a.value + ';background:' + colorOf[a.name] + ';cursor:pointer;opacity:' + (acc && acc !== a.name ? .3 : 1) + '"></i>';
+      }).join('');
+      $('inv-list').innerHTML = '<ul class="list">' + inv.accounts.map(function (a) {
+        var on = acc === a.name;
+        return '<li data-acc="' + esc(a.name) + '" class="pick' + (on ? ' on' : '') + '" role="button" tabindex="0" aria-pressed="' + on + '"><span class="t"><span class="key" style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;background:' + colorOf[a.name] + '"></span>' + esc(a.name) +
+          '<span class="tag">' + esc(a.kind) + '</span><div class="faint num" style="font-size:12px;margin-left:18px">' + a.share + '%' + (a.earned12 ? ' · earned ' + rm(a.earned12, 0) + ' in 12 months' : '') + '</div></span>' +
+          '<span class="r num" style="color:var(--text)">' + rm(a.value, 0) + '</span></li>';
+      }).join('') + '</ul>' + (acc ? '<button type="button" class="linkbtn" id="inv-all" style="margin-top:8px">Show all holdings</button> <button type="button" class="linkbtn" data-txacc="' + esc(acc) + '" style="margin-top:8px">Its transactions →</button>' : '');
+      var pick = function (name) { S.ui.invAcc = S.ui.invAcc === name ? '' : name; S.animate = false; drawInv(false); };
+      each($('inv'), '[data-acc]', function (e) {
+        var a = inv.accounts.filter(function (x) { return x.name === e.getAttribute('data-acc'); })[0];
+        e.addEventListener('click', function () { pick(a.name); });
+        e.addEventListener('keydown', function (k) { if (k.key === 'Enter' || k.key === ' ') { k.preventDefault(); pick(a.name); } });
+        if (e.tagName === 'I') {
+          var show = function (evt) { showTip(evt.clientX, evt.clientY, a.name, [{ color: colorOf[a.name], value: rm(a.value, 0), label: a.share + '%' }], [a.kind]); };
+          e.addEventListener('pointermove', show); e.addEventListener('pointerleave', mouseLeave);
+        }
+      });
+      if ($('inv-all')) $('inv-all').addEventListener('click', function () { pick(''); });
+      bindTxAcc($('inv'));
+
+      var moves = inv.recent.filter(function (t) { return !acc || t.account === acc; });
+      var KIND = { 'in': 'Put in', out: 'Taken out', earned: 'Earned', revalue: 'Revalued' };
+      $('inv-moves').innerHTML = moves.length ? '<ul class="list">' + moves.slice(0, 6).map(function (t) {
+        return '<li><span class="t"><span class="when">' + shortDate(t.date) + '</span>' + esc(t.account) + ' <span class="faint">· ' + KIND[t.kind] + '</span></span>' +
+          '<span class="r num ' + (t.amount >= 0 ? 'good' : 'bad') + '">' + (t.amount >= 0 ? '+' : '') + rm(t.amount, 0) + '</span></li>';
+      }).join('') + '</ul>' : '<div class="empty">No moves yet.</div>';
+    }
   }
 
   /* =========================================================
@@ -2229,7 +2387,7 @@ footer a { color: var(--muted); }
         '</div></div>';
 
       html += '<div class="grid g-21" style="margin-bottom:14px">';
-      html += '<div class="card">' + cardHead('Running costs', 'Fuel, servicing, tolls and parking per month · hover for litres and km') + '<div id="lg-run-' + ci + '"></div><div id="ch-run-' + ci + '"></div></div>';
+      html += '<div class="card">' + cardHead('Running costs', 'Fuel, servicing, tolls and parking per month · tap a month for its list') + '<div id="lg-run-' + ci + '"></div><div id="ch-run-' + ci + '"></div><div id="run-list-' + ci + '"></div></div>';
       html += '<div class="card">' + cardHead('Longest since done', 'Service items') +
         (c.services.length ? '<ul class="list">' + c.services.map(function (x) {
           return '<li><span class="t">' + esc(x.item) + '</span><span class="r num">' + (x.kmSince !== null ? fmtNum(x.kmSince) + ' km ago' : shortDate(x.date) + ' ' + x.date.slice(0, 4)) + '</span></li>';
@@ -2266,11 +2424,22 @@ footer a { color: var(--muted); }
           height: 250, aria: 'Fuel and service cost per month for the last 12 months',
           xTitle: function (i) { return monLabel(mo[i].month, true); },
           extra: function (i) {
-            var x = mo[i], out = ['Total ' + rm(x.fuel + x.service) + (x.fills ? ' · ' + plural(x.fills, 'fill') + ', ' + x.litres + ' L' : '')];
+            var x = mo[i], out = ['Total ' + rm(x.fuel + x.service + (x.other || 0)) + (x.fills ? ' · ' + plural(x.fills, 'fill') + ', ' + x.litres + ' L' : '')];
             if (x.km) out.push(fmtNum(x.km) + ' km driven' + (x.fuel ? ' · RM ' + (x.fuel / x.km).toFixed(2) + ' per km' : ''));
+            if ((x.items || []).length && S.ui['run' + ci] !== i) out.push('Tap to list what was spent');
             return out;
-          }
+          },
+          selected: S.ui['run' + ci] === undefined ? null : S.ui['run' + ci],
+          onSelect: function (i) { S.ui['run' + ci] = S.ui['run' + ci] === i ? undefined : i; S.animate = false; drawRun(); }
         });
+        var sel = S.ui['run' + ci], x = sel === undefined ? null : mo[sel];
+        var IC = { fuel: '⛽', service: '🔧', other: '🅿️' };
+        $('run-list-' + ci).innerHTML = !x ? '' : '<h3 class="sec" style="display:flex;justify-content:space-between;align-items:center">' + monLabel(x.month, true) +
+          '<button type="button" class="linkbtn" data-runx>Close ✕</button></h3>' + ((x.items || []).length ? '<ul class="list">' + x.items.map(function (it) {
+            return '<li><span class="t"><span class="when">' + shortDate(it.date) + '</span>' + (it.k === 'other' ? (/toll/i.test(it.label) ? '🛣️' : /park/i.test(it.label) ? '🅿️' : /wash/i.test(it.label) ? '🧽' : '🧾') : IC[it.k]) + ' ' + esc(it.label) + '</span><span class="r num">' + rm(it.cost) + '</span></li>';
+          }).join('') + '</ul>' : '<div class="empty">Nothing logged this month.</div>');
+        var cx = $('run-list-' + ci).querySelector('[data-runx]');
+        if (cx) cx.addEventListener('click', function () { S.ui['run' + ci] = undefined; S.animate = false; drawRun(); });
       }
       S.animate = firstPaint;
       drawRun();
@@ -2328,18 +2497,18 @@ footer a { color: var(--muted); }
     host.innerHTML = html;
 
     each(host, '.seg-ctl button', function (b) {
-      b.addEventListener('click', function () { S.filter = b.getAttribute('data-f'); viewHealth(host, d); bindAppLinks(host); });
+      b.addEventListener('click', function () { S.filter = b.getAttribute('data-f'); viewHealth(host, d); foldCards(host, "health"); bindAppLinks(host); });
     });
     each(host, '[data-hide]', function (b) {
       b.addEventListener('click', function () {
         S.hidden[b.getAttribute('data-hide')] = Date.now();
         lsSet(LS.hidden, JSON.stringify(S.hidden));
-        renderNav(); viewHealth(host, d); bindAppLinks(host);
+        renderNav(); viewHealth(host, d); foldCards(host, "health"); bindAppLinks(host);
         toast('Hidden on this device');
       });
     });
     $('recheck').addEventListener('click', recheck);
-    if ($('unhide')) $('unhide').addEventListener('click', function () { S.hidden = {}; lsSet(LS.hidden, '{}'); renderNav(); viewHealth(host, d); bindAppLinks(host); });
+    if ($('unhide')) $('unhide').addEventListener('click', function () { S.hidden = {}; lsSet(LS.hidden, '{}'); renderNav(); viewHealth(host, d); foldCards(host, "health"); bindAppLinks(host); });
   }
 
   /* Recheck: re-read the Sheets now and say what cleared. */

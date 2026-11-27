@@ -293,6 +293,11 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar, others,
       other: round2_(sum_(om, function (o) { return o.cost; })),
       litres: sum_(fm, function (f) { return f.litres; }),
       fills: fm.length,
+      // What made up the month, for the dashboard's tap-a-month list
+      items: fm.map(function (f) { return { date: f.date, k: 'fuel', label: (f.litres ? round2_(f.litres) + ' L' : 'Fuel') + (f.place ? ' · ' + f.place : ''), cost: f.cost || 0 }; })
+        .concat(sm.map(function (l) { return { date: l.date, k: 'service', label: l.items.join(', ') || 'Service', cost: l.cost || 0 }; }))
+        .concat(om.map(function (o) { return { date: o.date, k: 'other', label: o.cat.charAt(0).toUpperCase() + o.cat.slice(1), cost: o.cost || 0 }; }))
+        .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }),
       km: odoEnd !== null && odoStart !== null && odoEnd > odoStart && fm.length + sm.length ? odoEnd - odoStart : null
     });
   }

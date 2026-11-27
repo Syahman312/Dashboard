@@ -6,6 +6,19 @@ const { load, fakeSpreadsheet } = require('../test/harness');
 const fx = require('../test/fixtures');
 
 const books = { g: fx.garage(), f: fx.finance(), w: fx.flow(), v: fx.vault(), d: fx.dashboard(), c: fx.career(), y: fx.voyage(), n: fx.nest() };
+// Investments: EPF every month, ASB dividends and a loan, shares and gold revalued
+const addF = (date, desc, cat, acc, amt) => books.f.Transactions.push([date, desc, cat, '', acc, amt, '', '']);
+for (let i = 0; i < 40; i++) { const m = new Date(Date.UTC(2023, 7 + i, 25)).toISOString().slice(0, 10); if (m <= fx.TODAY) addF(m, 'Employer EPF', '🏢 Employer contributions', 'KWSP', 325 + Math.floor(i / 12) * 26); }
+[['2024-01-02', 410], ['2025-01-02', 520], ['2026-01-02', 1180]].forEach(([d, a]) => addF(d, 'Interests, dividends', '🪙 Interests, dividends', 'ASB', a));
+[['2024-03-01', 310], ['2025-03-01', 420], ['2026-03-01', 560]].forEach(([d, a]) => addF(d, 'Interests, dividends', '🪙 Interests, dividends', 'KWSP', a));
+addF('2025-08-01', 'ASB financing', '', 'ASB', 10000);
+addF('2026-06-19', 'Transfer, withdraw', '', 'ASB', 500);
+addF('2026-04-10', 'Buy shares', '', 'Bursa', 1000);
+addF('2026-11-03', 'Balance adjustment', '⚖️ Balance adjustment', 'Bursa', 85.5);
+addF('2026-09-12', 'Buy gold', '', 'Gold', 600);
+addF('2026-11-01', 'Balance adjustment', '⚖️ Balance adjustment', 'Gold', -24);
+books.f.Accounts.push(['Bursa', 'shares', 1085.5, ''], ['Gold', 'gold', 576, ''], ['ASB LOAN', 'borrow', '', 9400]);
+
 // Show the newer app features too: tolls/parking, a shared wallet, a licence, rent and a house budget
 const addG = (id, o) => books.g.Sheet1.push([id, JSON.stringify(Object.assign({ id, updated: 1 }, o)), o.kind, o.date || '', '', '', o.cost || '', '', '']);
 addG('x1', { kind: 'exp', carId: 'car1', date: '2026-10-21', cost: 34, cat: 'toll', pay: 'w' });

@@ -14,7 +14,7 @@ var FINANCE_COLUMNS = {
 
 var ACCOUNT_GROUPS = {
   cash: 'liquid', bank: 'liquid', ewallet: 'liquid',
-  kwsp: 'savings', asnb: 'savings', shares: 'savings', gold: 'savings', fd: 'savings',
+  kwsp: 'savings', asnb: 'savings', shares: 'savings', gold: 'savings', fd: 'savings', crypto: 'savings', invest: 'savings',
   card: 'debt', bnpl: 'debt', borrow: 'debt', loan: 'debt'
 };
 
@@ -38,14 +38,17 @@ function readFinance_(ss, ctx) {
 
   var accounts = readAccounts_(T.Accounts, issues);
   var tx = readTransactions_(T.Transactions, accounts, ctx, issues);
+  var investments = readInvestments_(accounts, tx.list || [], ctx);
   var pay = readPayslips_(T.Payslips, ctx, issues);
   var goals = readGoals_(T.Goals, ctx);
+  delete tx.list;
   var log = summariseLog_(T.Log, { time: 'Time', msg: 'What happened', area: 'Area', source: 'Device' }, ctx, issues, 7);
   var lastChange = lastAppWrite_(ss, ctx);
 
   return {
     summary: {
       netWorth: accounts.netWorth,
+      investments: investments,
       groups: accounts.groups,
       debts: accounts.debts,
       month: tx.month,
@@ -291,9 +294,10 @@ function readTransactions_(table, accounts, ctx, issues) {
 
   out.recent = list.filter(function (t) { return !t.adjust && t.date <= ctx.today; })
     .sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : a.__row - b.__row; })
-    .slice(0, 40)
+    .filter(function (t, i) { return i < 40 || (i < 250 && t.date >= since60); })
     .map(function (t) { return { date: t.date, desc: t.desc || t.catName, cat: t.cat, account: t.account, amount: t.amount, transfer: t.transfer }; });
 
+  out.list = list; // for readInvestments_; removed before it leaves the server
   return out;
 }
 
@@ -433,4 +437,90 @@ function detectRecurring_(real, ctx) {
       last: last.date, next: next, daysUntil: daysBetween_(ctx.today, next), months: mKeys.length });
   });
   return out.sort(function (a, b) { return a.next < b.next ? -1 : 1; });
+}
+
+/**
+ * Investments: KWSP, ASNB, shares, gold, crypto… The Accounts tab gives today's
+ * value (the app's book value). Transactions on those accounts say how it got
+ * there: money put in, dividends, and balance adjustments (revaluations).
+ * The value at each month end is worked out backwards from today's value.
+ */
+var INVEST_TYPES = { kwsp: 'KWSP', asnb: 'ASNB', shares: 'Shares', gold: 'Gold', crypto: 'Crypto', invest: 'Other', fd: 'Fixed deposit' };
+
+function readInvestments_(accounts, list, ctx) {
+  var accs = accounts.list.filter(function (a) { return INVEST_TYPES[a.type]; });
+  if (!accs.length) return null;
+  var byName = {};
+  accs.forEach(function (a) { byName[a.name] = a; });
+  var kind = function (t) { return /dividend|hibah/i.test(t.catName + ' ' + t.desc) ? 'earned' : t.adjust ? 'revalue' : t.amount >= 0 ? 'in' : 'out'; };
+  var tx = list.filter(function (t) { return byName[t.account]; }).map(function (t) {
+    return { date: t.date, account: t.account, amount: t.amount, kind: kind(t), desc: t.desc || t.catName };
+  }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+
+  var total = round2_(sum_(accs, function (a) { return a.balance || 0; }));
+  var thisMonth = monthKey_(ctx.today), year = ctx.today.slice(0, 4);
+
+  // Month-end values, oldest first (at most 10 years)
+  var first = tx.length ? monthKey_(tx[0].date) : thisMonth, months = [];
+  for (var m = thisMonth; months.length < 120; m = addMonths_(m, -1)) { months.unshift(m); if (m <= first) break; }
+  var after = {}; // account -> sum of amounts after the current month end
+  accs.forEach(function (a) { after[a.name] = 0; });
+  var history = [], ti = tx.length - 1;
+  for (var k = months.length - 1; k >= 0; k--) {
+    var end = months[k] + '-31';
+    while (ti >= 0 && tx[ti].date > end) { after[tx[ti].account] += tx[ti].amount; ti--; }
+    var by = {};
+    accs.forEach(function (a) { by[a.name] = round2_((a.balance || 0) - after[a.name]); });
+    history.unshift({ month: months[k], value: round2_(sum_(accs, function (a) { return by[a.name]; })), by: by });
+  }
+
+  // Per-year flows (last 6 years)
+  var years = {};
+  tx.forEach(function (t) {
+    var y = t.date.slice(0, 4), r = years[y] = years[y] || { year: y, putIn: 0, takenOut: 0, earned: 0, revalue: 0 };
+    if (t.kind === 'earned') r.earned += t.amount;
+    else if (t.kind === 'revalue') r.revalue += t.amount;
+    else if (t.kind === 'in') r.putIn += t.amount;
+    else r.takenOut += -t.amount;
+  });
+  var yearly = Object.keys(years).sort().slice(-6).map(function (y) {
+    var r = years[y];
+    return { year: y, putIn: round2_(r.putIn), takenOut: round2_(r.takenOut), earned: round2_(r.earned), revalue: round2_(r.revalue) };
+  });
+
+  var since12 = addDays_(ctx.today, -365);
+  var last12 = tx.filter(function (t) { return t.date > since12; });
+  var earned12 = round2_(sum_(last12.filter(function (t) { return t.kind === 'earned'; }), function (t) { return t.amount; }));
+  var putIn12 = round2_(sum_(last12.filter(function (t) { return t.kind === 'in'; }), function (t) { return t.amount; }) -
+    sum_(last12.filter(function (t) { return t.kind === 'out'; }), function (t) { return -t.amount; }));
+  var yearAgo = history.length > 12 ? history[history.length - 13].value : null;
+
+  // Loans taken to buy an investment (e.g. "ASB LOAN" for "ASB")
+  var loans = accounts.debts.filter(function (d) {
+    return accs.some(function (a) { return d.name.toLowerCase().indexOf(a.name.toLowerCase()) === 0 && d.name.length > a.name.length; });
+  }).map(function (d) { return { name: d.name, owed: d.owed }; });
+  var loanTotal = round2_(sum_(loans, function (l) { return l.owed; }));
+
+  return {
+    total: total,
+    loans: loans,
+    net: loans.length ? round2_(total - loanTotal) : null,
+    accounts: accs.map(function (a) {
+      var mine = tx.filter(function (t) { return t.account === a.name; });
+      return {
+        name: a.name, type: a.type, kind: INVEST_TYPES[a.type], value: round2_(a.balance || 0),
+        share: total ? Math.round((a.balance || 0) / total * 1000) / 10 : 0,
+        earned12: round2_(sum_(mine.filter(function (t) { return t.kind === 'earned' && t.date > since12; }), function (t) { return t.amount; })),
+        lastMove: mine.length ? mine[mine.length - 1].date : null
+      };
+    }).sort(function (a, b) { return b.value - a.value; }),
+    history: history,
+    yearly: yearly,
+    earned12: earned12,
+    earnedYtd: round2_(sum_(tx.filter(function (t) { return t.kind === 'earned' && t.date.slice(0, 4) === year; }), function (t) { return t.amount; })),
+    putIn12: putIn12,
+    change12: yearAgo === null ? null : round2_(total - yearAgo),
+    yield12: yearAgo ? Math.round(earned12 / yearAgo * 1000) / 10 : null,
+    recent: tx.slice(-8).reverse()
+  };
 }

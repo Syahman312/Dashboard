@@ -595,3 +595,32 @@ test('nest: rent, tenancy end and house budget this month', () => {
   assert.ok(d.alerts.some(a => a.src === 'nest' && /Tenancy ends in 46 days/.test(a.title)));
   assert.ok(d.alerts.some(a => a.src === 'nest' && /House budget over/.test(a.title)));
 });
+
+test('money: investments value, history, put in vs earned, loan', () => {
+  const f = fx.finance();
+  const add = (date, desc, cat, acc, amt) => f.Transactions.push([date, desc, cat, '', acc, amt, '', '']);
+  add('2026-09-25', 'Employer EPF', '🏢 Employer contributions', 'KWSP', 400);
+  add('2026-10-25', 'Employer EPF', '🏢 Employer contributions', 'KWSP', 400);
+  add('2026-01-01', 'Interests, dividends', '🪙 Interests, dividends', 'ASB', 1000);
+  add('2025-08-01', 'Loans, interests', '', 'ASB', 15000);   // financed: money put in, not a dividend
+  add('2026-11-01', 'Balance adjustment', '⚖️ Balance adjustment', 'Bursa', 50);
+  f.Accounts.push(['Bursa', 'shares', 1200, ''], ['ASB LOAN', 'borrow', '', 14000]);
+  const gs = load(PROPS);
+  const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(Object.assign({}, BOOKS, { f })[id]));
+  const s = d.sources.finance.summary, inv = s.investments;
+  assert.ok(!('list' in s), 'raw transaction list stays on the server');
+  assert.equal(inv.total, 37200);
+  assert.equal(inv.accounts.map(a => a.name).join(), 'ASB,KWSP,Bursa');
+  assert.equal(inv.net, 23200, 'ASB LOAN is matched to ASB');
+  assert.equal(inv.earned12, 1000);
+  assert.equal(inv.putIn12, 800);
+  const last = inv.history[inv.history.length - 1], sep = inv.history.find(h => h.month === '2026-09');
+  assert.equal(last.value, 37200);
+  assert.equal(sep.by.KWSP, 15600, 'value worked back from today');
+  assert.equal(sep.by.Bursa, 1150);
+  const y25 = inv.yearly.find(y => y.year === '2025'), y26 = inv.yearly.find(y => y.year === '2026');
+  assert.equal(y25.putIn, 15000);
+  assert.equal(y26.earned, 1000);
+  assert.equal(y26.revalue, 50);
+  assert.ok(s.recent.length > 40, 'last 60 days of transactions are sent for filtering');
+});

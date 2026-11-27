@@ -440,7 +440,7 @@
         },
         "lastChange": 1794697200000
       },
-      "ms": 9
+      "ms": 14
     },
     "finance": {
       "name": "Finance",
@@ -449,11 +449,554 @@
       "appUrl": null,
       "appProp": "FINANCE_APP_URL",
       "summary": {
-        "netWorth": 12339.69,
+        "netWorth": 4601.19,
+        "investments": {
+          "total": 37661.5,
+          "loans": [
+            {
+              "name": "ASB LOAN",
+              "owed": 9400
+            }
+          ],
+          "net": 28261.5,
+          "accounts": [
+            {
+              "name": "ASB",
+              "type": "asnb",
+              "kind": "ASNB",
+              "value": 20000,
+              "share": 53.1,
+              "earned12": 1180,
+              "lastMove": "2026-06-19"
+            },
+            {
+              "name": "KWSP",
+              "type": "kwsp",
+              "kind": "KWSP",
+              "value": 16000,
+              "share": 42.5,
+              "earned12": 560,
+              "lastMove": "2026-10-25"
+            },
+            {
+              "name": "Bursa",
+              "type": "shares",
+              "kind": "Shares",
+              "value": 1085.5,
+              "share": 2.9,
+              "earned12": 0,
+              "lastMove": "2026-11-03"
+            },
+            {
+              "name": "Gold",
+              "type": "gold",
+              "kind": "Gold",
+              "value": 576,
+              "share": 1.5,
+              "earned12": 0,
+              "lastMove": "2026-11-01"
+            }
+          ],
+          "history": [
+            {
+              "month": "2023-08",
+              "value": 8580,
+              "by": {
+                "KWSP": 1190,
+                "ASB": 7390,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2023-09",
+              "value": 8905,
+              "by": {
+                "KWSP": 1515,
+                "ASB": 7390,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2023-10",
+              "value": 9230,
+              "by": {
+                "KWSP": 1840,
+                "ASB": 7390,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2023-11",
+              "value": 9555,
+              "by": {
+                "KWSP": 2165,
+                "ASB": 7390,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2023-12",
+              "value": 9880,
+              "by": {
+                "KWSP": 2490,
+                "ASB": 7390,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-01",
+              "value": 10615,
+              "by": {
+                "KWSP": 2815,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-02",
+              "value": 10940,
+              "by": {
+                "KWSP": 3140,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-03",
+              "value": 11575,
+              "by": {
+                "KWSP": 3775,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-04",
+              "value": 11900,
+              "by": {
+                "KWSP": 4100,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-05",
+              "value": 12225,
+              "by": {
+                "KWSP": 4425,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-06",
+              "value": 12550,
+              "by": {
+                "KWSP": 4750,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-07",
+              "value": 12875,
+              "by": {
+                "KWSP": 5075,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-08",
+              "value": 13226,
+              "by": {
+                "KWSP": 5426,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-09",
+              "value": 13577,
+              "by": {
+                "KWSP": 5777,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-10",
+              "value": 13928,
+              "by": {
+                "KWSP": 6128,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-11",
+              "value": 14279,
+              "by": {
+                "KWSP": 6479,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2024-12",
+              "value": 14630,
+              "by": {
+                "KWSP": 6830,
+                "ASB": 7800,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-01",
+              "value": 15501,
+              "by": {
+                "KWSP": 7181,
+                "ASB": 8320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-02",
+              "value": 15852,
+              "by": {
+                "KWSP": 7532,
+                "ASB": 8320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-03",
+              "value": 16623,
+              "by": {
+                "KWSP": 8303,
+                "ASB": 8320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-04",
+              "value": 16974,
+              "by": {
+                "KWSP": 8654,
+                "ASB": 8320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-05",
+              "value": 17325,
+              "by": {
+                "KWSP": 9005,
+                "ASB": 8320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-06",
+              "value": 17676,
+              "by": {
+                "KWSP": 9356,
+                "ASB": 8320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-07",
+              "value": 18027,
+              "by": {
+                "KWSP": 9707,
+                "ASB": 8320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-08",
+              "value": 28404,
+              "by": {
+                "KWSP": 10084,
+                "ASB": 18320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-09",
+              "value": 28781,
+              "by": {
+                "KWSP": 10461,
+                "ASB": 18320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-10",
+              "value": 29158,
+              "by": {
+                "KWSP": 10838,
+                "ASB": 18320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-11",
+              "value": 29535,
+              "by": {
+                "KWSP": 11215,
+                "ASB": 18320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2025-12",
+              "value": 29912,
+              "by": {
+                "KWSP": 11592,
+                "ASB": 18320,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-01",
+              "value": 31469,
+              "by": {
+                "KWSP": 11969,
+                "ASB": 19500,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-02",
+              "value": 31846,
+              "by": {
+                "KWSP": 12346,
+                "ASB": 19500,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-03",
+              "value": 32783,
+              "by": {
+                "KWSP": 13283,
+                "ASB": 19500,
+                "Bursa": 0,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-04",
+              "value": 34160,
+              "by": {
+                "KWSP": 13660,
+                "ASB": 19500,
+                "Bursa": 1000,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-05",
+              "value": 34537,
+              "by": {
+                "KWSP": 14037,
+                "ASB": 19500,
+                "Bursa": 1000,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-06",
+              "value": 35414,
+              "by": {
+                "KWSP": 14414,
+                "ASB": 20000,
+                "Bursa": 1000,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-07",
+              "value": 35791,
+              "by": {
+                "KWSP": 14791,
+                "ASB": 20000,
+                "Bursa": 1000,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-08",
+              "value": 36194,
+              "by": {
+                "KWSP": 15194,
+                "ASB": 20000,
+                "Bursa": 1000,
+                "Gold": 0
+              }
+            },
+            {
+              "month": "2026-09",
+              "value": 37197,
+              "by": {
+                "KWSP": 15597,
+                "ASB": 20000,
+                "Bursa": 1000,
+                "Gold": 600
+              }
+            },
+            {
+              "month": "2026-10",
+              "value": 37600,
+              "by": {
+                "KWSP": 16000,
+                "ASB": 20000,
+                "Bursa": 1000,
+                "Gold": 600
+              }
+            },
+            {
+              "month": "2026-11",
+              "value": 37661.5,
+              "by": {
+                "KWSP": 16000,
+                "ASB": 20000,
+                "Bursa": 1085.5,
+                "Gold": 576
+              }
+            }
+          ],
+          "yearly": [
+            {
+              "year": "2023",
+              "putIn": 1625,
+              "takenOut": 0,
+              "earned": 0,
+              "revalue": 0
+            },
+            {
+              "year": "2024",
+              "putIn": 4030,
+              "takenOut": 0,
+              "earned": 720,
+              "revalue": 0
+            },
+            {
+              "year": "2025",
+              "putIn": 14342,
+              "takenOut": 0,
+              "earned": 940,
+              "revalue": 0
+            },
+            {
+              "year": "2026",
+              "putIn": 5948,
+              "takenOut": 0,
+              "earned": 1740,
+              "revalue": 61.5
+            }
+          ],
+          "earned12": 1740,
+          "earnedYtd": 1740,
+          "putIn12": 6702,
+          "change12": 8126.5,
+          "yield12": 5.9,
+          "recent": [
+            {
+              "date": "2026-11-03",
+              "account": "Bursa",
+              "amount": 85.5,
+              "kind": "revalue",
+              "desc": "Balance adjustment"
+            },
+            {
+              "date": "2026-11-01",
+              "account": "Gold",
+              "amount": -24,
+              "kind": "revalue",
+              "desc": "Balance adjustment"
+            },
+            {
+              "date": "2026-10-25",
+              "account": "KWSP",
+              "amount": 403,
+              "kind": "in",
+              "desc": "Employer EPF"
+            },
+            {
+              "date": "2026-09-25",
+              "account": "KWSP",
+              "amount": 403,
+              "kind": "in",
+              "desc": "Employer EPF"
+            },
+            {
+              "date": "2026-09-12",
+              "account": "Gold",
+              "amount": 600,
+              "kind": "in",
+              "desc": "Buy gold"
+            },
+            {
+              "date": "2026-08-25",
+              "account": "KWSP",
+              "amount": 403,
+              "kind": "in",
+              "desc": "Employer EPF"
+            },
+            {
+              "date": "2026-07-25",
+              "account": "KWSP",
+              "amount": 377,
+              "kind": "in",
+              "desc": "Employer EPF"
+            },
+            {
+              "date": "2026-06-25",
+              "account": "KWSP",
+              "amount": 377,
+              "kind": "in",
+              "desc": "Employer EPF"
+            }
+          ]
+        },
         "groups": {
           "liquid": 2370.9,
-          "savings": 36000,
-          "debt": 26031.21
+          "savings": 37661.5,
+          "debt": 35431.21
         },
         "debts": [
           {
@@ -465,6 +1008,11 @@
             "name": "Study Loan",
             "type": "borrow",
             "owed": 9800
+          },
+          {
+            "name": "ASB LOAN",
+            "type": "borrow",
+            "owed": 9400
           },
           {
             "name": "Affin Visa",
@@ -485,57 +1033,57 @@
           {
             "month": "2025-12",
             "spent": 0,
-            "income": 0
+            "income": 377
           },
           {
             "month": "2026-01",
             "spent": 0,
-            "income": 0
+            "income": 1557
           },
           {
             "month": "2026-02",
             "spent": 0,
-            "income": 0
+            "income": 377
           },
           {
             "month": "2026-03",
             "spent": 0,
-            "income": 0
+            "income": 937
           },
           {
             "month": "2026-04",
             "spent": 0,
-            "income": 0
+            "income": 1377
           },
           {
             "month": "2026-05",
             "spent": 207,
-            "income": 0
+            "income": 377
           },
           {
             "month": "2026-06",
             "spent": 472.4,
-            "income": 3063
+            "income": 3440
           },
           {
             "month": "2026-07",
             "spent": 487.9,
-            "income": 3063
+            "income": 3440
           },
           {
             "month": "2026-08",
             "spent": 522.4,
-            "income": 3063
+            "income": 3466
           },
           {
             "month": "2026-09",
             "spent": 472.4,
-            "income": 3063
+            "income": 4066
           },
           {
             "month": "2026-10",
             "spent": 563.4,
-            "income": 3063
+            "income": 3466
           },
           {
             "month": "2026-11",
@@ -819,6 +1367,27 @@
             "group": "debt",
             "balance": null,
             "owed": 15000
+          },
+          {
+            "name": "Bursa",
+            "type": "shares",
+            "group": "savings",
+            "balance": 1085.5,
+            "owed": null
+          },
+          {
+            "name": "Gold",
+            "type": "gold",
+            "group": "savings",
+            "balance": 576,
+            "owed": null
+          },
+          {
+            "name": "ASB LOAN",
+            "type": "borrow",
+            "group": "debt",
+            "balance": null,
+            "owed": 9400
           }
         ],
         "topCategories": [
@@ -1057,6 +1626,14 @@
             "transfer": false
           },
           {
+            "date": "2026-10-25",
+            "desc": "Employer EPF",
+            "cat": "🏢 Employer contributions",
+            "account": "KWSP",
+            "amount": 403,
+            "transfer": false
+          },
+          {
             "date": "2026-10-24",
             "desc": "Petrol",
             "cat": "⛽ Fuel",
@@ -1166,6 +1743,142 @@
             "cat": "📺 Netflix",
             "account": "Affin Visa",
             "amount": -54.9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-06",
+            "desc": "Petrol",
+            "cat": "⛽ Fuel",
+            "account": "Maybank",
+            "amount": -50,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-05",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -26,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-05",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-03",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -22.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-01",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -19,
+            "transfer": false
+          },
+          {
+            "date": "2026-10-01",
+            "desc": "Lunch",
+            "cat": "🍜 Food",
+            "account": "Maybank",
+            "amount": -9,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-30",
+            "desc": "Petrol",
+            "cat": "⛽ Fuel",
+            "account": "Maybank",
+            "amount": -50,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-29",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -15.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-27",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -12,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-25",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -26,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-25",
+            "desc": "Employer EPF",
+            "cat": "🏢 Employer contributions",
+            "account": "KWSP",
+            "amount": 403,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-24",
+            "desc": "Petrol",
+            "cat": "⛽ Fuel",
+            "account": "Maybank",
+            "amount": -50,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-23",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -22.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-21",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -19,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-19",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -15.5,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-18",
+            "desc": "Petrol",
+            "cat": "⛽ Fuel",
+            "account": "Maybank",
+            "amount": -50,
+            "transfer": false
+          },
+          {
+            "date": "2026-09-17",
+            "desc": "Food & Drinks",
+            "cat": "🍽️ Food & Drinks",
+            "account": "Maybank",
+            "amount": -12,
             "transfer": false
           }
         ],
@@ -1433,7 +2146,7 @@
           "url": "https://docs.google.com/spreadsheets/d/d/edit#gid=1000"
         }
       },
-      "ms": 13
+      "ms": 22
     },
     "garage": {
       "name": "Garage",
@@ -1534,6 +2247,7 @@
                 "other": 0,
                 "litres": 0,
                 "fills": 0,
+                "items": [],
                 "km": null
               },
               {
@@ -1543,6 +2257,7 @@
                 "other": 0,
                 "litres": 0,
                 "fills": 0,
+                "items": [],
                 "km": null
               },
               {
@@ -1552,6 +2267,7 @@
                 "other": 0,
                 "litres": 0,
                 "fills": 0,
+                "items": [],
                 "km": null
               },
               {
@@ -1561,6 +2277,7 @@
                 "other": 0,
                 "litres": 0,
                 "fills": 0,
+                "items": [],
                 "km": null
               },
               {
@@ -1570,6 +2287,7 @@
                 "other": 0,
                 "litres": 0,
                 "fills": 0,
+                "items": [],
                 "km": null
               },
               {
@@ -1579,6 +2297,7 @@
                 "other": 0,
                 "litres": 0,
                 "fills": 0,
+                "items": [],
                 "km": null
               },
               {
@@ -1588,6 +2307,14 @@
                 "other": 0,
                 "litres": 0,
                 "fills": 0,
+                "items": [
+                  {
+                    "date": "2026-06-20",
+                    "k": "service",
+                    "label": "Engine oil and filter, Air filter, Fan Belt, Wiper blades",
+                    "cost": 188
+                  }
+                ],
                 "km": 17200
               },
               {
@@ -1597,6 +2324,7 @@
                 "other": 0,
                 "litres": 0,
                 "fills": 0,
+                "items": [],
                 "km": null
               },
               {
@@ -1606,6 +2334,32 @@
                 "other": 0,
                 "litres": 97.6,
                 "fills": 4,
+                "items": [
+                  {
+                    "date": "2026-08-31",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-08-24",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-08-17",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-08-10",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  }
+                ],
                 "km": 2840
               },
               {
@@ -1615,6 +2369,32 @@
                 "other": 0,
                 "litres": 97.6,
                 "fills": 4,
+                "items": [
+                  {
+                    "date": "2026-09-28",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-09-21",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-09-14",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-09-07",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  }
+                ],
                 "km": 1040
               },
               {
@@ -1624,6 +2404,38 @@
                 "other": 34,
                 "litres": 97.6,
                 "fills": 4,
+                "items": [
+                  {
+                    "date": "2026-10-26",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-10-21",
+                    "k": "other",
+                    "label": "Toll",
+                    "cost": 34
+                  },
+                  {
+                    "date": "2026-10-19",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-10-12",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-10-05",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  }
+                ],
                 "km": 630
               },
               {
@@ -1633,6 +2445,26 @@
                 "other": 18,
                 "litres": 48.8,
                 "fills": 2,
+                "items": [
+                  {
+                    "date": "2026-11-10",
+                    "k": "other",
+                    "label": "Parking",
+                    "cost": 18
+                  },
+                  {
+                    "date": "2026-11-09",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  },
+                  {
+                    "date": "2026-11-02",
+                    "k": "fuel",
+                    "label": "24.4 L · Station",
+                    "cost": 50
+                  }
+                ],
                 "km": 520
               }
             ],
@@ -1806,7 +2638,7 @@
         },
         "lastChange": 1794657600000
       },
-      "ms": 3
+      "ms": 5
     },
     "vault": {
       "name": "Vault",
@@ -1966,7 +2798,7 @@
         ],
         "lastChange": 1794787200000
       },
-      "ms": 1
+      "ms": 3
     },
     "career": {
       "name": "NextRole",
@@ -2245,7 +3077,7 @@
         },
         "lastChange": 1794484800000
       },
-      "ms": 1
+      "ms": 2
     }
   },
   "issues": [
@@ -2449,8 +3281,8 @@
       "source": "finance",
       "level": "warn",
       "area": "categories",
-      "message": "2 transaction(s) in the last 90 days have no category",
-      "detail": "rows 126, 127",
+      "message": "3 transaction(s) in the last 90 days have no category",
+      "detail": "rows 126, 127, 182",
       "ref": {
         "gid": 1005,
         "row": 126
@@ -2785,7 +3617,7 @@
       "source": "finance",
       "level": "info",
       "area": "reconciliation",
-      "message": "3 balance adjustments this month (net RM -66.35)",
+      "message": "5 balance adjustments this month (net RM -4.85)",
       "detail": "Frequent adjustments mean some spending is not being recorded.",
       "ref": {
         "gid": 1005,
@@ -3392,9 +4224,9 @@
       "name": "October 2026",
       "money": {
         "spent": 563.4,
-        "income": 3063,
-        "saved": 2499.6,
-        "rate": 82,
+        "income": 3466,
+        "saved": 2902.6,
+        "rate": 84,
         "prevSpent": 472.4,
         "top": [
           {
@@ -3446,7 +4278,7 @@
         "kmPerL": 6.45
       },
       "wins": [
-        "Saved 82% of income (RM 2,500)",
+        "Saved 84% of income (RM 2,903)",
         "Within the RM 600 budget",
         "Studied 18 h, up from 0 h"
       ],
@@ -3461,9 +4293,9 @@
       "name": "September 2026",
       "money": {
         "spent": 472.4,
-        "income": 3063,
-        "saved": 2590.6,
-        "rate": 85,
+        "income": 4066,
+        "saved": 3593.6,
+        "rate": 88,
         "prevSpent": 522.4,
         "top": [
           {
@@ -3510,7 +4342,7 @@
       },
       "wins": [
         "Spent 10% less than August",
-        "Saved 85% of income (RM 2,591)",
+        "Saved 88% of income (RM 3,594)",
         "Within the RM 600 budget"
       ],
       "watch": [
@@ -3522,9 +4354,9 @@
       "name": "August 2026",
       "money": {
         "spent": 522.4,
-        "income": 3063,
-        "saved": 2540.6,
-        "rate": 83,
+        "income": 3466,
+        "saved": 2943.6,
+        "rate": 85,
         "prevSpent": 487.9,
         "top": [
           {
@@ -3576,7 +4408,7 @@
         "kmPerL": 29.1
       },
       "wins": [
-        "Saved 83% of income (RM 2,541)",
+        "Saved 85% of income (RM 2,944)",
         "Within the RM 600 budget"
       ],
       "watch": [
