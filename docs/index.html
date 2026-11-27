@@ -164,6 +164,23 @@ body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; ove
 #inv-list .spark { width: 56px; height: 22px; }
 #inv-list .t { white-space: normal; }
 @media (prefers-reduced-motion: reduce) { .donut .slice { transition: none; } }
+.tmap .tm-t { font-size: 12.5px; font-weight: 650; fill: var(--text); pointer-events: none; }
+.tmap .tm-s { font-size: 11.5px; fill: var(--muted); pointer-events: none; font-variant-numeric: tabular-nums; }
+.tmap .tm-t.on, .tmap .tm-s.on { fill: #fff; }
+.tmap .tm .hit:hover { fill: color-mix(in srgb, var(--text) 8%, transparent); }
+.chart.polar { display: flex; justify-content: center; }
+.chart.polar svg { width: 100%; max-width: 260px; height: auto; }
+.polar .slice { cursor: pointer; transition: opacity .2s ease; }
+.polar .slice.dim { opacity: .4; }
+.polar .slice.pop { animation: pop .5s cubic-bezier(.2,.8,.2,1) both; }
+.polar .tick.strong { fill: var(--text); font-weight: 700; }
+.gauge { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.gauge .g-arc { stroke-dasharray: var(--len); stroke-dashoffset: 0; animation: garc 1s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes garc { from { stroke-dashoffset: var(--len); } }
+.gauge .g-big { font-size: 22px; font-weight: 700; fill: var(--text); font-variant-numeric: tabular-nums; }
+.gauge .g-small { font-size: 12px; fill: var(--muted); }
+.gauge .g-end { font-size: 11px; fill: var(--faint); }
+@media (prefers-reduced-motion: reduce) { .gauge .g-arc { animation: none; } }
 .pick { cursor: pointer; border-radius: 8px; transition: background .15s ease; }
 .pick:hover, .pick:focus-visible { background: var(--card-2); outline: none; }
 li.pick { padding-left: 6px; padding-right: 6px; margin: 0 -6px; }
@@ -596,7 +613,7 @@ footer a { color: var(--muted); }
   /* =========================================================
    * State, storage, formatting
    * ======================================================= */
-  var S = { ui: { alerts: 'all', tasks: 'today', tx: 'all', txq: '', vcat: 'all', vowner: 'all', review: 0, bud: 'all', budSort: 'used', invRange: '3y', invAcc: '', txDay: '', txAcc: '', txCat: '', txN: 25 }, data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
+  var S = { ui: { alerts: 'all', tasks: 'today', tx: 'all', txq: '', vcat: 'all', vowner: 'all', review: 0, bud: 'all', budSort: 'used', invRange: '3y', invAcc: '', study: 'day', studyDow: null, txDay: '', txAcc: '', txCat: '', txN: 25 }, data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
   var LS = { data: 'dash:last', hidden: 'dash:hidden', theme: 'dash:theme', cfg: 'dash:cfg', hint: 'dash:hint' };
   var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
   var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* unavailable */ } };
@@ -1096,6 +1113,138 @@ footer a { color: var(--muted); }
         showTip(e.clientX, e.clientY, s.label, [{ color: s.color, value: rm(Math.abs(s.kind === 'end' ? run : s.value)), label: s.kind === 'step' ? (s.value < 0 ? 'spent' : 'added') : s.kind === 'end' ? (run < 0 ? 'short' : 'left') : '' }], s.sub ? [].concat(s.sub) : null);
       }, s.onTap || null);
     });
+  }
+
+  /**
+   * Treemap (squarified): area = size, an inner fill rising from the bottom = how much is used.
+   * items [{name, size, used (0..1+), color, sub, onTap}]
+   */
+  function treemap(host, opts) {
+    host.textContent = '';
+    var wrap = el('div', 'chart tmap'); host.appendChild(wrap);
+    var W = Math.max(280, host.clientWidth || 600), H = opts.height || 260;
+    var items = opts.items.filter(function (i) { return i.size > 0; }).sort(function (a, b) { return b.size - a.size; });
+    var tot = items.reduce(function (t, i) { return t + i.size; }, 0) || 1, scale = W * H / tot;
+    var rects = [], box = { x: 0, y: 0, w: W, h: H }, row = [], rest = items.slice();
+    var worst = function (r, side) {
+      var sum = r.reduce(function (t, i) { return t + i.size * scale; }, 0), mx = 0, mn = Infinity;
+      r.forEach(function (i) { mx = Math.max(mx, i.size * scale); mn = Math.min(mn, i.size * scale); });
+      return Math.max(side * side * mx / (sum * sum), sum * sum / (side * side * mn));
+    };
+    var lay = function (r) {
+      var sum = r.reduce(function (t, i) { return t + i.size * scale; }, 0), horiz = box.w >= box.h;
+      var thick = sum / (horiz ? box.h : box.w), off = 0;
+      r.forEach(function (i) {
+        var len = i.size * scale / thick;
+        rects.push({ it: i, x: horiz ? box.x : box.x + off, y: horiz ? box.y + off : box.y, w: horiz ? thick : len, h: horiz ? len : thick });
+        off += len;
+      });
+      if (horiz) { box.x += thick; box.w -= thick; } else { box.y += thick; box.h -= thick; }
+    };
+    while (rest.length) {
+      var side = Math.min(box.w, box.h), next = rest[0];
+      if (!row.length || worst(row.concat([next]), side) <= worst(row, side)) { row.push(rest.shift()); }
+      else { lay(row); row = []; }
+    }
+    if (row.length) lay(row);
+    var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, tabindex: 0, role: 'img', 'aria-label': opts.aria || 'Treemap' }, wrap);
+    rects.forEach(function (r, i) {
+      var it = r.it, x = r.x + 1, y = r.y + 1, w = Math.max(0, r.w - 2), h = Math.max(0, r.h - 2), u = Math.min(1, it.used || 0);
+      var g = sv('g', { 'class': 'tm' + (S.animate && !reduced ? ' fade' : ''), style: S.animate && !reduced ? 'animation-delay:' + i * 40 + 'ms' : null }, svg);
+      var cid = 'tc' + Math.random().toString(36).slice(2);
+      var cp = sv('clipPath', { id: cid }, g); sv('rect', { x: x, y: y, width: w, height: h, rx: 6 }, cp);
+      sv('rect', { x: x, y: y, width: w, height: h, rx: 6, style: 'fill:color-mix(in srgb, ' + it.color + ' 18%, var(--card))' }, g);
+      sv('rect', { x: x, y: y + h * (1 - u), width: w, height: h * u, fill: it.color, 'clip-path': 'url(#' + cid + ')', 'class': 'tm-fill' }, g);
+      if (w > 54 && h > 34) {
+        var dark = u >= 0.96;
+        var t1 = sv('text', { x: x + 8, y: y + 18, 'class': 'tm-t' + (dark ? ' on' : '') }, g);
+        var maxCh = Math.floor((w - 14) / 7);
+        t1.textContent = it.name.length > maxCh ? it.name.slice(0, Math.max(1, maxCh - 1)) + '…' : it.name;
+        if (h > 50) sv('text', { x: x + 8, y: y + 34, 'class': 'tm-s' + (dark ? ' on' : '') }, g).textContent = it.label || '';
+      }
+      var hit = sv('rect', { x: x, y: y, width: w, height: h, rx: 6, 'class': 'hit' }, g);
+      tipOn(hit, function (e) { showTip(e.clientX, e.clientY, it.name, it.rows || [], it.sub ? [].concat(it.sub) : null); }, it.onTap || null);
+    });
+  }
+
+  /**
+   * Polar rose: one wedge per slot (e.g. weekday), radius by value (area-true: sqrt).
+   * labels[], values[], color, fmt, selected index, onSelect(i)
+   */
+  function polar(host, opts) {
+    host.textContent = '';
+    var wrap = el('div', 'chart polar'); host.appendChild(wrap);
+    var size = opts.size || 240, c = size / 2, R = c - 24, n = opts.values.length;
+    var mx = Math.max.apply(null, opts.values.concat([1e-9]));
+    var svg = sv('svg', { viewBox: '0 0 ' + size + ' ' + size, width: size, height: size, tabindex: 0, role: 'img', 'aria-label': opts.aria || 'Polar chart' }, wrap);
+    [0.25, 0.5, 0.75, 1].forEach(function (f) { sv('circle', { cx: c, cy: c, r: R * Math.sqrt(f), fill: 'none', 'class': 'gl' }, svg); });
+    var step = Math.PI * 2 / n, gap = 0.04;
+    opts.values.forEach(function (v, i) {
+      var a0 = i * step - step / 2 + gap, a1 = (i + 1) * step - step / 2 - gap, r = v > 0 ? Math.max(6, R * Math.sqrt(v / mx)) : 0;
+      var on = opts.selected === i;
+      var g = sv('g', { 'class': 'slice' + (on ? ' on' : '') + (opts.selected !== null && opts.selected !== undefined && !on ? ' dim' : '') + (S.animate && !reduced ? ' pop' : ''), style: 'transform-origin:' + c + 'px ' + c + 'px;--dx:0px;--dy:0px' + (S.animate && !reduced ? ';animation-delay:' + i * 50 + 'ms' : '') }, svg);
+      sv('path', { d: arcPath(c, c, 0.1, R, a0, a1), fill: 'transparent', 'class': 'hitw' }, g);
+      if (r) sv('path', { d: arcPath(c, c, 0.1, r, a0, a1), fill: opts.color, opacity: on ? 1 : 0.85 }, g);
+      var la = i * step, lx = c + (R + 13) * Math.sin(la), ly = c - (R + 13) * Math.cos(la) + 4;
+      sv('text', { x: lx, y: ly, 'text-anchor': 'middle', 'class': 'tick' + (on ? ' strong' : '') }, svg).textContent = opts.labels[i];
+      tipOn(g, function (e) { showTip(e.clientX, e.clientY, opts.title ? opts.title(i) : opts.labels[i], [{ color: opts.color, value: (opts.fmt || String)(v), label: opts.unit || '' }], opts.extra ? opts.extra(i) : null); },
+        opts.onSelect ? function () { opts.onSelect(opts.selected === i ? null : i); } : null);
+    });
+  }
+
+  /**
+   * Gauge: a half ring from 0 to max with the value as an arc and a marker at `mark` (e.g. pace).
+   */
+  function gauge(value, max, opts) {
+    opts = opts || {};
+    var w = opts.size || 200, r = w / 2 - 12, cx = w / 2, cy = w / 2 + 2, sw = opts.stroke || 14, h = w / 2 + 26;
+    var f = Math.max(0, Math.min(1, max ? value / max : 0));
+    var pt = function (t) { var a = Math.PI * (1 - t); return (cx + r * Math.cos(a)).toFixed(2) + ',' + (cy - r * Math.sin(a)).toFixed(2); };
+    var arc = function (t0, t1) { return 'M' + pt(t0) + 'A' + r + ',' + r + ' 0 0 1 ' + pt(t1); };
+    var len = Math.PI * r;
+    var out = '<svg class="gauge" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" role="img" aria-label="' + esc(opts.aria || '') + '">' +
+      '<path d="' + arc(0, 1) + '" fill="none" stroke="var(--card-2)" stroke-width="' + sw + '" stroke-linecap="round"/>' +
+      (f > 0 ? '<path class="g-arc" d="' + arc(0, f) + '" fill="none" stroke="' + (opts.color || 'var(--s1)') + '" stroke-width="' + sw + '" stroke-linecap="round" style="--len:' + len.toFixed(1) + '"/>' : '');
+    if (opts.mark !== undefined && opts.mark !== null) {
+      var m = Math.max(0, Math.min(1, opts.mark)), a = Math.PI * (1 - m);
+      out += '<line x1="' + (cx + (r - sw / 2 - 3) * Math.cos(a)).toFixed(1) + '" y1="' + (cy - (r - sw / 2 - 3) * Math.sin(a)).toFixed(1) + '" x2="' + (cx + (r + sw / 2 + 3) * Math.cos(a)).toFixed(1) + '" y2="' + (cy - (r + sw / 2 + 3) * Math.sin(a)).toFixed(1) + '" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/>';
+    }
+    out += '<text x="' + cx + '" y="' + (cy - 8) + '" text-anchor="middle" class="g-big">' + esc(opts.label || '') + '</text>' +
+      '<text x="' + cx + '" y="' + (cy + 12) + '" text-anchor="middle" class="g-small">' + esc(opts.sub || '') + '</text>' +
+      '<text x="' + (cx - r - sw / 2) + '" y="' + (cy + 22) + '" text-anchor="start" class="g-end">0</text>' +
+      '<text x="' + (cx + r + sw / 2) + '" y="' + (cy + 22) + '" text-anchor="end" class="g-end">' + esc(opts.maxLabel || '') + '</text></svg>';
+    return out;
+  }
+
+  /**
+   * Funnel: stages narrowing left to right as centred bars; width = how many reached that stage.
+   * stages [{name, value, now, color}]
+   */
+  function funnel(host, opts) {
+    host.textContent = '';
+    var wrap = el('div', 'chart'); host.appendChild(wrap);
+    var st = opts.stages, n = st.length, W = Math.max(260, host.clientWidth || 400), rowH = 34, gap = 6, H = n * (rowH + gap);
+    var mx = Math.max.apply(null, st.map(function (x) { return x.value; }).concat([1]));
+    var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': opts.aria || 'Funnel' }, wrap);
+    var L = 92, avail = W - L - 44;
+    st.forEach(function (x, i) {
+      var y = i * (rowH + gap), w = Math.max(x.value ? 8 : 2, avail * x.value / mx), bx = L + (avail - w) / 2;
+      var g = sv('g', { 'class': 'grp' }, svg);
+      sv('text', { x: L - 10, y: y + rowH / 2 + 4, 'text-anchor': 'end', 'class': 'tick fn-l' }, g).textContent = x.name;
+      if (i > 0) { // trapezoid joining the previous bar
+        var pw = Math.max(st[i - 1].value ? 8 : 2, avail * st[i - 1].value / mx), px = L + (avail - pw) / 2;
+        sv('path', { d: 'M' + px + ',' + (y - gap) + 'L' + (px + pw) + ',' + (y - gap) + 'L' + (bx + w) + ',' + y + 'L' + bx + ',' + y + 'Z', fill: x.color, opacity: 0.18 }, g);
+      }
+      sv('rect', { x: bx, y: y, width: w, height: rowH, rx: 4, fill: x.color, 'class': 'bar' + (S.animate && !reduced ? ' fade' : ''), style: S.animate && !reduced ? 'animation-delay:' + i * 80 + 'ms' : null }, g);
+      sv('text', { x: L + avail + 10, y: y + rowH / 2 + 4, 'class': 'dl' }, g).textContent = x.value;
+      var hit = sv('rect', { x: 0, y: y, width: W, height: rowH, 'class': 'hit' }, g);
+      tipOn(hit, function (e) {
+        var prev = i ? st[i - 1].value : null;
+        showTip(e.clientX, e.clientY, x.name, [{ color: x.color, value: plural(x.value, 'application'), label: 'reached this stage' }],
+          [x.now !== undefined ? x.now + ' there now' : null, prev ? Math.round(x.value / prev * 100) + '% of the stage before' : null].filter(Boolean));
+      });
+    });
+    if (opts.note) { var nt = el('div', 'faint'); nt.style.cssText = 'font-size:12.5px;margin-top:4px'; nt.textContent = opts.note; wrap.appendChild(nt); }
   }
 
   function addMonthsIso(iso, n) {
@@ -1654,9 +1803,7 @@ footer a { color: var(--muted); }
     html += '<div class="card" style="margin-bottom:14px">' + cardHead('Expiry timeline', 'Next 12 months · hover or tap a dot') + '<div id="vault-filters"></div><div id="vault-tl"></div></div>';
     html += '<div class="grid g-21">';
     html += '<div class="card">' + cardHead('Documents by expiry', 'Soonest first') + '<div id="vault-list"></div></div>';
-    html += '<div class="card">' + cardHead('By category') + '<ul class="list">' + s.byCategory.map(function (c) {
-      return '<li><span class="t">' + esc(c.icon) + ' ' + esc(c.category) + '</span><span class="r num">' + c.count + '</span></li>';
-    }).join('') + '</ul></div>';
+    html += '<div class="card">' + cardHead('By category', 'Tap a slice to filter') + '<div id="vault-donut"></div><div id="vault-cats"></div></div>';
     html += '</div>';
     host.innerHTML = html;
 
@@ -1709,6 +1856,23 @@ footer a { color: var(--muted); }
       if (later) sv('text', { x: W - R, y: top - 8, 'text-anchor': 'end', 'class': 'tick' }, svg).textContent = '+' + later + ' later';
       if (!list.length) host2.innerHTML = '<div class="empty">No documents with an expiry date' + (S.ui.vcat !== 'all' || S.ui.vowner !== 'all' ? ' in this filter' : '') + '.</div>';
 
+      // Category donut: fixed colour per category (by size order), tap to filter
+      var VP = ['--s1', '--s2', '--s3', '--s4'], bc = s.byCategory || [];
+      var catCol = {}; bc.forEach(function (c, i) { catCol[c.category] = css(VP[i] || '--s-prev'); });
+      var vsel = S.ui.vcat === 'all' ? '' : S.ui.vcat;
+      var totalDocs = bc.reduce(function (t, c) { return t + c.count; }, 0);
+      if (bc.length) donut($('vault-donut'), {
+        items: bc.map(function (c) { return { name: c.category, value: c.count, color: catCol[c.category], sub: [(c.icon || '') + ' tap to show only these'] }; }),
+        selected: vsel, size: 170, fmt: function (v) { return plural(v, 'document'); },
+        aria: 'Documents by category. Use left and right arrows to filter.',
+        onSelect: function (n) { S.ui.vcat = n || 'all'; S.animate = false; draw(); },
+        center: function (it) { return it ? [String(it.value), it.name] : [String(totalDocs), 'documents']; }
+      });
+      $('vault-cats').innerHTML = '<ul class="list" style="margin-top:8px">' + bc.map(function (c) {
+        return '<li class="pick' + (vsel === c.category ? ' on' : '') + '" data-vc="' + esc(c.category) + '"><span class="t"><span class="key" style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;background:' + catCol[c.category] + '"></span>' + esc(c.icon) + ' ' + esc(c.category) + '</span><span class="r num">' + c.count + '</span></li>';
+      }).join('') + '</ul>';
+      each($('vault-cats'), '[data-vc]', function (e) { e.addEventListener('click', function () { var k = e.getAttribute('data-vc'); S.ui.vcat = S.ui.vcat === k ? 'all' : k; S.animate = false; draw(); }); });
+
       $('vault-list').innerHTML = list.length ? list.map(function (x) {
         var cls = { bad: 'bad', warn: 'warnc', info: 'muted', ok: 'faint' }[tone(x)];
         return '<details class="xrow"><summary><span class="t">' + esc(x.icon) + ' ' + esc(x.title) + (x.owner && x.owner !== 'Me' ? '<span class="tag">' + esc(x.owner) + '</span>' : '') + '</span>' +
@@ -1752,6 +1916,7 @@ footer a { color: var(--muted); }
     }).concat(s.jobs.followUp.map(function (x) {
       return '<li><span class="t"><span class="when">Follow up</span>' + esc(x.title) + (x.company ? ' <span class="faint">· ' + esc(x.company) + '</span>' : '') + '</span><span class="r faint num">' + x.daysAgo + 'd</span></li>';
     }));
+    if (s.jobs.total) h += '<h3 class="sec">Applications</h3><div id="job-funnel"></div>';
     h += '<h3 class="sec">Job search</h3>' + (steps.length ? '<ul class="list">' + steps.join('') + '</ul>' : '<div class="empty">' + (s.jobs.total ? 'No next steps in the next 30 days' : 'No applications yet') + '</div>');
     var b = s.acca.booked[0];
     if (b) h += '<div class="note" style="margin-top:10px">📝 <b>' + esc(b.code) + '</b> exam booked for ' + shortDate(b.date) + ' (' + inDays(b.daysLeft) + ')</div>';
@@ -1774,7 +1939,8 @@ footer a { color: var(--muted); }
     h += '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div style="font-size:18px;font-weight:650">' + esc(t.name) + '</div>' +
       '<div class="muted" style="font-size:13px">' + (t.dest && t.dest !== t.name ? esc(t.dest) + ' · ' : '') + shortDate(t.start) + (t.end && t.end !== t.start ? ' – ' + shortDate(t.end) : '') + (t.nights ? ' · ' + plural(t.nights, 'night') : '') + '</div></div>' +
       '<div style="text-align:right"><div class="num" style="font-size:28px;font-weight:700;line-height:1">' + (t.now ? 'Now' : t.daysToGo) + '</div><div class="faint" style="font-size:12px">' + (t.now ? 'on the trip' : t.daysToGo === 1 ? 'day to go' : 'days to go') + '</div></div></div>';
-    if (t.budget) h += '<div style="margin-top:12px;font-size:13px;display:flex;justify-content:space-between"><span class="muted">Spent so far</span><span class="num ' + (over ? 'bad' : '') + '">' + money(t.spent, t.ccy) + ' of ' + money(t.budget, t.ccy) + '</span></div>' + bar(t.spent / t.budget * 100, over);
+    if (t.budget) h += '<div class="gauge-wrap" data-tip="voyage" style="margin-top:12px">' + gauge(t.spent, t.budget, { size: 210, color: over ? 'var(--bad)' : 'var(--s1)', label: Math.round(t.spent / t.budget * 100) + '%', sub: over ? 'over the trip budget' : money(t.budget - t.spent, t.ccy) + ' left', maxLabel: money(t.budget, t.ccy), aria: 'Trip budget used' }) + '</div>' +
+      '<div class="faint num" style="font-size:12.5px;text-align:center">' + money(t.spent, t.ccy) + ' spent of ' + money(t.budget, t.ccy) + (t.nights ? ' · ' + money(Math.max(0, t.budget - t.spent) / t.nights, t.ccy) + ' a night left' : '') + '</div>';
     h += '<div class="tiles mini3" style="margin-top:12px">' + tile(t.todoOpen, 'To-dos left', t.todoOverdue ? '<span class="bad">' + t.todoOverdue + ' overdue</span>' : '', t.todoOverdue ? 'warnc' : '') +
       tile(t.packTotal ? Math.round(t.packed / t.packTotal * 100) + '%' : '—', 'Packed', t.packTotal ? t.packed + ' of ' + t.packTotal : '') +
       tile(t.bookings, 'Bookings', t.nextBooking ? 'next ' + shortDate(t.nextBooking.date) : '') + '</div>';
@@ -1798,8 +1964,8 @@ footer a { color: var(--muted); }
     h += '<div style="display:flex;gap:14px;align-items:center">' + ring(s.must.total ? s.must.done / s.must.total : 0, { size: 64, stroke: 7, label: s.must.done + '/' + s.must.total, fs: 14, color: 'var(--good)' }) +
       '<div style="flex:1;min-width:0"><div class="muted" style="font-size:12.5px">Must-haves in place</div>' +
       (s.moveIn ? '<div style="font-size:18px;font-weight:650">' + (s.daysToMoveIn > 1 ? 'Move-in in ' + s.daysToMoveIn + ' days' : s.daysToMoveIn === 1 ? 'Move-in tomorrow' : s.daysToMoveIn === 0 ? 'Moving in today' : 'Moved in ' + shortDate(s.moveIn)) + '</div><div class="faint" style="font-size:12.5px">' + shortDate(s.moveIn) + ' ' + s.moveIn.slice(0, 4) + '</div>' : '<div class="faint" style="font-size:13px">No move-in date set</div>') + '</div></div>';
-    if (s.budget) h += '<div style="margin-top:14px;font-size:13px;display:flex;justify-content:space-between"><span class="muted">Bought + ordered</span><span class="num ' + (over ? 'bad' : '') + '">' + rm(used, 0) + ' of ' + rm(s.budget, 0) + '</span></div>' +
-      bar(used / s.budget * 100, over) + '<div class="faint" style="font-size:12px">' + (over ? '<span class="bad">' + rm(-s.left, 0) + ' over</span>' : rm(s.left, 0) + ' left') + (s.planned ? ' · ' + rm(s.planned, 0) + ' more on the wish list' : '') + '</div>';
+    if (s.budget) h += '<h3 class="sec">Setting-up budget · ' + rm(s.budget, 0) + '</h3><div id="nest-donut"></div>' +
+      '<div class="faint" style="font-size:12px;text-align:center">' + (over ? '<span class="bad">' + rm(-s.left, 0) + ' over</span>' : rm(s.left, 0) + ' left') + (s.planned ? ' · ' + rm(s.planned, 0) + ' more on the wish list' : '') + '</div>';
     else h += '<div class="tiles mini3" style="margin-top:12px">' + tile(rm(s.spent, 0), 'Bought') + tile(rm(s.committed, 0), 'Ordered') + tile(rm(s.planned, 0), 'Planned') + '</div>';
     if (s.rent || s.month) {
       var r = s.rent, mo = s.month, monOver = mo && mo.left !== null && mo.left < 0;
@@ -1834,6 +2000,43 @@ footer a { color: var(--muted); }
     }).join('') + '</div>';
     host.innerHTML = html;
     bindGo(host);
+    var vy = d.sources.voyage, vt = vy && vy.summary && vy.summary.next;
+    each(host, '.gauge-wrap', function (g) {
+      tipOn(g, function (e) {
+        showTip(e.clientX, e.clientY, vt.name, [{ color: css(vt.spent > vt.budget ? '--bad' : '--s1'), value: money(vt.spent, vt.ccy), label: 'of ' + money(vt.budget, vt.ccy) }],
+          [vt.spent > vt.budget ? money(vt.spent - vt.budget, vt.ccy) + ' over' : money(vt.budget - vt.spent, vt.ccy) + ' left', vt.now ? 'On the trip now' : vt.daysToGo + ' days to go']);
+      });
+    });
+    var nest = d.sources.nest, car = d.sources.career;
+    if ($('nest-donut') && nest && nest.summary) {
+      var ns = nest.summary, free = Math.max(0, ns.budget - ns.spent - ns.committed);
+      var parts = [{ name: 'Bought', value: ns.spent, color: css('--s1'), sub: ['Paid and in the house'] },
+        { name: 'Ordered', value: ns.committed, color: css('--s2'), sub: ['Paid or due, not here yet'] },
+        { name: 'Wish list', value: Math.min(ns.planned, free), color: css('--s3'), sub: ['Planned but not bought' + (ns.planned > free ? ' · ' + rm(ns.planned - free, 0) + ' more than fits' : '')] },
+        { name: 'Free', value: Math.max(0, free - ns.planned), color: css('--s-prev'), sub: ['Not planned yet'] }];
+      var drawNest = function () {
+        donut($('nest-donut'), {
+          items: parts, selected: S.ui.nestPart || '', size: 170, fmt: function (v) { return rm(v, 0); },
+          aria: 'Setting-up budget split into bought, ordered, wish list and free',
+          onSelect: function (n) { S.ui.nestPart = n; S.animate = false; drawNest(); },
+          center: function (it) { return it ? [rmK(it.value), it.name] : [Math.round((ns.spent + ns.committed) / ns.budget * 100) + '%', 'used']; }
+        });
+      };
+      drawNest();
+    }
+    if ($('job-funnel') && car && car.summary) {
+      var by = car.summary.jobs.byStatus || {}, ORDER = ['Saved', 'Applied', 'Screening', 'Interview', 'Assessment', 'Offer', 'Accepted'];
+      var rank = function (k) { var i = ORDER.indexOf(k); return i; };
+      var stages = ORDER.filter(function (k, i) { return i >= 1 && (by[k] || ['Applied', 'Interview', 'Offer'].indexOf(k) >= 0); });
+      var closed = Object.keys(by).filter(function (k) { return rank(k) < 0; });
+      var closedN = closed.reduce(function (t, k) { return t + by[k]; }, 0);
+      var reached = stages.map(function (k) {
+        var n = Object.keys(by).reduce(function (t, x) { return t + (rank(x) >= rank(k) ? by[x] : 0); }, 0);
+        return { name: k, value: n + (k === 'Applied' ? closedN : 0), now: by[k] || 0, color: css('--s1') };
+      });
+      funnel($('job-funnel'), { stages: reached, aria: 'How many applications reached each stage',
+        note: closedN ? closed.map(function (k) { return by[k] + ' ' + k.toLowerCase(); }).join(' · ') + ' (counted under Applied)' : '' });
+    }
   }
 
   /* =========================================================
@@ -1952,6 +2155,9 @@ footer a { color: var(--muted); }
     html += '<div class="card">' + cardHead('Budget vs spent', 'Last 6 months · tap a month') + '<div id="bud-6"></div></div>';
     html += '</div>';
 
+    // ---- Budget map
+    html += '<div class="card" style="margin-top:14px">' + cardHead('Budget map', 'Box size = budget · fill = how much is used · tap a box') + '<div id="bud-map"></div></div>';
+
     // ---- Categories
     var status = function (r) { return r.budget > 0 && r.spent > r.budget ? 'over' : r.budget > 0 && r.spent > r.budget * bud.pacePct / 100 ? 'ahead' : 'ok'; };
     var cnt = { all: bud.rows.length, over: 0, ahead: 0, ok: 0 };
@@ -2002,7 +2208,7 @@ footer a { color: var(--muted); }
           var cur = i === h.length - 1;
           return '<div class="mb' + (v > r.budget && r.budget > 0 ? ' over' : '') + (cur ? ' cur' : '') + '" title="' + esc(monLabel(trend[trend.length - h.length + i].month, true) + ': ' + rm(v, 0)) + '"><i style="height:' + (v / mx * 56).toFixed(1) + 'px"></i><span>' + monLabel(trend[trend.length - h.length + i].month) + '</span></div>';
         }).join('');
-        return '<details class="xrow bud-row"><summary><div class="bh"><span class="t">' + esc(r.category) + (st === 'over' ? ' <span class="tag late">over</span>' : st === 'ahead' ? ' <span class="tag">ahead</span>' : '') + '</span>' +
+        return '<details class="xrow bud-row" data-cat="' + esc(r.category) + '"><summary><div class="bh"><span class="t">' + esc(r.category) + (st === 'over' ? ' <span class="tag late">over</span>' : st === 'ahead' ? ' <span class="tag">ahead</span>' : '') + '</span>' +
           '<span class="num ' + (st === 'over' ? 'bad' : 'muted') + '">' + rm(r.spent, 0) + ' / ' + rm(r.budget, 0) + '</span></div>' +
           '<div class="bbar' + (st === 'over' ? ' over' : '') + '"><i data-w="' + Math.min(100, r.pct || 0) + '%" style="width:' + Math.min(100, r.pct || 0) + '%"></i><span class="pace" style="left:' + bud.pacePct + '%"></span></div>' +
           '<div class="bs"><span>' + (r.pct === null ? '' : r.pct + '% used') + '</span><span>' + (st === 'over' ? rm(-r.left, 0) + ' over' : rm(r.left, 0) + ' left · ' + rm(r.left / Math.max(1, left), 0) + '/day') + '</span></div></summary>' +
@@ -2013,6 +2219,21 @@ footer a { color: var(--muted); }
       }).join('') : '<div class="empty">Nothing in this filter.</div>';
     }
     drawRows();
+    function openRow(cat) {
+      if (flt !== 'all') { S.ui.bud = flt = 'all'; each(host, '[data-chipgroup="bud"] [data-chip]', function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-chip') === 'all'); }); drawRows(); }
+      each($('bud-rows'), 'details', function (x) { if (x.getAttribute('data-cat') === cat) { x.open = true; x.scrollIntoView({ behavior: 'smooth', block: 'center' }); } });
+    }
+    treemap($('bud-map'), {
+      height: 240, aria: 'Each budget category as a box sized by its budget and filled by how much is used',
+      items: bud.rows.filter(function (r) { return r.budget > 0; }).map(function (r) {
+        var st = status(r), u = r.spent / r.budget;
+        return { name: r.category.replace(/^[^\p{L}\p{N}(]+/u, '').trim() || r.category, size: r.budget, used: u,
+          color: css(st === 'over' ? '--bad' : '--s1'), label: Math.round(u * 100) + '%' + (st === 'over' ? ' · over' : ''),
+          rows: [{ color: css(st === 'over' ? '--bad' : '--s1'), value: rm(r.spent, 0), label: 'of ' + rm(r.budget, 0) }],
+          sub: [st === 'over' ? rm(r.spent - r.budget, 0) + ' over budget' : rm(r.budget - r.spent, 0) + ' left · ' + rm((r.budget - r.spent) / Math.max(1, left), 0) + ' a day', st === 'ahead' ? 'Ahead of pace' : null, 'Tap for its last 6 months'].filter(Boolean),
+          onTap: function () { openRow(r.category); } };
+      })
+    });
     bindChips(host, 'bud', function (k) { S.ui.bud = k; flt = k; each(host, '[data-chipgroup="bud"] [data-chip]', function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-chip') === k); }); drawRows(); });
     bindChips(host, 'budsort', function (k) { S.ui.budSort = k; sort = k; each(host, '[data-chipgroup="budsort"] [data-chip]', function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-chip') === k); }); drawRows(); });
   }
@@ -2514,7 +2735,7 @@ footer a { color: var(--muted); }
     html += '</div>';
 
     html += '<div class="grid g-21" style="margin-top:14px">';
-    html += '<div class="card">' + cardHead('Study time', 'Per day, last 30 days · ' + mins((st.daily || []).reduce(function (t, x) { return t + x.minutes; }, 0)) + ' total') + '<div id="ch-study"></div></div>';
+    html += '<div class="card">' + cardHead('Study time', 'Per day, last 30 days · ' + mins((st.daily || []).reduce(function (t, x) { return t + x.minutes; }, 0)) + ' total') + '<div id="study-pick"></div><div id="ch-study"></div></div>';
     html += '<div class="card">' + cardHead('ACCA papers', (st.papers || []).length ? plural(st.papers.length, 'paper') : '') +
       ((st.papers || []).length ? st.papers.map(function (p, i) {
         var pct = p.targetHours ? Math.min(100, Math.round(p.hours / p.targetHours * 100)) : 0;
@@ -2571,14 +2792,48 @@ footer a { color: var(--muted); }
       c.addEventListener('pointerleave', mouseLeave);
     });
     var daily = st.daily || [];
-    barChart($('ch-study'), {
+    var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    function drawStudy() {
+      $('study-pick').innerHTML = chipBar('study', [{ key: 'day', label: 'Per day' }, { key: 'cal', label: 'Calendar' }, { key: 'dow', label: 'By weekday' }], S.ui.study);
+      bindChips($('study-pick'), 'study', function (k) { S.ui.study = k; S.animate = true; drawStudy(); S.animate = false; });
+      if (!daily.length) { $('ch-study').innerHTML = '<div class="empty">No study logged yet.</div>'; return; }
+      if (S.ui.study === 'cal') {
+        var vals = {}; daily.forEach(function (x) { vals[x.date] = x.minutes; });
+        var studied = daily.filter(function (x) { return x.minutes > 0; }).length;
+        calHeat($('ch-study'), { values: vals, start: daily[0].date, end: daily[daily.length - 1].date, fmt: mins, label: 'studied',
+          aria: 'Study minutes per day as a calendar', extra: function (iso, v) { return [v ? 'Studied' : 'No study']; } });
+        var n1 = el('div', 'faint num'); n1.style.cssText = 'font-size:12.5px;margin-top:6px';
+        n1.textContent = 'Studied on ' + studied + ' of ' + daily.length + ' days';
+        $('ch-study').appendChild(n1);
+        return;
+      }
+      if (S.ui.study === 'dow') {
+        var sum = [0, 0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0, 0], hit = [0, 0, 0, 0, 0, 0, 0];
+        daily.forEach(function (x) { var w = (parseIso(x.date).getUTCDay() + 6) % 7; sum[w] += x.minutes; cnt[w]++; if (x.minutes > 0) hit[w]++; });
+        var avg = sum.map(function (v, i) { return cnt[i] ? Math.round(v / cnt[i]) : 0; });
+        var best = avg.indexOf(Math.max.apply(null, avg));
+        polar($('ch-study'), {
+          labels: DOW, values: avg, color: css('--s1'), fmt: mins, unit: 'on average', selected: S.ui.studyDow,
+          aria: 'Average study time for each day of the week',
+          title: function (i) { return ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays'][i]; },
+          extra: function (i) { return [hit[i] + ' of ' + cnt[i] + ' ' + DOW[i] + 's had study', 'Total ' + mins(sum[i])]; },
+          onSelect: function (i) { S.ui.studyDow = i; S.animate = false; drawStudy(); }
+        });
+        var n2 = el('div', 'faint'); n2.style.cssText = 'font-size:12.5px;margin-top:6px;text-align:center';
+        n2.textContent = avg[best] ? 'Best day: ' + DOW[best] + ' (' + mins(avg[best]) + ' on average)' : 'No study in the last 30 days';
+        $('ch-study').appendChild(n2);
+        return;
+      }
+      barChart($('ch-study'), {
       labels: daily.map(function (x) { return String(parseIso(x.date).getUTCDate()); }),
       // Plotted in hours so the axis lands on round numbers (0.5h, 1h, 1.5h…)
       series: [{ name: 'Study', values: daily.map(function (x) { return x.minutes / 60; }), color: css('--s1') }],
       yFmt: function (v) { return v === 0 ? '0' : (Math.round(v * 10) / 10) + 'h'; },
       tipFmt: function (v) { return mins(v * 60); }, height: 220, aria: 'Study time per day for the last 30 days',
       xTitle: function (i) { return dayName(daily[i].date) + ', ' + shortDate(daily[i].date); }
-    });
+      });
+    }
+    drawStudy();
   }
 
   /* =========================================================
@@ -2616,7 +2871,8 @@ footer a { color: var(--muted); }
         (c.fuel.lastFill ? '<div class="note" style="margin-top:12px">Last fill ' + shortDate(c.fuel.lastFill.date) + ' · ' + rm(c.fuel.lastFill.cost) + (c.fuel.lastFill.litres ? ' · ' + c.fuel.lastFill.litres + ' L' : '') + (c.fuel.lastFill.place ? ' at ' + esc(c.fuel.lastFill.place) : '') + '</div>' : '') + '</div>';
       html += '</div>';
 
-      html += '<div class="card" style="margin-bottom:14px">' + cardHead('Fuel economy', 'km per litre for each fill-up · hover or tap') + '<div id="ch-eco-' + ci + '"></div></div>';
+      html += '<div class="grid g-21" style="margin-bottom:14px"><div class="card">' + cardHead('Fuel economy', 'km per litre for each fill-up · hover or tap') + '<div id="ch-eco-' + ci + '"></div></div>' +
+        '<div class="card">' + cardHead('Where the car money went', 'Last 12 months · tap a slice') + '<div id="ch-split-' + ci + '"></div><div id="split-note-' + ci + '"></div></div></div>';
       html += '<div class="card" style="margin-bottom:14px">' + cardHead('Service history', (c.history || []).length ? 'Most recent first' : '') +
         ((c.history || []).length ? '<ul class="tl">' + c.history.map(function (h) {
           return '<li><div class="d num">' + shortDate(h.date) + ' ' + h.date.slice(0, 4) + (h.odo ? ' · ' + fmtNum(h.odo) + ' km' : '') + (h.cost !== null ? ' · ' + rm(h.cost) : '') + '</div><div class="i">' + esc(h.items.join(', ')) + '</div></li>';
@@ -2677,6 +2933,24 @@ footer a { color: var(--muted); }
           extra: function (i) { var f = eco[i]; return [rm(f.cost) + ' · ' + f.litres + ' L' + (f.place ? ' at ' + f.place : ''), fmtNum(f.km) + ' km since the previous fill · ' + fmtNum(f.odo) + ' km'] ; }
         });
       } else $('ch-eco-' + ci).innerHTML = '<div class="empty">Log a few fill-ups with the odometer reading to see this.</div>';
+      function drawSplit() {
+        var sum = function (k) { return mo.reduce(function (t, x) { return t + (x[k] || 0); }, 0); };
+        var km = mo.reduce(function (t, x) { return t + (x.km || 0); }, 0);
+        var parts = [{ name: 'Fuel', value: sum('fuel'), color: css('--s1') }, { name: 'Service', value: sum('service'), color: css('--s2') }, { name: 'Tolls & other', value: sum('other'), color: css('--s3') }];
+        var all = parts.reduce(function (t, x) { return t + x.value; }, 0), sel = S.ui['split' + ci] || '';
+        if (!all) { $('ch-split-' + ci).innerHTML = '<div class="empty">No costs logged in the last 12 months.</div>'; return; }
+        parts.forEach(function (x) { x.sub = [rm(x.value / 12, 0) + ' a month on average'].concat(km ? [rm(x.value / km, 2) + ' per km'] : []); });
+        donut($('ch-split-' + ci), {
+          items: parts, selected: sel, size: 180, fmt: function (v) { return rm(v, 0); },
+          aria: 'Running costs for the last 12 months split into fuel, service and other',
+          onSelect: function (n) { S.ui['split' + ci] = n; S.animate = false; drawSplit(); },
+          center: function (it) { return it ? [rmK(it.value), it.name + ' · ' + Math.round(it.value / all * 100) + '%'] : [rmK(all), 'in 12 months']; }
+        });
+        $('split-note-' + ci).innerHTML = '<div class="legend" style="justify-content:center;margin-top:8px">' + parts.filter(function (x) { return x.value; }).map(function (x) {
+          return '<button type="button" disabled><span class="key" style="background:' + x.color + '"></span>' + esc(x.name) + ' · ' + rm(x.value, 0) + '</button>';
+        }).join('') + '</div>' + (km ? '<div class="faint num" style="font-size:12.5px;text-align:center;margin-top:4px">' + rm(all / km, 2) + ' per km over ' + fmtNum(km) + ' km</div>' : '');
+      }
+      drawSplit();
     });
   }
 
