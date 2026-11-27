@@ -583,11 +583,16 @@ footer a { color: var(--muted); }
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var MONTHS_L = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // Number formatters are slow to build, so make one per decimal count and reuse it.
+  var NF = {};
+  var nf = function (dp) {
+    var k = dp === undefined ? 'n' : dp;
+    return NF[k] || (NF[k] = new Intl.NumberFormat('en-MY', dp === undefined ? {} : { minimumFractionDigits: dp, maximumFractionDigits: dp }));
+  };
   var rm = function (n, dp) {
     if (n === null || n === undefined || isNaN(n)) return '—';
     var neg = n < 0; n = Math.abs(n);
-    dp = dp === undefined ? 2 : dp;
-    return (neg ? '−' : '') + 'RM ' + n.toLocaleString('en-MY', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+    return (neg ? '−' : '') + 'RM ' + nf(dp === undefined ? 2 : dp).format(n);
   };
   var rmK = function (n) {
     var a = Math.abs(n);
@@ -596,7 +601,7 @@ footer a { color: var(--muted); }
     if (a >= 1e3) return 'RM ' + (n / 1e3).toFixed(1) + 'k';
     return 'RM ' + Math.round(n);
   };
-  var fmtNum = function (n) { return n === null || n === undefined ? '—' : Number(n).toLocaleString('en-MY'); };
+  var fmtNum = function (n) { return n === null || n === undefined ? '—' : nf().format(Number(n)); };
   var parseIso = function (iso) { return new Date(Date.UTC(+iso.slice(0,4), +iso.slice(5,7)-1, +iso.slice(8,10))); };
   var shortDate = function (iso) { if (!iso) return '—'; var d = parseIso(iso); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()]; };
   var dayName = function (iso) { return DAYS[parseIso(iso).getUTCDay()]; };
@@ -1165,7 +1170,11 @@ footer a { color: var(--muted); }
   function viewIndex(k) { for (var i = 0; i < VIEWS.length; i++) if (VIEWS[i].key === k) return i; return 0; }
 
   var pager = $('pager');
-  function pageWidth() { return pager.clientWidth || window.innerWidth; }
+  // Reading clientWidth forces a layout, so keep the width and update it only when the pager resizes.
+  var pagerW = 0;
+  function pageWidth() { return pagerW || (pagerW = pager.clientWidth) || window.innerWidth; }
+  if (window.ResizeObserver) new ResizeObserver(function (e) { pagerW = e[0].contentRect.width; }).observe(pager);
+  else window.addEventListener('resize', function () { pagerW = 0; });
 
   /** Switch tab: tapping a tab, keys, Back, links. Swipes arrive here via the pager. */
   function go(view, opts) {
@@ -1518,7 +1527,7 @@ footer a { color: var(--muted); }
     ['voyage', 'Voyage', 'VOYAGE_SHEET_ID', 'Trips: countdown, budget, to-dos and packing'],
     ['nest', 'Nest', 'NEST_SHEET_ID', 'Home setup: move-in, budget, must-haves and upkeep']];
   function inDays(n) { return n === 0 ? 'today' : n === 1 ? 'tomorrow' : n < 0 ? (-n) + 'd ago' : 'in ' + n + 'd'; }
-  function money(n, ccy) { return !ccy || ccy === 'MYR' || ccy === 'RM' ? rm(n, 0) : esc(ccy) + ' ' + Math.round(n).toLocaleString('en-MY'); }
+  function money(n, ccy) { return !ccy || ccy === 'MYR' || ccy === 'RM' ? rm(n, 0) : esc(ccy) + ' ' + nf().format(Math.round(n)); }
   function lifeHead(src, title, icon) {
     return '<div class="card-h"><div><h2>' + icon + ' ' + esc(title) + '</h2><div class="sub">' + freshBadge(src) + '</div></div>' +
       '<div style="display:flex;gap:8px;align-items:center">' + (src.url ? '<a class="linkbtn" href="' + esc(src.url) + '" target="_blank" rel="noopener">Sheet ↗</a>' : '') + '</div></div>';
