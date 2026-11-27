@@ -238,9 +238,7 @@ function today_(sources, ctx) {
     t.habits = { total: active.length, done: active.filter(function (h) { return h.doneToday; }).length,
       items: active.map(function (h) { return { icon: h.icon, habit: h.habit, done: h.doneToday, due: !h.doneToday && h.week < h.target }; }) };
   }
-  var g = sources.garage && sources.garage.ok ? sources.garage.summary.cars : [];
-  var reminders = [];
-  g.forEach(function (c) { c.renewals.forEach(function (r) { reminders.push({ car: c.name, label: r.label, date: r.date, daysLeft: r.daysLeft }); }); });
+  var reminders = garageReminders_(sources).map(function (r) { return { car: r.car, label: r.label, date: r.date, daysLeft: r.daysLeft }; });
   reminders.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
   t.garage = reminders[0] || null;
   var v = sources.vault && sources.vault.ok ? sources.vault.summary : null;
@@ -288,12 +286,9 @@ function alerts_(sources, sync, ctx) {
     var x = f.study && f.study.next;
     if (x && x.daysLeft <= 30 && x.targetHours && x.hours < x.targetHours * 0.6) add('warn', 'flow', x.code + ' exam: ' + x.hours + ' of ' + x.targetHours + ' h studied', '', x.exam, 'flow');
   }
-  var g = sources.garage && sources.garage.ok ? sources.garage.summary.cars : [];
-  g.forEach(function (c) {
-    c.renewals.forEach(function (r) {
-      if (r.daysLeft < 0) add('bad', 'garage', c.name + ' ' + r.label.toLowerCase() + ' expired', '', r.date, 'garage');
-      else if (r.daysLeft <= 60) add(r.daysLeft <= 30 ? 'warn' : 'info', 'garage', c.name + ' ' + r.label.toLowerCase() + ' renewal', '', r.date, 'garage');
-    });
+  garageReminders_(sources).forEach(function (r) {
+    if (r.daysLeft < 0) add('bad', 'garage', r.text + ' expired', '', r.date, 'garage');
+    else if (r.daysLeft <= 60) add(r.daysLeft <= 30 ? 'warn' : 'info', 'garage', r.text + ' renewal', '', r.date, 'garage');
   });
   var v = sources.vault && sources.vault.ok ? sources.vault.summary : null;
   if (v) {
@@ -367,11 +362,8 @@ function brief_(sources, issues, ctx) {
       (diff > 0 ? ' more' : ' less') + ' than this point last month' + (m.projected ? ' (on pace for RM ' + Math.round(m.projected) + ')' : ''));
   }
 
-  var g = sources.garage && sources.garage.ok ? sources.garage.summary.cars : [];
-  g.forEach(function (c) {
-    c.renewals.forEach(function (r) {
-      if (r.daysLeft <= 45) push(r.daysLeft < 0 ? 'bad' : 'warn', 'garage', c.name + ' ' + r.label.toLowerCase() + (r.daysLeft < 0 ? ' expired' : ' due in ' + r.daysLeft + ' days'));
-    });
+  garageReminders_(sources).forEach(function (r) {
+    if (r.daysLeft <= 45) push(r.daysLeft < 0 ? 'bad' : 'warn', 'garage', r.text + (r.daysLeft < 0 ? ' expired' : ' due in ' + r.daysLeft + ' days'));
   });
   lifeBrief_(sources, push);
   return out;
@@ -401,8 +393,7 @@ function upcoming_(sources, ctx) {
       }
     }
   }
-  var g = sources.garage && sources.garage.ok ? sources.garage.summary.cars : [];
-  g.forEach(function (c) { c.renewals.forEach(function (r) { add(r.date, c.name + ' ' + r.label.toLowerCase(), 'garage', 'warn'); }); });
+  garageReminders_(sources).forEach(function (r) { add(r.date, r.text, 'garage', 'warn'); });
   lifeUpcoming_(sources, add);
   out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   return out.slice(0, 12);

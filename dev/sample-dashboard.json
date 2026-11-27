@@ -440,7 +440,7 @@
         },
         "lastChange": 1794697200000
       },
-      "ms": 10
+      "ms": 9
     },
     "finance": {
       "name": "Finance",
@@ -1433,7 +1433,7 @@
           "url": "https://docs.google.com/spreadsheets/d/d/edit#gid=1000"
         }
       },
-      "ms": 12
+      "ms": 13
     },
     "garage": {
       "name": "Garage",
@@ -1521,9 +1521,9 @@
                 "fills": 10
               }
             },
-            "spendMonth": 100,
+            "spendMonth": 118,
             "week": {
-              "cur": 50,
+              "cur": 68,
               "prev": 50
             },
             "monthly": [
@@ -1531,6 +1531,7 @@
                 "month": "2025-12",
                 "fuel": 0,
                 "service": 0,
+                "other": 0,
                 "litres": 0,
                 "fills": 0,
                 "km": null
@@ -1539,6 +1540,7 @@
                 "month": "2026-01",
                 "fuel": 0,
                 "service": 0,
+                "other": 0,
                 "litres": 0,
                 "fills": 0,
                 "km": null
@@ -1547,6 +1549,7 @@
                 "month": "2026-02",
                 "fuel": 0,
                 "service": 0,
+                "other": 0,
                 "litres": 0,
                 "fills": 0,
                 "km": null
@@ -1555,6 +1558,7 @@
                 "month": "2026-03",
                 "fuel": 0,
                 "service": 0,
+                "other": 0,
                 "litres": 0,
                 "fills": 0,
                 "km": null
@@ -1563,6 +1567,7 @@
                 "month": "2026-04",
                 "fuel": 0,
                 "service": 0,
+                "other": 0,
                 "litres": 0,
                 "fills": 0,
                 "km": null
@@ -1571,6 +1576,7 @@
                 "month": "2026-05",
                 "fuel": 0,
                 "service": 0,
+                "other": 0,
                 "litres": 0,
                 "fills": 0,
                 "km": null
@@ -1579,6 +1585,7 @@
                 "month": "2026-06",
                 "fuel": 0,
                 "service": 188,
+                "other": 0,
                 "litres": 0,
                 "fills": 0,
                 "km": 17200
@@ -1587,6 +1594,7 @@
                 "month": "2026-07",
                 "fuel": 0,
                 "service": 0,
+                "other": 0,
                 "litres": 0,
                 "fills": 0,
                 "km": null
@@ -1595,6 +1603,7 @@
                 "month": "2026-08",
                 "fuel": 200,
                 "service": 0,
+                "other": 0,
                 "litres": 97.6,
                 "fills": 4,
                 "km": 2840
@@ -1603,6 +1612,7 @@
                 "month": "2026-09",
                 "fuel": 200,
                 "service": 0,
+                "other": 0,
                 "litres": 97.6,
                 "fills": 4,
                 "km": 1040
@@ -1611,6 +1621,7 @@
                 "month": "2026-10",
                 "fuel": 200,
                 "service": 0,
+                "other": 34,
                 "litres": 97.6,
                 "fills": 4,
                 "km": 630
@@ -1619,6 +1630,7 @@
                 "month": "2026-11",
                 "fuel": 100,
                 "service": 0,
+                "other": 18,
                 "litres": 48.8,
                 "fills": 2,
                 "km": 520
@@ -1769,13 +1781,27 @@
             "totals": {
               "fuel12": 700,
               "service12": 188,
+              "other12": 52,
               "km12": 22230
             }
           }
         ],
+        "docs": [
+          {
+            "label": "Driving licence",
+            "date": "2026-12-20",
+            "daysLeft": 35,
+            "lead": 30
+          }
+        ],
+        "wallet": {
+          "name": "Family wallet",
+          "balance": 166
+        },
         "counts": {
           "logs": 3,
           "fuel": 14,
+          "other": 2,
           "deleted": 1
         },
         "lastChange": 1794657600000
@@ -2146,8 +2172,8 @@
       "appProp": "NEST_APP_URL",
       "staleDays": 45,
       "summary": {
-        "moveIn": "2026-12-15",
-        "daysToMoveIn": 30,
+        "moveIn": "2026-11-15",
+        "daysToMoveIn": 0,
         "budget": 4000,
         "spent": 2300,
         "committed": 400,
@@ -2203,6 +2229,19 @@
         "bills": {
           "monthly": 149,
           "count": 2
+        },
+        "rent": {
+          "amount": 1500,
+          "due": "2026-11-18",
+          "daysLeft": 3,
+          "paid": false,
+          "leaseEnd": "2027-01-10",
+          "leaseDaysLeft": 56
+        },
+        "month": {
+          "spent": 516,
+          "budget": 850,
+          "left": 334
         },
         "lastChange": 1794484800000
       },
@@ -2912,10 +2951,17 @@
     {
       "tone": "warn",
       "src": "nest",
-      "text": "Move-in in 30 days · 1 of 3 must-haves in"
+      "text": "Move-in in 0 days · 1 of 3 must-haves in"
     }
   ],
   "upcoming": [
+    {
+      "date": "2026-11-15",
+      "days": 0,
+      "label": "Move-in day",
+      "src": "nest",
+      "tone": "good"
+    },
     {
       "date": "2026-11-17",
       "days": 2,
@@ -2928,6 +2974,13 @@
       "days": 2,
       "label": "Interview: Assistant Manager",
       "src": "career",
+      "tone": "warn"
+    },
+    {
+      "date": "2026-11-18",
+      "days": 3,
+      "label": "Rent RM 1,500",
+      "src": "nest",
       "tone": "warn"
     },
     {
@@ -2971,13 +3024,6 @@
       "label": "Demo Car road tax",
       "src": "garage",
       "tone": "warn"
-    },
-    {
-      "date": "2026-12-15",
-      "days": 30,
-      "label": "Move-in day",
-      "src": "nest",
-      "tone": "good"
     },
     {
       "date": "2026-12-25",
@@ -3197,6 +3243,15 @@
     },
     {
       "level": "warn",
+      "src": "nest",
+      "title": "Rent due in 3 days",
+      "detail": "RM 1,500 · not marked paid in Nest",
+      "date": "2026-11-18",
+      "days": 3,
+      "view": "life"
+    },
+    {
+      "level": "warn",
       "src": "vault",
       "title": "Medical (encrypted) expires",
       "detail": "🩺 Medical",
@@ -3230,6 +3285,15 @@
       "date": "2026-12-09",
       "days": 24,
       "view": "garage"
+    },
+    {
+      "level": "warn",
+      "src": "nest",
+      "title": "Tenancy ends in 56 days",
+      "detail": "Renew or plan the move",
+      "date": "2027-01-10",
+      "days": 56,
+      "view": "life"
     },
     {
       "level": "warn",
@@ -3314,12 +3378,12 @@
       "view": "garage",
       "label": "Car costs",
       "unit": "rm",
-      "cur": 50,
+      "cur": 68,
       "prev": 50,
-      "delta": 0,
-      "pct": 0,
-      "dir": "flat",
-      "good": null
+      "delta": 18,
+      "pct": 36,
+      "dir": "up",
+      "good": false
     }
   ],
   "review": [
@@ -3376,7 +3440,8 @@
       "car": {
         "fuel": 200,
         "service": 0,
-        "cost": 200,
+        "other": 34,
+        "cost": 234,
         "km": 630,
         "kmPerL": 6.45
       },
@@ -3438,6 +3503,7 @@
       "car": {
         "fuel": 200,
         "service": 0,
+        "other": 0,
         "cost": 200,
         "km": 1040,
         "kmPerL": 10.66
@@ -3504,6 +3570,7 @@
       "car": {
         "fuel": 200,
         "service": 0,
+        "other": 0,
         "cost": 200,
         "km": 2840,
         "kmPerL": 29.1

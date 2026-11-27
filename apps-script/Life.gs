@@ -181,7 +181,7 @@ var NEST_COLUMNS = {
 function readNest_(ss, ctx) {
   var issues = makeIssues_('nest');
   var T = {};
-  ['rooms', 'items', 'tasks', 'bills', '_meta'].forEach(function (n) { T[n] = readTable_(ss, n); });
+  ['rooms', 'items', 'tasks', 'bills', 'exps', 'pays', '_meta'].forEach(function (n) { T[n] = readTable_(ss, n); });
   var ok = checkColumns_(T.items, NEST_COLUMNS.items, issues, 'structure');
   if (T.tasks.exists) checkColumns_(T.tasks, NEST_COLUMNS.tasks, issues, 'structure');
   if (T.bills.exists) checkColumns_(T.bills, NEST_COLUMNS.bills, issues, 'structure');
@@ -230,6 +230,25 @@ function readNest_(ss, ctx) {
   }) : [];
 
   var s = meta.settings || {}, moveIn = isoOrEmpty_(s.moveIn), budget = toAmount_(s.budget) || 0;
+
+  // Running the home: rent, and house spending against the monthly budget
+  var month = ctx.today.slice(0, 7);
+  var exps = T.exps.exists ? T.exps.rows.map(function (r) { seen(r); return { date: isoOrEmpty_(r.date), amount: toAmount_(r.amount) || 0 }; }) : [];
+  var pays = T.pays.exists ? T.pays.rows.map(function (r) { seen(r); return { month: text_(r.month).slice(0, 7), amount: toAmount_(r.amount) || 0 }; }) : [];
+  var monthSpent = round2_(sum_(exps.filter(function (x) { return x.date.slice(0, 7) === month; }), function (x) { return x.amount; }) +
+    sum_(pays.filter(function (p) { return p.month === month; }), function (p) { return p.amount; }));
+  var budgets = s.budgets && typeof s.budgets === 'object' ? s.budgets : {};
+  var monthBudget = round2_(Object.keys(budgets).reduce(function (t, k) { return t + (toAmount_(budgets[k]) || 0); }, 0));
+  var rented = text_(s.homeType) === 'rent', rentAmt = toAmount_(s.rent) || 0, rentDay = toNumber_(s.rentDay) || 0;
+  var rent = null;
+  if (rented && rentAmt) {
+    var last = new Date(Date.UTC(+month.slice(0, 4), +month.slice(5, 7), 0)).getUTCDate();
+    var due = rentDay ? month + '-' + pad_(Math.min(rentDay, last)) : null;
+    var leaseEnd = isoOrEmpty_(s.leaseEnd);
+    rent = { amount: rentAmt, due: due, daysLeft: due ? daysBetween_(ctx.today, due) : null,
+      paid: pays.some(function (p) { return p.month === month; }),
+      leaseEnd: leaseEnd || null, leaseDaysLeft: leaseEnd ? daysBetween_(ctx.today, leaseEnd) : null };
+  }
   return {
     summary: {
       moveIn: moveIn || null, daysToMoveIn: moveIn ? daysBetween_(ctx.today, moveIn) : null,
@@ -241,6 +260,8 @@ function readNest_(ss, ctx) {
           .slice(0, 6).map(function (i) { return { name: i.name, room: i.room, status: i.status, cost: i.cost }; }) },
       tasks: { overdue: tasks.filter(function (t) { return t.daysLeft < 0; }).slice(0, 8), soon: tasks.filter(function (t) { return t.daysLeft >= 0 && t.daysLeft <= 30; }).slice(0, 6), total: tasks.length },
       bills: { monthly: round2_(sum_(bills, function (b) { return b.monthly; })), count: bills.length },
+      rent: rent,
+      month: (monthBudget || monthSpent) ? { spent: monthSpent, budget: monthBudget || null, left: monthBudget ? round2_(monthBudget - monthSpent) : null } : null,
       lastChange: lastChange
     },
     issues: issues.list
@@ -272,6 +293,10 @@ function lifeAlerts_(sources, add) {
   if (n) {
     n.tasks.overdue.slice(0, 3).forEach(function (t) { add('warn', 'nest', 'Home: ' + t.name, (t.room ? t.room + ' · ' : '') + 'every ' + t.every + ' month' + (t.every === 1 ? '' : 's'), t.due, 'life'); });
     if (n.tasks.overdue.length > 3) add('warn', 'nest', (n.tasks.overdue.length - 3) + ' more home tasks overdue', '', null, 'life');
+    var r = n.rent;
+    if (r && !r.paid && r.daysLeft !== null && r.daysLeft <= 5) add(r.daysLeft < 0 ? 'bad' : 'warn', 'nest', r.daysLeft < 0 ? 'Rent is ' + (-r.daysLeft) + ' days late' : 'Rent due ' + (r.daysLeft === 0 ? 'today' : 'in ' + r.daysLeft + ' days'), rmWhole_(r.amount) + ' · not marked paid in Nest', r.due, 'life');
+    if (r && r.leaseDaysLeft !== null && r.leaseDaysLeft >= 0 && r.leaseDaysLeft <= 60) add('warn', 'nest', 'Tenancy ends in ' + r.leaseDaysLeft + ' days', 'Renew or plan the move', r.leaseEnd, 'life');
+    if (n.month && n.month.left !== null && n.month.left < 0) add('warn', 'nest', 'House budget over by ' + rmWhole_(-n.month.left) + ' this month', 'Spent ' + rmWhole_(n.month.spent) + ' of ' + rmWhole_(n.month.budget), null, 'life');
     if (n.left !== null && n.left < 0) add('warn', 'nest', 'Home budget over by ' + rmWhole_(n.left), 'Bought and ordered: ' + rmWhole_(n.spent + n.committed) + ' of ' + rmWhole_(n.budget), null, 'life');
   }
 }
@@ -290,6 +315,8 @@ function lifeUpcoming_(sources, add) {
   if (n) {
     add(n.moveIn, 'Move-in day', 'nest', 'good');
     n.tasks.soon.forEach(function (t) { add(t.due, 'Home: ' + t.name, 'nest'); });
+    if (n.rent && !n.rent.paid && n.rent.due) add(n.rent.due, 'Rent ' + rmWhole_(n.rent.amount), 'nest', 'warn');
+    if (n.rent && n.rent.leaseEnd) add(n.rent.leaseEnd, 'Tenancy ends', 'nest', 'warn');
   }
 }
 

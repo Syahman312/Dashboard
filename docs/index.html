@@ -24,7 +24,7 @@
   --text: #eceef3; --muted: #a0a8b8; --faint: #6f7789;
   --accent: #4f8cff; --accent-ink: #ffffff;
   --good: #3ecf8e; --warn: #f5b74e; --bad: #ff6b6b; --info: #8ab4ff;
-  --s1: #3987e5; --s2: #d95926; --s-prev: #6f7789;
+  --s1: #3987e5; --s2: #d95926; --s3: #a07cf0; --s-prev: #6f7789;
   --grid: #262a33; --axis: #3a404c;
   --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.25);
   --radius: 16px;
@@ -35,7 +35,7 @@
     --bg: #f3f5f9; --card: #ffffff; --card-2: #f2f4f8; --card-3: #e8ebf2; --line: #e3e7ef;
     --text: #141821; --muted: #566074; --faint: #8a93a6;
     --accent: #2f6fe8; --good: #12925c; --warn: #b7791f; --bad: #d64545; --info: #2f6fe8;
-    --s1: #2a78d6; --s2: #eb6834; --s-prev: #9aa2b2;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #7b52d9; --s-prev: #9aa2b2;
     --grid: #edf0f5; --axis: #d3d8e2;
     --shadow: 0 1px 2px rgba(20,24,33,.04), 0 8px 24px rgba(20,24,33,.06);
     color-scheme: light;
@@ -45,7 +45,7 @@
   --bg: #f3f5f9; --card: #ffffff; --card-2: #f2f4f8; --card-3: #e8ebf2; --line: #e3e7ef;
   --text: #141821; --muted: #566074; --faint: #8a93a6;
   --accent: #2f6fe8; --good: #12925c; --warn: #b7791f; --bad: #d64545; --info: #2f6fe8;
-  --s1: #2a78d6; --s2: #eb6834; --s-prev: #9aa2b2;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #7b52d9; --s-prev: #9aa2b2;
   --grid: #edf0f5; --axis: #d3d8e2;
   --shadow: 0 1px 2px rgba(20,24,33,.04), 0 8px 24px rgba(20,24,33,.06);
   color-scheme: light;
@@ -1601,6 +1601,16 @@ footer a { color: var(--muted); }
     if (s.budget) h += '<div style="margin-top:14px;font-size:13px;display:flex;justify-content:space-between"><span class="muted">Bought + ordered</span><span class="num ' + (over ? 'bad' : '') + '">' + rm(used, 0) + ' of ' + rm(s.budget, 0) + '</span></div>' +
       bar(used / s.budget * 100, over) + '<div class="faint" style="font-size:12px">' + (over ? '<span class="bad">' + rm(-s.left, 0) + ' over</span>' : rm(s.left, 0) + ' left') + (s.planned ? ' · ' + rm(s.planned, 0) + ' more on the wish list' : '') + '</div>';
     else h += '<div class="tiles mini3" style="margin-top:12px">' + tile(rm(s.spent, 0), 'Bought') + tile(rm(s.committed, 0), 'Ordered') + tile(rm(s.planned, 0), 'Planned') + '</div>';
+    if (s.rent || s.month) {
+      var r = s.rent, mo = s.month, monOver = mo && mo.left !== null && mo.left < 0;
+      h += '<h3 class="sec">This month</h3>';
+      if (r) h += '<div style="display:flex;justify-content:space-between;gap:10px;font-size:13.5px;margin-bottom:8px"><span>Rent <b class="num">' + rm(r.amount, 0) + '</b>' + (r.due ? ' <span class="faint">· due ' + shortDate(r.due) + '</span>' : '') + '</span>' +
+        (r.paid ? '<span class="tag t3">Paid</span>' : r.daysLeft !== null && r.daysLeft < 0 ? '<span class="tag late">' + (-r.daysLeft) + 'd late</span>' : '<span class="tag">Not paid yet</span>') + '</div>' +
+        (r.leaseEnd ? '<div class="faint" style="font-size:12.5px;margin:-4px 0 8px">Tenancy ends ' + shortDate(r.leaseEnd) + ' ' + r.leaseEnd.slice(0, 4) + (r.leaseDaysLeft !== null && r.leaseDaysLeft >= 0 && r.leaseDaysLeft <= 60 ? ' · <span class="warnc">' + inDays(r.leaseDaysLeft) + '</span>' : '') + '</div>' : '');
+      if (mo && mo.budget) h += '<div style="font-size:13px;display:flex;justify-content:space-between"><span class="muted">House spending</span><span class="num ' + (monOver ? 'bad' : '') + '">' + rm(mo.spent, 0) + ' of ' + rm(mo.budget, 0) + '</span></div>' +
+        bar(mo.spent / mo.budget * 100, monOver) + '<div class="faint" style="font-size:12px">' + (monOver ? '<span class="bad">' + rm(-mo.left, 0) + ' over</span>' : rm(mo.left, 0) + ' left this month') + '</div>';
+      else if (mo) h += '<div style="font-size:13px" class="muted">House spending <b class="num">' + rm(mo.spent, 0) + '</b> this month</div>';
+    }
     if (s.must.next.length) h += '<h3 class="sec">Must-haves still to get</h3><ul class="list">' + s.must.next.map(function (i) {
       return '<li><span class="t">' + esc(i.name) + (i.room ? ' <span class="faint">· ' + esc(i.room) + '</span>' : '') + '<span class="tag' + (i.status === 'ordered' ? ' t3' : '') + '">' + (STATUS[i.status] || esc(i.status)) + '</span></span><span class="r num faint">' + rm(i.cost, 0) + '</span></li>';
     }).join('') + '</ul>';
@@ -2225,11 +2235,12 @@ footer a { color: var(--muted); }
         tile(c.fuel.economy ? c.fuel.economy.kmPerL + ' km/L' : '—', 'Fuel economy', c.fuel.economy ? 'last ' + c.fuel.economy.fills + ' fills' : '') +
         tile(c.fuel.economy ? 'RM ' + c.fuel.economy.rmPerKm.toFixed(2) : '—', 'Fuel cost per km') +
         tile(rm(c.fuel.monthCost, 0), 'Fuel this month', rm(c.fuel.last30Cost, 0) + ' in the last 30 days') +
-        tile(rm((t.fuel12 || 0) + (t.service12 || 0), 0), 'Running cost, 12 months', t.km12 ? fmtNum(t.km12) + ' km driven' : '') +
+        tile(rm((t.fuel12 || 0) + (t.service12 || 0) + (t.other12 || 0), 0), 'Running cost, 12 months', t.km12 ? fmtNum(t.km12) + ' km driven' : '') +
+        (ci === 0 && src.summary.wallet ? tile(rm(src.summary.wallet.balance, 0), esc(src.summary.wallet.name), src.summary.wallet.balance < 0 ? '<span class="bad">Needs a top-up</span>' : 'Shared car wallet') : '') +
         '</div></div>';
 
       html += '<div class="grid g-21" style="margin-bottom:14px">';
-      html += '<div class="card">' + cardHead('Running costs', 'Fuel and servicing per month · hover for litres and km') + '<div id="lg-run-' + ci + '"></div><div id="ch-run-' + ci + '"></div></div>';
+      html += '<div class="card">' + cardHead('Running costs', 'Fuel, servicing, tolls and parking per month · hover for litres and km') + '<div id="lg-run-' + ci + '"></div><div id="ch-run-' + ci + '"></div></div>';
       html += '<div class="card">' + cardHead('Longest since done', 'Service items') +
         (c.services.length ? '<ul class="list">' + c.services.map(function (x) {
           return '<li><span class="t">' + esc(x.item) + '</span><span class="r num">' + (x.kmSince !== null ? fmtNum(x.kmSince) + ' km ago' : shortDate(x.date) + ' ' + x.date.slice(0, 4)) + '</span></li>';
@@ -2243,6 +2254,11 @@ footer a { color: var(--muted); }
           return '<li><div class="d num">' + shortDate(h.date) + ' ' + h.date.slice(0, 4) + (h.odo ? ' · ' + fmtNum(h.odo) + ' km' : '') + (h.cost !== null ? ' · ' + rm(h.cost) : '') + '</div><div class="i">' + esc(h.items.join(', ')) + '</div></li>';
         }).join('') + '</ul>' : '<div class="empty">No services logged.</div>') + '</div>';
     });
+    var gdocs = src.summary.docs || [];
+    if (gdocs.length) html += '<div class="card" style="margin-bottom:14px">' + cardHead('Documents', 'Licence and other papers saved in Garage') + '<ul class="list">' + gdocs.map(function (x) {
+      return '<li><span class="t"><span class="when' + (x.daysLeft <= 30 ? ' soon' : '') + '">' + shortDate(x.date) + '</span>' + esc(x.label) + (x.date.slice(0, 4) !== String(new Date().getFullYear()) ? ' <span class="faint">· ' + x.date.slice(0, 4) + '</span>' : '') + '</span>' +
+        (x.daysLeft < 0 ? '<span class="r tag late">Expired</span>' : '<span class="r faint num">' + x.daysLeft + 'd</span>') + '</li>';
+    }).join('') + '</ul></div>';
     host.innerHTML = html;
 
     var firstPaint = S.animate;
@@ -2253,6 +2269,7 @@ footer a { color: var(--muted); }
           { name: 'Fuel', values: mo.map(function (x) { return x.fuel; }), color: css('--s1'), off: S.legendOff['run' + ci + ':Fuel'] },
           { name: 'Service', values: mo.map(function (x) { return x.service; }), color: css('--s2'), off: S.legendOff['run' + ci + ':Service'] }
         ];
+        if (mo.some(function (x) { return x.other; })) sr.push({ name: 'Tolls & other', values: mo.map(function (x) { return x.other || 0; }), color: css('--s3'), off: S.legendOff['run' + ci + ':Tolls & other'] });
         $('lg-run-' + ci).textContent = '';
         $('lg-run-' + ci).appendChild(legend(sr.map(function (x) { return { name: x.name, color: x.color }; }), 'run' + ci, function () { S.animate = false; drawRun(); }));
         barChart($('ch-run-' + ci), {

@@ -553,3 +553,45 @@ test('setup tells Garage and NextRole apart (both have a json column)', () => {
   assert.equal(props.VOYAGE_SHEET_ID, 'y');
   assert.equal(props.NEST_SHEET_ID, 'n');
 });
+
+test('garage: tolls and parking, shared wallet, personal documents', () => {
+  const g = fx.garage();
+  const add = (id, o) => g.Sheet1.push([id, JSON.stringify(Object.assign({ id, updated: 1 }, o)), o.kind, o.date || '', '', '', o.cost || '', '', '']);
+  add('x1', { kind: 'exp', carId: 'car1', date: '2026-11-10', cost: 12.5, cat: 'toll', pay: 'w' });
+  add('x2', { kind: 'exp', carId: 'car1', date: '2026-11-12', cost: 8, cat: 'parking' });
+  add('w0', { kind: 'wal', typ: 'cfg', name: 'Family wallet', date: '2026-11-01' });
+  add('w1', { kind: 'wal', typ: 'in', cost: 10 });
+  add('d1', { kind: 'doc', dtype: 'licence', name: 'Driving licence', date: '2026-12-01', lead: 30 });
+  add('d2', { kind: 'doc', dtype: 'roadtax', carId: 'car1', name: 'Road tax', date: '2027-01-01' });
+  const gs = load(PROPS);
+  const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(Object.assign({}, BOOKS, { g })[id]));
+  const s = d.sources.garage.summary;
+  assert.equal(s.cars[0].totals.other12, 20.5);
+  assert.equal(s.cars[0].monthly.find(m => m.month === '2026-11').other, 20.5);
+  assert.equal(s.wallet.balance, -2.5, 'top-up minus the toll paid from the wallet');
+  assert.ok(has(d.issues, 'garage', /Family wallet is RM 2.50 short/));
+  assert.equal(s.docs.length, 1, 'car road tax is not a personal document');
+  assert.equal(s.docs[0].label, 'Driving licence');
+  assert.equal(s.docs[0].daysLeft, 16);
+  assert.ok(d.upcoming.some(u => /Driving licence/.test(u.label)), 'licence shows in coming up');
+});
+
+test('nest: rent, tenancy end and house budget this month', () => {
+  const n = fx.nest();
+  const meta = n._meta.find(r => r[0] === 'settings');
+  meta[1] = JSON.stringify({ homeType: 'rent', rent: 1500, rentDay: 18, leaseEnd: '2026-12-31', budgets: { Groceries: 400, Utilities: 200 } });
+  n.exps = [['id', 'date', 'amount', 'cat', 'u'], ['e1', '2026-11-03', 700, 'Groceries', 1], ['e2', '2026-10-03', 999, 'Groceries', 1]];
+  n.pays = [['id', 'month', 'amount', 'date', 'paid', 'u'], ['p1', '2026-10', 1500, '2026-10-17', '', 1]];
+  const gs = load(PROPS);
+  const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(Object.assign({}, BOOKS, { n })[id]));
+  const s = d.sources.nest.summary;
+  assert.equal(s.rent.due, '2026-11-18');
+  assert.equal(s.rent.daysLeft, 3);
+  assert.equal(s.rent.leaseDaysLeft, 46);
+  assert.equal(s.month.spent, 700, 'this month only');
+  assert.equal(s.rent.paid, false, 'only last month is paid');
+  assert.equal(s.month.budget, 600);
+  assert.equal(s.month.left, -100);
+  assert.ok(d.alerts.some(a => a.src === 'nest' && /Tenancy ends in 46 days/.test(a.title)));
+  assert.ok(d.alerts.some(a => a.src === 'nest' && /House budget over/.test(a.title)));
+});

@@ -219,7 +219,7 @@ function readPapers_(papersT, topicsT, studyT, ctx, issues) {
   var daily = [];
   for (var i = 29; i >= 0; i--) { var dd = addDays_(ctx.today, -i); daily.push({ date: dd, minutes: study.days[dd] || 0 }); }
 
-  var upcoming = list.filter(function (p) { return p.exam && p.exam >= ctx.today && !/pass|done|complete/i.test(p.status); })
+  var upcoming = list.filter(function (p) { return p.exam && p.exam >= ctx.today && !/pass|done|complete|exempt/i.test(p.status); })
     .sort(function (a, b) { return a.exam < b.exam ? -1 : 1; });
   var next = upcoming[0] || null;
   var nextOut = next ? {

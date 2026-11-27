@@ -71,16 +71,16 @@ function review_(sources, ctx) {
   };
   var carFor = function (mk) {
     if (!cars.length) return null;
-    var fuel = 0, service = 0, km = 0, litres = 0, any = false;
+    var fuel = 0, service = 0, other = 0, km = 0, litres = 0, any = false;
     cars.forEach(function (c) {
       (c.monthly || []).forEach(function (m) {
         if (m.month !== mk) return;
-        any = true; fuel += m.fuel; service += m.service; litres += m.litres || 0;
+        any = true; fuel += m.fuel; service += m.service; other += m.other || 0; litres += m.litres || 0;
         if (m.km) km += m.km;
       });
     });
     if (!any) return null;
-    return { fuel: round2_(fuel), service: round2_(service), cost: round2_(fuel + service), km: km || null,
+    return { fuel: round2_(fuel), service: round2_(service), other: round2_(other), cost: round2_(fuel + service + other), km: km || null,
       kmPerL: km && litres ? round2_(km / litres) : null };
   };
 

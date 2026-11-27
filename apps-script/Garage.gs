@@ -3,7 +3,8 @@
  * Column "json (do not edit)" holds the full record the app wrote; the other
  * columns are a readable copy. We trust the JSON and cross-check the copy.
  *
- * kinds: car | svc (service item list) | log (service visit) | fuel
+ * kinds: car | svc (service item list) | log (service visit) | fuel |
+ *        exp (tolls, parking, car wash…) | doc (licence, warranty… with an expiry) | wal (shared car wallet)
  */
 
 var GARAGE_COLUMNS = ['id', 'json (do not edit)', 'type', 'date', 'odometer', 'item', 'cost', 'notes', 'deleted'];
@@ -17,7 +18,7 @@ function readGarage_(ss, ctx) {
 
   var badJson = [], badDates = [], noDate = [], noCost = [], noOdo = [];
   var unknownCar = [], deleted = 0, lastChange = null;
-  var cars = {}, svcNames = {}, logs = [], fuels = [];
+  var cars = {}, svcNames = {}, logs = [], fuels = [], others = [], docs = [], wallet = null, walletRecs = [];
 
   table.rows.forEach(function (row) {
     var rec = null;
@@ -47,6 +48,24 @@ function readGarage_(ss, ctx) {
       };
       return;
     }
+    if (kind === 'doc') {
+      var dtype = text_(rec.dtype) || 'other';
+      // Road tax and insurance for a car are copied onto the car itself, so skip them here.
+      if ((dtype === 'roadtax' || dtype === 'insurance') && rec.carId) return;
+      var dd = toISODate_(rec.date);
+      if (dd) docs.push({ carId: text_(rec.carId), label: text_(rec.name) || 'Document', date: dd, lead: toNumber_(rec.lead) || 30 });
+      return;
+    }
+    if (kind === 'wal') {
+      if (text_(rec.typ) === 'cfg') wallet = { name: text_(rec.name) || 'Car wallet', since: toISODate_(rec.date) };
+      else walletRecs.push({ typ: text_(rec.typ), cost: toAmount_(rec.cost) || 0 });
+      return;
+    }
+    if (kind === 'exp') {
+      var xd = toISODate_(rec.date);
+      if (xd) others.push({ carId: text_(rec.carId), date: xd, cost: toAmount_(rec.cost) || 0, cat: text_(rec.cat) || 'other', pay: text_(rec.pay) });
+      return;
+    }
     if (kind !== 'log' && kind !== 'fuel') return;
 
     // Date: prefer the JSON, but catch typos like "0021-03-02".
@@ -68,6 +87,7 @@ function readGarage_(ss, ctx) {
       cost: toAmount_(rec.cost !== undefined ? rec.cost : row.cost),
       litres: toNumber_(rec.litres),
       place: text_(rec.place),
+      pay: text_(rec.pay),
       items: kind === 'log' ? text_(rec.item || row.item).split(/\s*,\s*/).filter(String) : [],
       guessedFrom: guessedFrom || null,
       __row: row.__row,
@@ -106,14 +126,32 @@ function readGarage_(ss, ctx) {
 
   /* --- per car summary --- */
   var carList = Object.keys(cars).map(function (id) {
-    return summariseCar_(cars[id], logs, fuels, svcNames, ctx, issues, Object.keys(cars).length === 1);
+    return summariseCar_(cars[id], logs, fuels, svcNames, ctx, issues, Object.keys(cars).length === 1, others, docs);
   });
+
+  // Documents with an expiry that do not belong to a car (licence, passport…)
+  var carIds = Object.keys(cars);
+  var personalDocs = docs.filter(function (d) { return !d.carId || carIds.indexOf(d.carId) < 0; }).map(function (d) {
+    return { label: d.label, date: d.date, daysLeft: daysBetween_(ctx.today, d.date), lead: d.lead };
+  }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+
+  // Shared car wallet: top-ups in, payments out, and anything logged as "paid from the wallet"
+  var walletOut = null;
+  if (wallet) {
+    var bal = 0;
+    walletRecs.forEach(function (w) { if (w.typ === 'in') bal += w.cost; else if (w.typ === 'out') bal -= w.cost; });
+    logs.concat(fuels, others).forEach(function (e) { if (e.pay === 'w' && e.cost) bal -= e.cost; });
+    walletOut = { name: wallet.name, balance: round2_(bal) };
+    if (bal < 0) issues.add('info', 'wallet', wallet.name + ' is RM ' + (-bal).toFixed(2) + ' short', 'More has been paid from it than was put in. Top it up in Garage.');
+  }
   if (!carList.length) issues.add('warn', 'records', 'No car found in the sheet');
 
   return {
     summary: {
       cars: carList,
-      counts: { logs: logs.length, fuel: fuels.length, deleted: deleted },
+      docs: personalDocs,
+      wallet: walletOut,
+      counts: { logs: logs.length, fuel: fuels.length, other: others.length, deleted: deleted },
       lastChange: lastChange
     },
     issues: issues.list
@@ -157,10 +195,11 @@ function checkGuessedDates_(entries, cars, issues) {
   });
 }
 
-function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
+function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar, others, docs) {
   var mine = function (e) { return e.carId === car.id || (!e.carId && onlyCar); };
   var myLogs = logs.filter(mine).filter(function (e) { return e.date; });
   var myFuel = fuels.filter(mine).filter(function (e) { return e.date; });
+  var myOther = (others || []).filter(mine);
   var byDate = function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.odo || 0) - (b.odo || 0); };
   myLogs.sort(byDate);
   myFuel.sort(byDate);
@@ -192,6 +231,12 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
     else if (left <= 30) issues.add('warn', 'renewals', car.name + ': ' + r[0] + ' expires in ' + left + ' days (' + r[1] + ')', '', car);
   });
   if (!car.roadTax) issues.add('info', 'fields', car.name + ': no road tax expiry date saved', '', car);
+  // Other documents saved for this car (warranty, inspection…)
+  (docs || []).filter(function (d) { return d.carId === car.id; }).forEach(function (d) {
+    var left = daysBetween_(ctx.today, d.date);
+    renewals.push({ label: d.label, date: d.date, daysLeft: left });
+    if (left < 0) issues.add('warn', 'renewals', car.name + ': ' + d.label + ' expired ' + (-left) + ' days ago', '', car);
+  });
 
   // Last time each service item was done
   var lastByItem = {};
@@ -234,6 +279,7 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
     var mk = addMonths_(month, -mi);
     var fm = myFuel.filter(function (f) { return monthKey_(f.date) === mk; });
     var sm = myLogs.filter(function (l) { return monthKey_(l.date) === mk; });
+    var om = myOther.filter(function (o) { return monthKey_(o.date) === mk; });
     var odoEnd = null, odoStart = null;
     timeline.forEach(function (e) {
       if (!e.date) return;
@@ -244,6 +290,7 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
       month: mk,
       fuel: sum_(fm, function (f) { return f.cost; }),
       service: sum_(sm, function (l) { return l.cost; }),
+      other: round2_(sum_(om, function (o) { return o.cost; })),
       litres: sum_(fm, function (f) { return f.litres; }),
       fills: fm.length,
       km: odoEnd !== null && odoStart !== null && odoEnd > odoStart && fm.length + sm.length ? odoEnd - odoStart : null
@@ -266,10 +313,10 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
 
   // Running costs in the last 7 days and the 7 before (weekly trend)
   var d6 = addDays_(ctx.today, -6), d13 = addDays_(ctx.today, -13);
-  var costIn = function (from, to) { return round2_(sum_(myFuel.concat(myLogs).filter(function (e) { return e.date >= from && e.date <= to; }), function (e) { return e.cost; })); };
+  var costIn = function (from, to) { return round2_(sum_(myFuel.concat(myLogs, myOther).filter(function (e) { return e.date >= from && e.date <= to; }), function (e) { return e.cost; })); };
   var week = { cur: costIn(d6, ctx.today), prev: costIn(d13, addDays_(ctx.today, -7)) };
 
-  var spendMonth = sum_(myFuel.concat(myLogs).filter(function (e) { return monthKey_(e.date) === month; }), function (e) { return e.cost; });
+  var spendMonth = sum_(myFuel.concat(myLogs, myOther).filter(function (e) { return monthKey_(e.date) === month; }), function (e) { return e.cost; });
 
   return {
     id: car.id,
@@ -298,7 +345,23 @@ function summariseCar_(car, logs, fuels, svcNames, ctx, issues, onlyCar) {
     totals: {
       fuel12: sum_(monthly, function (m) { return m.fuel; }),
       service12: sum_(monthly, function (m) { return m.service; }),
+      other12: round2_(sum_(monthly, function (m) { return m.other; })),
       km12: monthly.reduce(function (n, m) { return n + (m.km || 0); }, 0)
     }
   };
+}
+
+/** Every Garage reminder with a date: each car's renewals, plus documents not tied to a car. */
+function garageReminders_(sources) {
+  var g = sources.garage && sources.garage.ok ? sources.garage.summary : null;
+  if (!g) return [];
+  var out = [];
+  (g.cars || []).forEach(function (c) {
+    c.renewals.forEach(function (r) { out.push({ car: c.name, label: r.label, date: r.date, daysLeft: r.daysLeft, text: c.name + ' ' + r.label.toLowerCase() }); });
+  });
+  (g.docs || []).forEach(function (d) {
+    // A personal document only shows up once its reminder window opens.
+    if (d.daysLeft <= Math.max(d.lead || 30, 30)) out.push({ car: '', label: d.label, date: d.date, daysLeft: d.daysLeft, text: d.label });
+  });
+  return out;
 }
