@@ -284,8 +284,8 @@ function readTransactions_(table, accounts, ctx, issues) {
     row[i] = round2_(row[i] - t.amount);
   });
 
-  // Spending per day for the last 14 days (weekly trend)
-  var since14 = addDays_(ctx.today, -13);
+  // Spending per day for the last 26 weeks (weekly trend + the calendar heatmap)
+  var since14 = addDays_(ctx.today, -181);
   out.spendDays = {};
   real.forEach(function (t) {
     if (t.amount >= 0 || t.date < since14 || t.date > ctx.today) return;

@@ -13,7 +13,7 @@
   --text: #eceef3; --muted: #a0a8b8; --faint: #6f7789;
   --accent: #4f8cff; --accent-ink: #ffffff;
   --good: #3ecf8e; --warn: #f5b74e; --bad: #ff6b6b; --info: #8ab4ff;
-  --s1: #3987e5; --s2: #d95926; --s3: #a07cf0; --s-prev: #6f7789;
+  --s1: #3987e5; --s2: #d95926; --s3: #a07cf0; --s4: #00a888; --s-prev: #6f7789;
   --grid: #262a33; --axis: #3a404c;
   --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.25);
   --radius: 16px;
@@ -24,7 +24,7 @@
     --bg: #f3f5f9; --card: #ffffff; --card-2: #f2f4f8; --card-3: #e8ebf2; --line: #e3e7ef;
     --text: #141821; --muted: #566074; --faint: #8a93a6;
     --accent: #2f6fe8; --good: #12925c; --warn: #b7791f; --bad: #d64545; --info: #2f6fe8;
-    --s1: #2a78d6; --s2: #eb6834; --s3: #7b52d9; --s-prev: #9aa2b2;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #7b52d9; --s4: #00b894; --s-prev: #9aa2b2;
     --grid: #edf0f5; --axis: #d3d8e2;
     --shadow: 0 1px 2px rgba(20,24,33,.04), 0 8px 24px rgba(20,24,33,.06);
     color-scheme: light;
@@ -34,7 +34,7 @@
   --bg: #f3f5f9; --card: #ffffff; --card-2: #f2f4f8; --card-3: #e8ebf2; --line: #e3e7ef;
   --text: #141821; --muted: #566074; --faint: #8a93a6;
   --accent: #2f6fe8; --good: #12925c; --warn: #b7791f; --bad: #d64545; --info: #2f6fe8;
-  --s1: #2a78d6; --s2: #eb6834; --s3: #7b52d9; --s-prev: #9aa2b2;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #7b52d9; --s4: #00b894; --s-prev: #9aa2b2;
   --grid: #edf0f5; --axis: #d3d8e2;
   --shadow: 0 1px 2px rgba(20,24,33,.04), 0 8px 24px rgba(20,24,33,.06);
   color-scheme: light;
@@ -135,6 +135,24 @@ body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; ove
 .card.folded > .card-h { margin-bottom: 0; }
 .card.folded > .card-h .fold::before { transform: translateY(1px) rotate(-135deg); }
 .card.folded > :not(.card-h) { display: none !important; }
+.donut { display: flex; justify-content: center; }
+.chart.donut svg { width: 100%; max-width: 210px; height: auto; }
+.donut .slice { cursor: pointer; transition: transform .2s ease, opacity .2s ease; }
+.donut .slice:hover, .donut .slice.on { transform: translate(var(--dx), var(--dy)); }
+.donut .slice.dim { opacity: .35; }
+.donut .slice.pop { animation: pop .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes pop { from { opacity: 0; transform: scale(.85) rotate(-8deg); } to { opacity: 1; transform: none; } }
+.donut .dn-big { font-size: 20px; font-weight: 700; fill: var(--text); font-variant-numeric: tabular-nums; }
+.donut .dn-small { font-size: 12px; fill: var(--muted); }
+.hc { cursor: pointer; transition: stroke .15s ease; stroke: transparent; stroke-width: 2; }
+.hc:hover, .hc.on { stroke: var(--text); }
+.hc.today { stroke: var(--accent); }
+.heat-key { display: flex; align-items: center; gap: 3px; justify-content: flex-end; font-size: 11.5px; color: var(--faint); margin-top: 6px; }
+.heat-key i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.heat-key i:first-of-type { margin-left: 5px; } .heat-key i:last-of-type { margin-right: 5px; }
+#inv-list .spark { width: 56px; height: 22px; }
+#inv-list .t { white-space: normal; }
+@media (prefers-reduced-motion: reduce) { .donut .slice { transition: none; } }
 .pick { cursor: pointer; border-radius: 8px; transition: background .15s ease; }
 .pick:hover, .pick:focus-visible { background: var(--card-2); outline: none; }
 li.pick { padding-left: 6px; padding-right: 6px; margin: 0 -6px; }
@@ -567,7 +585,7 @@ footer a { color: var(--muted); }
   /* =========================================================
    * State, storage, formatting
    * ======================================================= */
-  var S = { ui: { alerts: 'all', tasks: 'today', tx: 'all', txq: '', vcat: 'all', vowner: 'all', review: 0, bud: 'all', budSort: 'used', invRange: '3y', invAcc: '', txAcc: '', txCat: '', txN: 25 }, data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
+  var S = { ui: { alerts: 'all', tasks: 'today', tx: 'all', txq: '', vcat: 'all', vowner: 'all', review: 0, bud: 'all', budSort: 'used', invRange: '3y', invAcc: '', txDay: '', txAcc: '', txCat: '', txN: 25 }, data: null, view: 'overview', filter: 'problems', hidden: {}, loadedAt: 0, stale: false, moneyMonth: null, legendOff: {}, animate: true };
   var LS = { data: 'dash:last', hidden: 'dash:hidden', theme: 'dash:theme', cfg: 'dash:cfg', hint: 'dash:hint' };
   var lsGet = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
   var lsSet = function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* unavailable */ } };
@@ -926,6 +944,147 @@ footer a { color: var(--muted); }
     var last = pts[pts.length - 1].split(',');
     return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><polyline points="' + pts.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
       '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="3" fill="' + color + '"/></svg>';
+  }
+
+  /** Pointer helpers shared by the charts below: hover shows, tap shows and keeps. */
+  function tipOn(node, show, onTap) {
+    var touched = false;
+    node.addEventListener('pointermove', show);
+    node.addEventListener('pointerdown', function (e) { touched = e.pointerType !== 'mouse'; show(e); });
+    node.addEventListener('pointerleave', mouseLeave);
+    if (onTap) node.addEventListener('click', function () { if (!touched) hideTip(); onTap(); });
+  }
+  function arcPath(cx, cy, r0, r1, a0, a1) {
+    var big = a1 - a0 > Math.PI ? 1 : 0, p = function (r, a) { return (cx + r * Math.sin(a)).toFixed(2) + ',' + (cy - r * Math.cos(a)).toFixed(2); };
+    if (a1 - a0 >= Math.PI * 2 - 1e-6) a1 = a0 + Math.PI * 2 - 1e-4;
+    return 'M' + p(r1, a0) + 'A' + r1 + ',' + r1 + ' 0 ' + big + ' 1 ' + p(r1, a1) + 'L' + p(r0, a1) + 'A' + r0 + ',' + r0 + ' 0 ' + big + ' 0 ' + p(r0, a0) + 'Z';
+  }
+
+  /**
+   * Donut: share of a whole. items [{name, value, color, sub}], selected name, onSelect(name),
+   * center(item|null) -> [big, small]. Slices grow in, lift on hover, tap to pick.
+   */
+  function donut(host, opts) {
+    host.textContent = '';
+    var wrap = el('div', 'chart donut'); host.appendChild(wrap);
+    var size = opts.size || 200, cx = size / 2, cy = size / 2, r1 = size / 2 - 6, r0 = r1 * 0.64;
+    var items = opts.items.filter(function (i) { return i.value > 0; });
+    var total = items.reduce(function (t, i) { return t + i.value; }, 0) || 1;
+    var svg = sv('svg', { viewBox: '0 0 ' + size + ' ' + size, width: size, height: size, tabindex: 0, role: 'img', 'aria-label': opts.aria || 'Donut chart' }, wrap);
+    var gap = items.length > 1 ? 0.025 : 0, a = 0, sel = opts.selected || '';
+    var paths = [];
+    items.forEach(function (it, i) {
+      var sweep = it.value / total * Math.PI * 2, a0 = a + gap / 2, a1 = a + sweep - gap / 2, mid = (a0 + a1) / 2;
+      a += sweep;
+      if (a1 <= a0) return;
+      var on = sel === it.name, dim = sel && !on;
+      var g = sv('g', { 'class': 'slice' + (on ? ' on' : '') + (dim ? ' dim' : ''), style: 'transform-origin:' + cx + 'px ' + cy + 'px;--dx:' + (Math.sin(mid) * 5).toFixed(1) + 'px;--dy:' + (-Math.cos(mid) * 5).toFixed(1) + 'px' + (S.animate && !reduced ? ';animation-delay:' + i * 60 + 'ms' : '') }, svg);
+      if (S.animate && !reduced) g.classList.add('pop');
+      var path = sv('path', { d: arcPath(cx, cy, r0, on ? r1 + 4 : r1, a0, a1), fill: it.color }, g);
+      paths.push({ g: g, it: it });
+      tipOn(g, function (e) {
+        showTip(e.clientX, e.clientY, it.name, [{ color: it.color, value: (opts.fmt || rm)(it.value), label: Math.round(it.value / total * 1000) / 10 + '%' }], it.sub ? [].concat(it.sub) : null);
+      }, opts.onSelect ? function () { opts.onSelect(sel === it.name ? '' : it.name); } : null);
+    });
+    var c = opts.center ? opts.center(items.filter(function (i) { return i.name === sel; })[0] || null) : null;
+    if (c) {
+      sv('text', { x: cx, y: cy + 2, 'text-anchor': 'middle', 'class': 'dn-big' }, svg).textContent = c[0];
+      if (c[1]) sv('text', { x: cx, y: cy + 22, 'text-anchor': 'middle', 'class': 'dn-small' }, svg).textContent = c[1];
+    }
+    var fi = Math.max(0, items.map(function (i) { return i.name; }).indexOf(sel));
+    svg.addEventListener('keydown', function (e) {
+      if (!opts.onSelect || ['ArrowLeft', 'ArrowRight', 'Enter', 'Escape'].indexOf(e.key) < 0) return;
+      e.preventDefault();
+      if (e.key === 'Escape') return opts.onSelect('');
+      if (e.key !== 'Enter') fi = (fi + (e.key === 'ArrowRight' ? 1 : items.length - 1)) % items.length;
+      opts.onSelect(items[fi].name);
+    });
+  }
+
+  /**
+   * Calendar heatmap: one square per day, weeks as columns (Mon at top), one hue light -> dark.
+   * values {iso: number}; start/end iso; onPick(iso) on tap.
+   */
+  function calHeat(host, opts) {
+    host.textContent = '';
+    var wrap = el('div', 'chart'); host.appendChild(wrap);
+    var startDow = (parseIso(opts.start).getUTCDay() + 6) % 7, first = addDaysIso(opts.start, -startDow);
+    var days = daysBetweenIso(first, opts.end) + 1, weeks = Math.ceil(days / 7);
+    var W = Math.max(280, host.clientWidth || 600), L = 26, T = 18;
+    var step = Math.min(26, Math.floor((W - L) / weeks)), cell = step - 3, H = T + step * 7 + 4;
+    var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, tabindex: 0, role: 'img', 'aria-label': opts.aria || 'Calendar heatmap' }, wrap);
+    var vals = Object.keys(opts.values).filter(function (k) { return k >= opts.start && k <= opts.end; }).map(function (k) { return opts.values[k]; }).filter(function (v) { return v > 0; }).sort(function (a, b) { return a - b; });
+    var q = function (p) { return vals.length ? vals[Math.min(vals.length - 1, Math.floor(p * vals.length))] : 0; };
+    var cuts = [q(0.25), q(0.5), q(0.75), q(0.92)];
+    var lvl = function (v) { if (!(v > 0)) return 0; for (var i = 0; i < cuts.length; i++) if (v <= cuts[i]) return i + 1; return 5; };
+    var base = css(opts.color || '--s1'), STEP = [0, 22, 40, 60, 80, 100];
+    var fill = function (l) { return l ? 'color-mix(in srgb, ' + base + ' ' + STEP[l] + '%, var(--card-2))' : 'var(--card-2)'; };
+    ['M', '', 'W', '', 'F', '', ''].forEach(function (t, i) { if (t) sv('text', { x: L - 8, y: T + i * step + cell - 2, 'text-anchor': 'end', 'class': 'tick' }, svg).textContent = t; });
+    var lastMonth = '', lastCol = -9, cells = [];
+    for (var k = 0; k < days; k++) (function (k) {
+      var iso = addDaysIso(first, k), col = Math.floor(k / 7), row = k % 7, x = L + col * step, y = T + row * step;
+      if (iso.slice(0, 7) !== lastMonth && row === 0) { lastMonth = iso.slice(0, 7); if (col < weeks - 1 && col - lastCol >= 3 && (lastCol = col) >= 0) sv('text', { x: x, y: T - 6, 'class': 'tick' }, svg).textContent = MONTHS[parseIso(iso).getUTCMonth()]; }
+      if (iso < opts.start || iso > opts.end) return;
+      var v = opts.values[iso] || 0, on = opts.selected === iso;
+      var r = sv('rect', { x: x, y: y, width: cell, height: cell, rx: 3, style: 'fill:' + fill(lvl(v)), 'class': 'hc' + (on ? ' on' : '') + (iso === opts.end ? ' today' : '') }, svg);
+      cells.push(r);
+      tipOn(r, function (e) {
+        showTip(e.clientX, e.clientY, dayName(iso) + ', ' + shortDate(iso) + ' ' + iso.slice(0, 4), [{ color: base, value: (opts.fmt || rm)(v), label: opts.label || '' }], opts.extra ? opts.extra(iso, v) : null);
+      }, opts.onPick ? function () { opts.onPick(iso); } : null);
+    })(k);
+    var key = el('div', 'heat-key');
+    key.appendChild(document.createTextNode('Less'));
+    for (var l = 0; l <= 5; l++) { var sw = el('i'); sw.style.background = fill(l); key.appendChild(sw); }
+    key.appendChild(document.createTextNode('More'));
+    wrap.appendChild(key);
+  }
+
+  /**
+   * Waterfall: a start total, then each step taking away (or adding), ending at what is left.
+   * steps [{label, value, kind: 'total'|'step'|'end', color, sub, onTap}]
+   */
+  function waterfall(host, opts) {
+    host.textContent = '';
+    var wrap = el('div', 'chart'); host.appendChild(wrap);
+    var W = Math.max(300, host.clientWidth || 600), H = opts.height || 260, P = { l: 52, r: 10, t: 14, b: 58 };
+    var st = opts.steps, n = st.length, run = 0, bars = [], lo = 0, hi = 0;
+    if ((W - P.l - P.r) / n < 64) P.b = 78;
+    st.forEach(function (s) {
+      var a, b;
+      if (s.kind === 'total') { a = 0; b = s.value; run = s.value; }
+      else if (s.kind === 'end') { a = 0; b = run; }
+      else { a = run; b = run + s.value; run = b; }
+      bars.push([Math.min(a, b), Math.max(a, b)]);
+      lo = Math.min(lo, a, b); hi = Math.max(hi, a, b);
+    });
+    var sc = niceScale(Math.max(hi, -lo) * 1.05, 4), min = lo < 0 ? -Math.ceil(-lo / sc.step) * sc.step : 0, max = sc.max;
+    var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, tabindex: 0, role: 'img', 'aria-label': opts.aria || 'Waterfall chart' }, wrap);
+    var Y = function (v) { return P.t + (H - P.t - P.b) * (max - v) / (max - min); };
+    for (var v = min; v <= max + 1e-9; v += sc.step) {
+      sv('line', { x1: P.l, x2: W - P.r, y1: Y(v), y2: Y(v), 'class': Math.abs(v) < 1e-9 ? 'base' : 'gl' }, svg);
+      sv('text', { x: P.l - 8, y: Y(v) + 4, 'text-anchor': 'end', 'class': 'tick' }, svg).textContent = (opts.yFmt || rmK)(v);
+    }
+    var band = (W - P.l - P.r) / n, bw = Math.min(46, band * 0.66), groups = [];
+    st.forEach(function (s, i) {
+      var x0 = P.l + band * i, bx = x0 + (band - bw) / 2, b = bars[i];
+      var g = sv('g', { 'class': 'grp' + (opts.selected === i ? ' sel' : opts.selected !== undefined && opts.selected !== null ? ' dim' : '') }, svg);
+      groups.push(g);
+      sv('rect', { x: x0 + 1, y: P.t, width: Math.max(0, band - 2), height: H - P.t - P.b, rx: 6, 'class': 'band' }, g);
+      var y1 = Y(b[1]), h = Math.max(1.5, Y(b[0]) - y1);
+      sv('rect', { x: bx, y: y1, width: bw, height: h, rx: 4, fill: s.color, 'class': 'bar' + (S.animate && !reduced ? ' grow' : ''), style: S.animate ? 'animation-delay:' + i * 40 + 'ms' : null }, g);
+      if (i < n - 1) { // connector to the next bar
+        var ly = s.kind === 'step' ? Y(s.value < 0 ? b[0] : b[1]) : y1;
+        sv('line', { x1: bx + bw, x2: bx + band, y1: ly, y2: ly, stroke: css('--axis'), 'stroke-dasharray': '3 3' }, g);
+      }
+      var tilt = band < 64, lab = s.label.length > (tilt ? 12 : 11) ? s.label.slice(0, tilt ? 11 : 9) + '…' : s.label;
+      var lx = x0 + band / 2 + (tilt ? 4 : 0), ly2 = H - P.b + 16;
+      var t = sv('text', { x: lx, y: ly2, 'text-anchor': tilt ? 'end' : 'middle', 'class': 'tick', transform: tilt ? 'rotate(-40 ' + lx + ' ' + ly2 + ')' : null }, g);
+      t.textContent = lab;
+      var hit = sv('rect', { x: x0, y: 0, width: band, height: H, 'class': 'hit' }, g);
+      tipOn(hit, function (e) {
+        showTip(e.clientX, e.clientY, s.label, [{ color: s.color, value: rm(Math.abs(s.kind === 'end' ? run : s.value)), label: s.kind === 'step' ? (s.value < 0 ? 'spent' : 'added') : s.kind === 'end' ? (run < 0 ? 'short' : 'left') : '' }], s.sub ? [].concat(s.sub) : null);
+      }, s.onTap || null);
+    });
   }
 
   function addMonthsIso(iso, n) {
@@ -1940,6 +2099,10 @@ footer a { color: var(--muted); }
       '<div class="mpick"><button type="button" id="mp-prev" aria-label="Previous month">' + svgIcon('left') + '</button><span id="mp-lbl"></span><button type="button" id="mp-next" aria-label="Next month">' + svgIcon('right') + '</button></div></div>' +
       '<div id="cats"></div></div>';
     html += '</div>';
+    html += '<div class="grid g-21" style="margin-top:14px">';
+    html += '<div class="card">' + cardHead('Spending calendar', 'Each square is a day · darker = more spent · tap a recent day for its list') + '<div id="ch-heat"></div></div>';
+    html += '<div class="card">' + cardHead('Where the income went', '<span id="wf-sub"></span>') + '<div id="ch-wf"></div></div>';
+    html += '</div>';
 
     // Budget and recurring payments
     var bud = s.budget, rec = s.recurring || [];
@@ -1979,7 +2142,7 @@ footer a { color: var(--muted); }
         '<div id="lg-inv"></div><div id="ch-inv"></div>' +
         '<h3 class="sec">Put in vs earned, by year</h3><div id="lg-invy"></div><div id="ch-invy"></div></div>';
       html += '<div class="card">' + cardHead('Holdings', plural(inv.accounts.length, 'account') + ' · tap one') +
-        '<div class="seg" id="inv-seg" style="height:16px;margin:4px 0 12px"></div><div id="inv-list"></div>' +
+        '<div id="inv-donut" style="margin:2px 0 10px"></div><div id="inv-list"></div>' +
         (inv.loans.length ? '<div class="note" style="margin-top:12px;font-size:13px">' + inv.loans.map(function (l) { return esc(l.name) + ' still owes <b class="num">' + rm(l.owed, 0) + '</b>'; }).join(' · ') +
           '. After the loan you own <b class="num">' + rm(inv.net, 0) + '</b>.</div>' : '') +
         '<h3 class="sec">Latest moves</h3><div id="inv-moves"></div></div>';
@@ -2065,28 +2228,29 @@ footer a { color: var(--muted); }
       var catOf = function (t) { return t.cat || '(no category)'; };
       var list = all.filter(function (t) {
         if (S.ui.txAcc && t.account !== S.ui.txAcc) return false;
+        if (S.ui.txDay && (t.date !== S.ui.txDay || t.amount >= 0 || t.transfer)) return false;
         if (S.ui.txCat && (catOf(t) !== S.ui.txCat.cat || t.date.slice(0, 7) !== S.ui.txCat.month || t.amount >= 0)) return false;
         if (f !== 'all' && kind(t) !== f) return false;
         return !q || [t.desc, t.cat, t.account].join(' ').toLowerCase().indexOf(q) >= 0;
       });
       $('tx-list').innerHTML = chipBar('tx', [{ key: 'all', label: 'All', count: cnt.all }, { key: 'out', label: 'Spending', count: cnt.out },
         { key: 'in', label: 'Income', count: cnt.in }, { key: 'transfer', label: 'Transfers', count: cnt.transfer }], f) +
-        (S.ui.txAcc || S.ui.txCat ? '<div class="chips2" style="margin-top:-4px"><button type="button" id="tx-clear" aria-pressed="true">' +
-          esc(S.ui.txAcc ? S.ui.txAcc : S.ui.txCat.cat + ' · ' + monLabel(S.ui.txCat.month)) + ' ✕</button></div>' : '') +
+        (S.ui.txAcc || S.ui.txCat || S.ui.txDay ? '<div class="chips2" style="margin-top:-4px"><button type="button" id="tx-clear" aria-pressed="true">' +
+          esc(S.ui.txAcc ? S.ui.txAcc : S.ui.txDay ? 'Spent on ' + dayName(S.ui.txDay) + ' ' + shortDate(S.ui.txDay) : S.ui.txCat.cat + ' · ' + monLabel(S.ui.txCat.month)) + ' ✕</button></div>' : '') +
         (list.length ? '<ul class="list">' + list.slice(0, S.ui.txN).map(function (t) {
           var inflow = t.amount > 0 && !t.transfer;
           return '<li><span class="t"><span class="when">' + shortDate(t.date) + '</span>' + esc(t.desc || t.cat || '—') +
             '<div class="faint" style="font-size:12px;margin-left:62px;overflow:hidden;text-overflow:ellipsis">' + esc(t.cat || (t.transfer ? 'Transfer' : 'No category')) + ' · ' + esc(t.account) + '</div></span>' +
             '<span class="num ' + (inflow ? 'good' : '') + '" style="font-size:14px;white-space:nowrap">' + (t.amount > 0 ? '+' : '') + rm(t.amount) + '</span></li>';
         }).join('') + '</ul>' + (list.length > S.ui.txN ? '<button type="button" class="linkbtn" id="tx-more" style="margin-top:8px">Show ' + Math.min(25, list.length - S.ui.txN) + ' more of ' + (list.length - S.ui.txN) + '</button>' : '') +
-          (q || f !== 'all' || S.ui.txAcc || S.ui.txCat ? '<div class="faint num" style="font-size:12.5px;margin-top:8px">' + plural(list.length, 'transaction') + ' · net ' + rm(list.reduce(function (t, x) { return t + x.amount; }, 0)) + '</div>' : '')
+          (q || f !== 'all' || S.ui.txAcc || S.ui.txCat || S.ui.txDay ? '<div class="faint num" style="font-size:12.5px;margin-top:8px">' + plural(list.length, 'transaction') + ' · net ' + rm(list.reduce(function (t, x) { return t + x.amount; }, 0)) + '</div>' : '')
           : '<div class="empty">No matching transactions' + (S.ui.txCat ? ' in the last 60 days. Older ones are in the Finance app.' : '.') + '</div>');
       bindChips($('tx-list'), 'tx', function (k) { S.ui.tx = k; S.ui.txN = 25; drawTx(); });
-      if ($('tx-clear')) $('tx-clear').addEventListener('click', function () { S.ui.txAcc = ''; S.ui.txCat = ''; S.ui.txN = 25; drawTx(); });
+      if ($('tx-clear')) $('tx-clear').addEventListener('click', function () { S.ui.txAcc = ''; S.ui.txCat = ''; S.ui.txDay = ''; drawHeat(); S.ui.txN = 25; drawTx(); });
       if ($('tx-more')) $('tx-more').addEventListener('click', function () { S.ui.txN += 25; drawTx(); });
     }
-    function showTxFor(acc, cat) {
-      S.ui.txAcc = acc || ''; S.ui.txCat = cat || ''; S.ui.tx = 'all'; S.ui.txq = ''; S.ui.txN = 25;
+    function showTxFor(acc, cat, day) {
+      S.ui.txAcc = acc || ''; S.ui.txCat = cat || ''; S.ui.txDay = day || ''; S.ui.tx = 'all'; S.ui.txq = ''; S.ui.txN = 25;
       $('tx-q').value = ''; drawTx();
       $('tx-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -2143,7 +2307,50 @@ footer a { color: var(--muted); }
     function pickMonth(i) {
       if (i < 0 || i >= months.length) return;
       S.moneyMonth = months[i]; S.animate = false;
-      draw12(); drawCats(true);
+      draw12(); drawCats(true); drawWf();
+    }
+    function drawHeat() {
+      var sd = s.spendDays || {}, end = d.today, startH = addDaysIso(end, -181), since60 = addDaysIso(end, -59);
+      var tot = 0, nd = 0, top = null;
+      Object.keys(sd).forEach(function (k) { if (k >= startH && k <= end && sd[k] > 0) { tot += sd[k]; nd++; if (!top || sd[k] > sd[top]) top = k; } });
+      calHeat($('ch-heat'), {
+        values: sd, start: startH, end: end, selected: S.ui.txDay, label: 'spent',
+        aria: 'Spending per day for the last 26 weeks',
+        extra: function (iso, v) {
+          var out = [];
+          if (v && nd) out.push(v > tot / nd ? Math.round(v / (tot / nd) * 10) / 10 + '× a usual spending day' : 'Below a usual spending day');
+          out.push(iso >= since60 ? (v ? 'Tap to list what you bought' : 'No spending') : 'Older than 60 days · see the Finance app');
+          return out;
+        },
+        onPick: function (iso) { if (iso < since60 || !sd[iso]) return; showTxFor('', '', S.ui.txDay === iso ? '' : iso); drawHeat(); }
+      });
+      if (nd) {
+        var note = el('div', 'faint num'); note.style.cssText = 'font-size:12.5px;margin-top:6px';
+        note.textContent = 'Spent on ' + nd + ' of 182 days · ' + rm(tot / 26, 0) + ' a week on average · biggest day ' + shortDate(top) + ' (' + rm(sd[top], 0) + ')';
+        $('ch-heat').appendChild(note);
+      }
+    }
+    function drawWf() {
+      var mk = S.moneyMonth || months[months.length - 1], t = tr[months.indexOf(mk)];
+      var rows = ((s.catsByMonth || {})[mk] || []).slice();
+      if (!t || !t.income) {
+        $('wf-sub').textContent = monLabel(mk, true);
+        $('ch-wf').innerHTML = '<div class="empty">No income recorded in ' + monLabel(mk, true) + '.</div>';
+        return;
+      }
+      var keep = rows.filter(function (r) { return !r.other; }).slice(0, 6), rest = rows.filter(function (r) { return keep.indexOf(r) < 0; });
+      var other = rest.reduce(function (x, r) { return x + r.spent; }, 0);
+      var spent = rows.reduce(function (x, r) { return x + r.spent; }, 0), left = t.income - spent;
+      $('wf-sub').textContent = monLabel(mk, true) + ' · ' + (left >= 0 ? rm(left, 0) + ' left (' + Math.round(left / t.income * 100) + '% kept)' : rm(-left, 0) + ' more spent than came in') + ' · follows the month picker';
+      var steps = [{ label: 'Income', value: t.income, kind: 'total', color: css('--s2'), sub: ['Money in during ' + monLabel(mk, true)] }];
+      keep.forEach(function (r) {
+        steps.push({ label: r.category.replace(/^[^\p{L}\p{N}(]+/u, '').trim() || r.category, value: -r.spent, kind: 'step', color: css('--s1'),
+          sub: [Math.round(r.spent / t.income * 100) + '% of income · ' + plural(r.count, 'transaction'), 'Tap to list them'],
+          onTap: function () { showTxFor('', { cat: r.category, month: mk }); } });
+      });
+      if (other > 0) steps.push({ label: 'Other', value: -other, kind: 'step', color: css('--s-prev'), sub: [plural(rest.length, 'category', 'categories') + ' · ' + Math.round(other / t.income * 100) + '% of income'] });
+      steps.push({ label: left >= 0 ? 'Left' : 'Short', value: left, kind: 'end', color: css('--s4'), sub: [left >= 0 ? 'Kept ' + Math.round(left / t.income * 100) + '% of income' : 'Spent more than came in'] });
+      waterfall($('ch-wf'), { steps: steps, height: 250, aria: 'Income for ' + monLabel(mk, true) + ' and how much each category took from it' });
     }
     function drawCats(grow) {
       var mk = S.moneyMonth || months[months.length - 1], idx = months.indexOf(mk);
@@ -2175,12 +2382,14 @@ footer a { color: var(--muted); }
     S.animate = firstPaint;
     draw12();
     drawCats(true);
+    drawHeat();
+    drawWf();
     if (inv) drawInv(firstPaint);
 
     function drawInv(grow) {
-      var PAL = ['--s1', '--s2', '--s3', '--good', '--warn', '--info', '--s-prev'];
+      var PAL = ['--s1', '--s2', '--s3', '--s4'];
       var colorOf = {};
-      inv.accounts.forEach(function (a, i) { colorOf[a.name] = css(PAL[i % PAL.length]); });
+      inv.accounts.forEach(function (a, i) { colorOf[a.name] = css(PAL[i] || '--s-prev'); });
       var acc = S.ui.invAcc && colorOf[S.ui.invAcc] ? S.ui.invAcc : '';
       var one = acc ? inv.accounts.filter(function (a) { return a.name === acc; })[0] : null;
       var RANGE = { '1y': 13, '3y': 37, all: 1e9 };
@@ -2214,7 +2423,7 @@ footer a { color: var(--muted); }
       var yr = inv.yearly;
       var ys = [
         { name: 'Put in', values: yr.map(function (y) { return Math.max(0, y.putIn - y.takenOut); }), color: css('--s1'), off: S.legendOff['invy:Put in'] },
-        { name: 'Earned', values: yr.map(function (y) { return y.earned; }), color: css('--good'), off: S.legendOff['invy:Earned'] },
+        { name: 'Earned', values: yr.map(function (y) { return y.earned; }), color: css('--s4'), off: S.legendOff['invy:Earned'] },
         { name: 'Revalued', values: yr.map(function (y) { return Math.max(0, y.revalue); }), color: css('--s3'), off: S.legendOff['invy:Revalued'] }
       ];
       $('lg-invy').textContent = '';
@@ -2228,24 +2437,25 @@ footer a { color: var(--muted); }
       else $('ch-invy').innerHTML = '<div class="empty">No transactions on these accounts yet.</div>';
 
       // Allocation bar + holdings list
-      $('inv-seg').innerHTML = inv.accounts.filter(function (a) { return a.value > 0; }).map(function (a) {
-        return '<i data-acc="' + esc(a.name) + '" style="flex-grow:' + a.value + ';background:' + colorOf[a.name] + ';cursor:pointer;opacity:' + (acc && acc !== a.name ? .3 : 1) + '"></i>';
-      }).join('');
+      var pick = function (name) { S.ui.invAcc = S.ui.invAcc === name ? '' : name; S.animate = false; drawInv(false); };
+      donut($('inv-donut'), {
+        items: inv.accounts.map(function (a) { return { name: a.name, value: a.value, color: colorOf[a.name], sub: [a.kind].concat(a.earned12 ? ['Earned ' + rm(a.earned12, 0) + ' in 12 months'] : []).concat(['Tap to see it alone']) }; }),
+        selected: acc, fmt: function (v) { return rm(v, 0); }, size: 190,
+        aria: 'Share of each holding. Use left and right arrows to pick one.',
+        onSelect: function (name) { S.ui.invAcc = name; S.animate = false; drawInv(false); },
+        center: function (it) { return it ? [rmK(it.value), it.name.slice(0, 16) + ' · ' + Math.round(it.value / inv.total * 100) + '%'] : [rmK(inv.total), 'in ' + plural(inv.accounts.length, 'holding')]; }
+      });
+      var last12 = inv.history.slice(-13);
       $('inv-list').innerHTML = '<ul class="list">' + inv.accounts.map(function (a) {
         var on = acc === a.name;
         return '<li data-acc="' + esc(a.name) + '" class="pick' + (on ? ' on' : '') + '" role="button" tabindex="0" aria-pressed="' + on + '"><span class="t"><span class="key" style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;background:' + colorOf[a.name] + '"></span>' + esc(a.name) +
           '<span class="tag">' + esc(a.kind) + '</span><div class="faint num" style="font-size:12px;margin-left:18px">' + a.share + '%' + (a.earned12 ? ' · earned ' + rm(a.earned12, 0) + ' in 12 months' : '') + '</div></span>' +
-          '<span class="r num" style="color:var(--text)">' + rm(a.value, 0) + '</span></li>';
+          '<span class="r" style="display:flex;align-items:center;gap:10px">' + sparkline(last12.map(function (h) { return h.by[a.name] || 0; }), colorOf[a.name]) + '<span class="num" style="color:var(--text)">' + rm(a.value, 0) + '</span></span></li>';
       }).join('') + '</ul>' + (acc ? '<button type="button" class="linkbtn" id="inv-all" style="margin-top:8px">Show all holdings</button> <button type="button" class="linkbtn" data-txacc="' + esc(acc) + '" style="margin-top:8px">Its transactions →</button>' : '');
-      var pick = function (name) { S.ui.invAcc = S.ui.invAcc === name ? '' : name; S.animate = false; drawInv(false); };
       each($('inv'), '[data-acc]', function (e) {
         var a = inv.accounts.filter(function (x) { return x.name === e.getAttribute('data-acc'); })[0];
         e.addEventListener('click', function () { pick(a.name); });
         e.addEventListener('keydown', function (k) { if (k.key === 'Enter' || k.key === ' ') { k.preventDefault(); pick(a.name); } });
-        if (e.tagName === 'I') {
-          var show = function (evt) { showTip(evt.clientX, evt.clientY, a.name, [{ color: colorOf[a.name], value: rm(a.value, 0), label: a.share + '%' }], [a.kind]); };
-          e.addEventListener('pointermove', show); e.addEventListener('pointerleave', mouseLeave);
-        }
       });
       if ($('inv-all')) $('inv-all').addEventListener('click', function () { pick(''); });
       bindTxAcc($('inv'));

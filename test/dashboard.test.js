@@ -422,7 +422,9 @@ test('weekly trend: last 7 days against the 7 before', () => {
   if (spend.dir === 'up') assert.equal(spend.good, false);
   const fin = d.sources.finance.summary;
   const days = Object.keys(fin.spendDays);
-  assert.ok(days.every(x => x >= '2026-11-02' && x <= '2026-11-15'), 'only the last 14 days');
+  // 26 weeks kept for the spending calendar; the weekly trend still uses only the last 14
+  assert.ok(days.every(x => x >= '2026-05-18' && x <= '2026-11-15'), 'only the last 26 weeks');
+  assert.ok(days.some(x => x < '2026-11-02'), 'older days are kept for the calendar');
   const study = by('study');
   assert.ok(study && study.unit === 'h');
   assert.equal(study.good, study.dir === 'flat' ? null : study.dir === 'up');
