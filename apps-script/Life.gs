@@ -161,7 +161,8 @@ function readVoyage_(ss, ctx) {
       past: past.slice(0, 4).map(function (t) { return { name: t.name, dest: t.dest, start: t.start, end: t.end, spent: t.spent, budget: t.budget, ccy: t.ccy }; }),
       count: { ahead: ahead.length, past: past.length,
         thisYear: all.filter(function (t) { return String(t.start || '').slice(0, 4) === year; }).length },
-      lastChange: fileUpdated_(ss)
+      // Voyage stamps each save in `updated`; the file's own change time is the fallback.
+      lastChange: (toNumber_(data.updated) > 1e11 && toNumber_(data.updated) <= ctx.now + 864e5) ? toNumber_(data.updated) : fileUpdated_(ss)
     },
     issues: issues.list
   };

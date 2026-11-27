@@ -502,6 +502,16 @@ test('voyage: next trip, budget in home currency, to-dos, nothing private', () =
   assert.equal(d.sync.find(r => r.key === 'voyage').status, 'stale', 'no file date in tests');
 });
 
+test('voyage: save time comes from the app\'s own "updated" stamp', () => {
+  const gs = load(PROPS);
+  const saved = fx.NOW.getTime() - 2 * 864e5;
+  const str = JSON.stringify({ trips: [], updated: saved }), rows = [];
+  for (let i = 0; i < str.length; i += 50) rows.push([str.slice(i, i + 50)]);
+  const d = gs.buildDashboard_(fx.NOW, id => fakeSpreadsheet(id === 'y' ? { _voyage: rows } : BOOKS[id]));
+  assert.equal(d.sources.voyage.summary.lastChange, saved);
+  assert.equal(d.sync.find(r => r.key === 'voyage').status, 'ok');
+});
+
 test('nest: move-in, budget, must-haves, home tasks', () => {
   const d = build();
   const n = d.sources.nest;
